@@ -7,4 +7,5 @@ db:
   user: 
   password: 
   port: 5432
+  name: "mydb"
   sslmode: "disable"
