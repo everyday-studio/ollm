@@ -11,7 +11,7 @@ import (
 func NewDBConnection(cfg *config.Config) (*sql.DB, error) {
 	//DSN Create
 	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s, dbname=%s, sslmode=%s",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.DB.Host, cfg.DB.Port, cfg.DB.User, cfg.DB.Password, cfg.DB.Name, cfg.DB.SSLMode,
 	)
 
