@@ -27,14 +27,14 @@ func TestCreateUser(t *testing.T) {
 			expectErr:  nil,
 		},
 		{
-			name:      "Failed to create user due to invalid input",
+			name:      "Fail to create user due to invalid input",
 			mockInput: &domain.User{Name: "", Email: ""},
 			mockError: domain.ErrInvalidInput,
 			expected:  nil,
 			expectErr: domain.ErrInvalidInput,
 		},
 		{
-			name:      "Failed to create use due to existing email",
+			name:      "Fail to create use due to existing email",
 			mockInput: &domain.User{Name: "John", Email: "john@example.com"},
 			mockError: domain.ErrAlreadyExists,
 			expected:  nil,
@@ -76,7 +76,7 @@ func TestGetByID(t *testing.T) {
 			expectErr:  nil,
 		},
 		{
-			name:      "Fails to find user",
+			name:      "Fail to find user",
 			inputID:   2,
 			mockError: domain.ErrNotFound,
 			expected:  nil,
@@ -122,7 +122,7 @@ func TestGetAll(t *testing.T) {
 			expectErr: nil,
 		},
 		{
-			name:      "Failed to find any users",
+			name:      "Fail to find any users",
 			mockError: domain.ErrNotFound,
 			expected:  nil,
 			expectErr: domain.ErrNotFound,
