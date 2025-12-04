@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -18,7 +20,13 @@ import (
 func main() {
 	app := fx.New(
 		fx.Provide(
+			NewConfig,
+			NewDB,
+			echo.New,
+		),
+		fx.Provide(
 			handler.NewUserHandler,
+			//handler.NewGameHandler,
 		),
 		fx.Provide(
 			usecase.NewUserUseCase,
@@ -26,17 +34,19 @@ func main() {
 		fx.Provide(
 			repository.NewUserRepository,
 		),
-		fx.Invoke(),
+		fx.Invoke(StartServer),
 	)
-	app.Run()
 
-	// YAML Load
+	app.Run()
+}
+
+func NewConfig() *config.Config {
 	env := flag.String("env", "dev", "Environment (dev, prod)")
 	flag.Parse()
 
 	validEnvs := map[string]bool{"dev": true, "prod": true}
 	if !validEnvs[*env] {
-		log.Fatalf("Invalid environment: %s", *env)
+		log.Fatalf("Invalid environment: %s. Valid environments are: dev, prod", *env)
 	}
 
 	cfg, err := config.LoadConfig(*env)
@@ -45,24 +55,36 @@ func main() {
 	}
 	fmt.Printf("config: %+v\n", cfg)
 
+	return cfg
+}
+
+func NewDB(lc fx.Lifecycle, cfg *config.Config) *sql.DB {
 	dbConn, err := db.NewDBConnection(cfg)
 	if err != nil {
 		log.Fatalf("DB connection error: %v", err)
 	}
 
-	userRepo := repository.NewUserRepository(dbConn)
-	userUseCase := usecase.NewUserUseCase(userRepo)
-	userHandler := handler.NewUserHandler(userUseCase)
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			return dbConn.Close()
+		},
+	})
 
-	//Server
-	e := echo.New()
+	return dbConn
+}
 
-	e.POST("/users", userHandler.CreateUser)
-	e.GET("/users/:id", userHandler.GetByID)
-	e.GET("/users", userHandler.GetAll)
-
-	log.Printf("Server started at %s", fmt.Sprintf(":%d", cfg.App.Port))
-	if err := e.Start(fmt.Sprintf(":%d", cfg.App.Port)); err != nil {
-		log.Fatalf("failed to start server: %v", err)
-	}
+func StartServer(lc fx.Lifecycle, e *echo.Echo, cfg *config.Config) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func() {
+				if err := e.Start(fmt.Sprintf(":%d", cfg.App.Port)); err != nil {
+					log.Fatal("Shutting down the server due to:", err)
+				}
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return e.Shutdown(ctx)
+		},
+	})
 }
