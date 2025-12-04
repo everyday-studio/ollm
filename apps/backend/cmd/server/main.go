@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/labstack/echo/v4"
+	"go.uber.org/fx"
 
 	"github.com/mondayy1/llm-games/internal/config"
 	"github.com/mondayy1/llm-games/internal/db"
@@ -15,6 +16,20 @@ import (
 )
 
 func main() {
+	app := fx.New(
+		fx.Provide(
+			handler.NewUserHandler,
+		),
+		fx.Provide(
+			usecase.NewUserUseCase,
+		),
+		fx.Provide(
+			repository.NewUserRepository,
+		),
+		fx.Invoke(),
+	)
+	app.Run()
+
 	// YAML Load
 	env := flag.String("env", "dev", "Environment (dev, prod)")
 	flag.Parse()
