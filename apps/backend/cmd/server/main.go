@@ -59,7 +59,6 @@ func NewConfig() *config.Config {
 
 func NewDB(lc fx.Lifecycle, cfg *config.Config) *sql.DB {
 	dbConn, err := db.NewDBConnection(cfg)
-
 	if err != nil {
 		log.Fatalf("DB connection error: %v", err)
 	}
