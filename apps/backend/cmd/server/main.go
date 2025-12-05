@@ -13,6 +13,7 @@ import (
 	"github.com/mondayy1/llm-games/internal/config"
 	"github.com/mondayy1/llm-games/internal/db"
 	"github.com/mondayy1/llm-games/internal/handler"
+	"github.com/mondayy1/llm-games/internal/middleware"
 	repository "github.com/mondayy1/llm-games/internal/repository/postgres"
 	"github.com/mondayy1/llm-games/internal/usecase"
 )
@@ -31,6 +32,7 @@ func main() {
 			repository.NewUserRepository,
 		),
 		fx.Invoke(
+			middleware.Setup,
 			handler.NewUserHandler,
 		),
 		fx.Invoke(StartServer),
