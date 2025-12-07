@@ -1,48 +1,74 @@
 <script lang="ts">
   import { user } from '$lib/stores';
+  import { fade, scale } from 'svelte/transition'; // 팝업 애니메이션용
 
   // 상태 변수들
-  let isRegisterMode = false; // false: 로그인, true: 회원가입
+  let showRegisterModal = false; // 회원가입 팝업 표시 여부
   let isLoading = false;
-  let email = '';
-  let password = '';
-  let nickname = ''; 
+  
+  // 로그인용 입력값
+  let loginEmail = '';
+  let loginPassword = '';
+
+  // 회원가입용 입력값
+  let regEmail = '';
+  let regNickname = '';
+  let regPassword = '';
+
   let errorMessage = '';
 
-  // 탭 전환
-  const toggleMode = (mode: boolean) => {
-    isRegisterMode = mode;
-    errorMessage = ''; 
+  // 모달 열기/닫기
+  const openModal = () => {
+    showRegisterModal = true;
+    errorMessage = '';
+    // 입력값 초기화
+    regEmail = '';
+    regNickname = '';
+    regPassword = '';
   };
 
-  // [MOCK] 자체 로그인/회원가입 처리
-  const handleAuth = async () => {
-    if (!email || !password) {
+  const closeModal = () => {
+    showRegisterModal = false;
+    errorMessage = '';
+  };
+
+  // [MOCK] 로그인 처리
+  const handleLogin = async () => {
+    if (!loginEmail || !loginPassword) {
       errorMessage = "이메일과 비밀번호를 입력해주세요.";
       return;
     }
+    
+    isLoading = true;
+    errorMessage = '';
 
-    if (isRegisterMode && !nickname) {
-        errorMessage = "닉네임을 입력해주세요.";
-        return;
+    setTimeout(() => {
+      isLoading = false;
+      console.log("[Simulation] 로그인 성공:", loginEmail);
+      user.set({ email: loginEmail, nickname: 'Player1' });
+      alert("로그인되었습니다.");
+    }, 1000);
+  };
+
+  // [MOCK] 회원가입 처리 (팝업 내부)
+  const handleRegister = async () => {
+    if (!regEmail || !regNickname || !regPassword) {
+      errorMessage = "모든 정보를 입력해주세요.";
+      return;
     }
 
     isLoading = true;
     errorMessage = '';
 
-    // 백엔드 통신 시뮬레이션 (1초)
     setTimeout(() => {
       isLoading = false;
+      console.log("[Simulation] 회원가입 성공:", regEmail);
       
-      console.log(`[Simulation] ${isRegisterMode ? '회원가입' : '로그인'} 성공:`, email);
+      // 회원가입 후 로그인 처리까지
+      user.set({ email: regEmail, nickname: regNickname });
       
-      // 스토어 업데이트
-      user.set({ 
-        email: email, 
-        nickname: isRegisterMode ? nickname : 'Player1' 
-      });
-
-      alert(`환영합니다! ${isRegisterMode ? '회원가입' : '로그인'}이 완료되었습니다.`);
+      alert(`환영합니다, ${regNickname}님! 가입이 완료되었습니다.`);
+      closeModal(); // 가입 성공 시 팝업 닫기
     }, 1000);
   };
 
@@ -59,88 +85,62 @@
 
 <div class="min-h-screen flex items-center justify-center bg-gray-50 text-gray-900 font-sans p-4">
   
-  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-    
-    <div class="p-8 md:p-10">
-      <div class="text-center mb-10">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative p-8 md:p-10">
+      
+      <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900 tracking-tight">LLM GAMES</h1>
         <p class="text-gray-500 mt-2 text-sm">프롬프트 인젝션 플레이그라운드</p>
       </div>
 
-      <div class="flex mb-8 bg-gray-100 rounded-lg p-1">
-        <button 
-          class="flex-1 py-2.5 text-sm font-semibold rounded-md transition-all duration-200 cursor-pointer { !isRegisterMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }"
-          on:click={() => toggleMode(false)}
-        >
-          로그인
-        </button>
-        <button 
-          class="flex-1 py-2.5 text-sm font-semibold rounded-md transition-all duration-200 cursor-pointer { isRegisterMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }"
-          on:click={() => toggleMode(true)}
-        >
-          회원가입
-        </button>
-      </div>
-
-      <form on:submit|preventDefault={handleAuth} class="space-y-5">
-        
+      <form on:submit|preventDefault={handleLogin} class="space-y-5">
         <div class="space-y-1.5">
-          <label for="email" class="block text-sm font-medium text-gray-700">이메일</label>
-          <input 
-            type="email" 
-            id="email"
-            bind:value={email}
-            placeholder="name@example.com"
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
-          />
-        </div>
-
-        {#if isRegisterMode}
-          <div class="space-y-1.5">
-            <label for="nickname" class="block text-sm font-medium text-gray-700">닉네임</label>
+            <label for="login-email" class="block text-sm font-medium text-gray-700">이메일</label>
             <input 
-              type="text" 
-              id="nickname"
-              bind:value={nickname}
-              placeholder="게임에서 사용할 이름"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
+                type="email" 
+                id="login-email"
+                bind:value={loginEmail}
+                placeholder="name@example.com"
+                class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
             />
-          </div>
-        {/if}
-
+        </div>
         <div class="space-y-1.5">
-          <label for="password" class="block text-sm font-medium text-gray-700">비밀번호</label>
-          <input 
-            type="password" 
-            id="password"
-            bind:value={password}
-            placeholder="••••••••"
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
-          />
+            <label for="login-password" class="block text-sm font-medium text-gray-700">비밀번호</label>
+            <input 
+                type="password" 
+                id="login-password"
+                bind:value={loginPassword}
+                placeholder="••••••••"
+                class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
+            />
         </div>
 
-        {#if errorMessage}
-          <div class="text-red-500 text-sm font-medium text-center bg-red-50 py-2 rounded">
-            {errorMessage}
-          </div>
+        {#if errorMessage && !showRegisterModal}
+            <div class="text-red-500 text-sm font-medium text-center bg-red-50 py-2 rounded animate-pulse">
+                {errorMessage}
+            </div>
         {/if}
 
         <button 
-          type="submit" 
-          disabled={isLoading}
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
+            type="submit" 
+            disabled={isLoading}
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
         >
-          {#if isLoading}
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            처리 중...
-          {:else}
-            {isRegisterMode ? '회원가입 완료' : '로그인'}
-          {/if}
+            {#if isLoading}
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                처리 중...
+            {:else}
+                로그인
+            {/if}
         </button>
       </form>
+
+      <button 
+        type="button"
+        on:click={openModal}
+        class="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 rounded-lg transition-all transform active:scale-[0.98] cursor-pointer"
+      >
+        새 계정 만들기
+      </button>
 
       <div class="relative my-8">
         <div class="absolute inset-0 flex items-center">
@@ -164,11 +164,94 @@
         </svg>
         Google 계정으로 계속하기
       </button>
-
-    </div>
   </div>
   
   <div class="absolute bottom-4 text-center text-xs text-gray-400">
     &copy; 2025 LLM GAMES. All rights reserved.
   </div>
+
+  {#if showRegisterModal}
+    <div 
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center p-4 cursor-pointer"
+        transition:fade={{ duration: 200 }}
+        on:click={closeModal}
+    >
+        <div 
+            class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative cursor-default"
+            transition:scale={{ duration: 200, start: 0.95 }}
+            on:click|stopPropagation
+        >
+            <button 
+                on:click={closeModal}
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div class="p-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">회원가입</h2>
+                    <p class="text-gray-500 text-sm mt-1">LLM GAMES의 새로운 요원이 되어보세요.</p>
+                </div>
+
+                <form on:submit|preventDefault={handleRegister} class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label for="reg-email" class="block text-sm font-medium text-gray-700">이메일</label>
+                        <input 
+                            type="email" 
+                            id="reg-email"
+                            bind:value={regEmail}
+                            placeholder="name@example.com"
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="reg-nickname" class="block text-sm font-medium text-gray-700">닉네임</label>
+                        <input 
+                            type="text" 
+                            id="reg-nickname"
+                            bind:value={regNickname}
+                            placeholder="게임에서 사용할 이름"
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="reg-password" class="block text-sm font-medium text-gray-700">비밀번호</label>
+                        <input 
+                            type="password" 
+                            id="reg-password"
+                            bind:value={regPassword}
+                            placeholder="••••••••"
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    {#if errorMessage}
+                        <div class="text-red-500 text-sm font-medium text-center bg-red-50 py-2 rounded">
+                            {errorMessage}
+                        </div>
+                    {/if}
+
+                    <div class="pt-2">
+                        <button 
+                            type="submit" 
+                            disabled={isLoading}
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-50 cursor-pointer flex items-center justify-center"
+                        >
+                            {#if isLoading}
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                가입 중...
+                            {:else}
+                                가입하기
+                            {/if}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+  {/if}
+
 </div>
