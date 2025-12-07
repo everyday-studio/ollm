@@ -1,6 +1,8 @@
 <script lang="ts">
   import { user } from '$lib/stores';
   import { fade, scale } from 'svelte/transition'; // 팝업 애니메이션용
+  import { goto } from '$app/navigation'; // 👈 [추가] 라우팅 함수 가져오기
+  import { toast } from 'svelte-french-toast';
 
   // 상태 변수들
   let showRegisterModal = false; // 회원가입 팝업 표시 여부
@@ -44,31 +46,44 @@
 
     setTimeout(() => {
       isLoading = false;
-      console.log("[Simulation] 로그인 성공:", loginEmail);
       user.set({ email: loginEmail, nickname: 'Player1' });
-      alert("로그인되었습니다.");
+      toast.success(`로그인 성공!`, {
+        duration: 3000,       // 3초 뒤 사라짐
+        position: 'top-center', // 화면 상단 중앙에 표시
+        icon: '✅',           // 아이콘 커스텀 (선택사항)
+      });
+      // alert("로그인되었습니다."); // 👈 알림 대신 이동
+      goto('/lobby'); // 👈 [수정] 게임 선택 화면으로 이동
     }, 1000);
   };
 
-  // [MOCK] 회원가입 처리 (팝업 내부)
+  // [회원가입 처리]
   const handleRegister = async () => {
+    // 유효성 검사 실패 시 에러 토스트 (선택사항)
     if (!regEmail || !regNickname || !regPassword) {
-      errorMessage = "모든 정보를 입력해주세요.";
+      toast.error("모든 정보를 입력해주세요.", {
+        position: "top-center"
+      });
       return;
     }
 
     isLoading = true;
-    errorMessage = '';
 
     setTimeout(() => {
       isLoading = false;
-      console.log("[Simulation] 회원가입 성공:", regEmail);
       
-      // 회원가입 후 로그인 처리까지
-      user.set({ email: regEmail, nickname: regNickname });
+      // 2. alert 대신 toast.success 사용
+      toast.success(`환영합니다, ${regNickname}님!\n로그인을 진행해주세요.`, {
+        duration: 3000,       // 3초 뒤 사라짐
+        position: 'top-center', // 화면 상단 중앙에 표시
+        icon: '👏',           // 아이콘 커스텀 (선택사항)
+      });
+
+      // 사용자 편의: 이메일 자동 입력
+      loginEmail = regEmail;
+      loginPassword = '';
       
-      alert(`환영합니다, ${regNickname}님! 가입이 완료되었습니다.`);
-      closeModal(); // 가입 성공 시 팝업 닫기
+      closeModal(); // 회원가입 모달 닫기 -> 로그인 화면이 보임
     }, 1000);
   };
 
@@ -76,9 +91,14 @@
   const handleGoogleLogin = () => {
     isLoading = true;
     setTimeout(() => {
-        isLoading = false;
-        user.set({ email: "google@example.com", nickname: "GoogleUser" });
-        alert("Google 계정으로 로그인되었습니다.");
+      isLoading = false;
+      user.set({ email: "google@example.com", nickname: "GoogleUser" });
+        toast.success(`구글 로그인 성공!`, {
+        duration: 3000,       // 3초 뒤 사라짐
+        position: 'top-center', // 화면 상단 중앙에 표시
+        icon: '✅',           // 아이콘 커스텀 (선택사항)
+      });
+      goto('/lobby'); // 👈 게임 선택 화면으로 이동
     }, 1000);
   };
 </script>
@@ -191,7 +211,7 @@
             <div class="p-8">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">회원가입</h2>
-                    <p class="text-gray-500 text-sm mt-1">LLM GAMES의 새로운 요원이 되어보세요.</p>
+                    <p class="text-gray-500 text-sm mt-1">LLM GAMES의 새로운 사용자가 되어보세요.</p>
                 </div>
 
                 <form on:submit|preventDefault={handleRegister} class="space-y-4">
