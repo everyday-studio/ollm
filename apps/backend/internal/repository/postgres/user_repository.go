@@ -7,7 +7,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
-	"github.com/mondayy1/llm-games/internal/domain"
+	"github.com/everyday-studio/ollm/internal/domain"
 )
 
 type userRepository struct {

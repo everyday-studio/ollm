@@ -10,12 +10,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
 
-	"github.com/mondayy1/llm-games/internal/config"
-	"github.com/mondayy1/llm-games/internal/db"
-	"github.com/mondayy1/llm-games/internal/handler"
-	"github.com/mondayy1/llm-games/internal/middleware"
-	repository "github.com/mondayy1/llm-games/internal/repository/postgres"
-	"github.com/mondayy1/llm-games/internal/usecase"
+	"github.com/everyday-studio/ollm/internal/config"
+	"github.com/everyday-studio/ollm/internal/db"
+	"github.com/everyday-studio/ollm/internal/handler"
+	"github.com/everyday-studio/ollm/internal/middleware"
+	repository "github.com/everyday-studio/ollm/internal/repository/postgres"
+	"github.com/everyday-studio/ollm/internal/usecase"
 )
 
 func main() {

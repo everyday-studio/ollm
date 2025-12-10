@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 
-	"github.com/mondayy1/llm-games/internal/config"
+	"github.com/everyday-studio/ollm/internal/config"
 )
 
 func Setup(cfg *config.Config, e *echo.Echo) {

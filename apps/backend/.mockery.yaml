@@ -4,7 +4,7 @@ resolve-type-alias: false               # 타입 별칭 자동 해석 비활성�
 issue-845-fix: true                     # Mockery의 #845 이슈 관련 경고 해결
 
 packages:
-  github.com/mondayy1/llm-games/internal/domain:
+  github.com/everyday-studio/ollm/internal/domain:
     config:
       dir: ./internal/domain/mocks
       filename: "Mock{{.InterfaceName}}.go"

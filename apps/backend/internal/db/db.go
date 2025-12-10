@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mondayy1/llm-games/internal/config"
+	"github.com/everyday-studio/ollm/internal/config"
 )
 
 func NewDBConnection(cfg *config.Config) (*sql.DB, error) {

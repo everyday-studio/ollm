@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"github.com/mondayy1/llm-games/internal/domain"
+	"github.com/everyday-studio/ollm/internal/domain"
 )
 
 type userUseCase struct {

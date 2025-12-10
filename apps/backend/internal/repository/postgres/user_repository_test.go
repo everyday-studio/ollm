@@ -3,7 +3,7 @@ package postgres
 import (
 	"testing"
 
-	"github.com/mondayy1/llm-games/internal/domain"
+	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
 

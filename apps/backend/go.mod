@@ -1,4 +1,4 @@
-module github.com/mondayy1/llm-games
+module github.com/everyday-studio/ollm
 
 go 1.25.4
 
