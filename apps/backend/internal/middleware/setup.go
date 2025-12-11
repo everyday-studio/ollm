@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/gommon/log"
 
 	"github.com/everyday-studio/ollm/internal/config"
+	"github.com/everyday-studio/ollm/internal/kit/ctx"
 )
 
 func Setup(cfg *config.Config, e *echo.Echo) {
@@ -18,7 +19,15 @@ func Setup(cfg *config.Config, e *echo.Echo) {
 	}))
 
 	// ✅ RequestID: 각 요청에 고유한 ID 부여 (추적 및 디버깅 목적)
-	e.Use(middleware.RequestID())
+	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
+		RequestIDHandler: func(c echo.Context, requestID string) {
+			req := c.Request()
+			req.Header.Set(echo.HeaderXRequestID, requestID)
+
+			ctx := ctx.WithRequestID(req.Context(), requestID)
+			c.SetRequest(req.WithContext(ctx))
+		},
+	}))
 
 	// ✅ Logger: 요청 및 응답 로깅 설정
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
