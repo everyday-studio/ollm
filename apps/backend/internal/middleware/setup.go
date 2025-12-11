@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/everyday-studio/ollm/internal/kit/ctx"
 )
 
-func Setup(cfg *config.Config, e *echo.Echo) {
+func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) {
 	// ✅ Trailing Slash 제거 및 301 리디렉트 설정
 	e.Pre(middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{
 		RedirectCode: http.StatusMovedPermanently, // 301 리디렉트
@@ -30,9 +31,7 @@ func Setup(cfg *config.Config, e *echo.Echo) {
 	}))
 
 	// ✅ Logger: 요청 및 응답 로깅 설정
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "[${time_rfc3339}] ${method} ${uri} ${status} request_id=${id}\n",
-	}))
+	e.Use(LoggerMiddleware(logger))
 
 	// ✅ Recover: 패닉 발생 시 복구 및 로그 출력
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
