@@ -1,7 +1,8 @@
 app:
   env: "dev"
   port: 8080
-  debug: false
+  debug: true
+  log_level: "debug"
 
 db:
   host: "127.0.0.1"

@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	domain "github.com/mondayy1/llm-games/internal/domain"
+	domain "github.com/everyday-studio/ollm/internal/domain"
 	mock "github.com/stretchr/testify/mock"
 )
 

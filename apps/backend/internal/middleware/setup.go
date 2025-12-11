@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -8,22 +9,29 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 
-	"github.com/mondayy1/llm-games/internal/config"
+	"github.com/everyday-studio/ollm/internal/config"
+	"github.com/everyday-studio/ollm/internal/kit/ctx"
 )
 
-func Setup(cfg *config.Config, e *echo.Echo) {
+func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) {
 	// ✅ Trailing Slash 제거 및 301 리디렉트 설정
 	e.Pre(middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{
 		RedirectCode: http.StatusMovedPermanently, // 301 리디렉트
 	}))
 
 	// ✅ RequestID: 각 요청에 고유한 ID 부여 (추적 및 디버깅 목적)
-	e.Use(middleware.RequestID())
+	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
+		RequestIDHandler: func(c echo.Context, requestID string) {
+			req := c.Request()
+			req.Header.Set(echo.HeaderXRequestID, requestID)
+
+			ctx := ctx.WithRequestID(req.Context(), requestID)
+			c.SetRequest(req.WithContext(ctx))
+		},
+	}))
 
 	// ✅ Logger: 요청 및 응답 로깅 설정
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "[${time_rfc3339}] ${method} ${uri} ${status} request_id=${id}\n",
-	}))
+	e.Use(LoggerMiddleware(logger))
 
 	// ✅ Recover: 패닉 발생 시 복구 및 로그 출력
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{

@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/mondayy1/llm-games/internal/domain"
-	"github.com/mondayy1/llm-games/internal/domain/mocks"
+	"github.com/everyday-studio/ollm/internal/domain"
+	"github.com/everyday-studio/ollm/internal/domain/mocks"
 )
 
 func TestErrResponse(t *testing.T) {
