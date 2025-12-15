@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type SignUpRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -8,4 +10,17 @@ type SignUpRequest struct {
 type SignUpResponse struct {
 	ID    int64  `json:"id"`
 	Email string `json:"email"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	ID                     int64     `json:"id"`
+	Email                  string    `json:"email"`
+	AccessToken            string    `json:"access_token"`
+	RefreshToken           string    `json:"-"` // Not included in JSON response
+	RefreshTokenExpiration time.Time `json:"-"` // Not included in JSON response
 }
