@@ -49,7 +49,7 @@ func TestGeneratePasswordHash(t *testing.T) {
 }
 
 // 비밀번호가 저장된 해시와 일치하는지 확인하는 테스트
-func TestComparePasswordHas(t *testing.T) {
+func TestComparePasswordHash(t *testing.T) {
 	tests := []struct {
 		name        string
 		password    string
