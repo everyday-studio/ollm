@@ -42,7 +42,8 @@ func (h *UserHandler) GetByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
 
-	user, err := h.userUseCase.GetByID(int64(id))
+	ctx := c.Request().Context()
+	user, err := h.userUseCase.GetByID(ctx, int64(id))
 	if err == nil {
 		return c.JSON(http.StatusOK, user)
 	}
@@ -55,8 +56,8 @@ func (h *UserHandler) GetByID(c echo.Context) error {
 }
 
 func (h *UserHandler) GetAll(c echo.Context) error {
-
-	users, err := h.userUseCase.GetAll()
+	ctx := c.Request().Context()
+	users, err := h.userUseCase.GetAll(ctx)
 	if err == nil {
 		return c.JSON(http.StatusOK, users)
 	}

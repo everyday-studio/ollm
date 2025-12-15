@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/everyday-studio/ollm/internal/domain"
 )
 
 func TestCreateUser(t *testing.T) {
