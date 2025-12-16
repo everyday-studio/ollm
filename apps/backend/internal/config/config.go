@@ -11,24 +11,45 @@ import (
 )
 
 type Config struct {
-	App AppConfig `yaml:"app"`
-	DB  DBConfig  `yaml:"db"`
+	App    AppConfig    `mapstructure:"app"`
+	DB     DBConfig     `mapstructure:"db"`
+	Secure SecureConfig `mapstructure:"secure"`
 }
 
 type AppConfig struct {
-	Env      string `yaml:"env"`
-	Port     int    `yaml:"port"`
-	Debug    bool   `yaml:"debug"`
-	LogLevel string `yaml:"log_level"`
+	Env      string `mapstructure:"env"`
+	Port     int    `mapstructure:"port"`
+	Debug    bool   `mapstructure:"debug"`
+	LogLevel string `mapstructure:"log_level"`
 }
 
 type DBConfig struct {
-	Host     string `yaml:"host"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Port     int    `yaml:"port"`
-	DBName   string `yaml:"dbname"`
-	SSLMode  string `yaml:"sslmode"`
+	Host     string `mapstructure:"host"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	Port     int    `mapstructure:"port"`
+	DBName   string `mapstructure:"dbname"`
+	SSLMode  string `mapstructure:"sslmode"`
+}
+
+type SecureConfig struct {
+	CORSAllowOrigins []string  `mapstructure:"cors_allow_origins"`
+	JWT              JWTConfig `mapstructure:"jwt"`
+}
+
+type JWTConfig struct {
+	PrivateKey           string       `mapstructure:"private_key_base64"`
+	PublicKey            string       `mapstructure:"public_key_base64"`
+	AccessExpirationMin  int          `mapstructure:"access_expiration_min"`
+	RefreshExpirationDay int          `mapstructure:"refresh_expiration_day"`
+	Cookie               CookieConfig `mapstructure:"cookie"`
+}
+
+type CookieConfig struct {
+	Secure   bool   `mapstructure:"secure"`
+	HTTPOnly bool   `mapstructure:"http_only"`
+	SameSite string `mapstructure:"same_site"`
+	Domain   string `mapstructure:"domain"`
 }
 
 func LoadConfig(env string) (*Config, error) {

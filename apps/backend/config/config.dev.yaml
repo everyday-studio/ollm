@@ -11,3 +11,16 @@ db:
   port: 5432
   dbname: "mydb"
   sslmode: "disable"
+
+secure:
+  cors_allow_origins: ""
+  jwt:
+    private_key_base64: ""
+    public_key_base64: ""
+    access_expiration_min: 60
+    refresh_expiration_day: 30
+    cookie:
+      secure: false
+      http_only: true
+      same_site: "Lax"
+      domain: "localhost"

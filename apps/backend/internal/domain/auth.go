@@ -29,7 +29,6 @@ type LoginResponse struct {
 }
 
 type AuthRepository interface {
-	CreateUser(ctx context.Context, user *User) (*User, error)
 }
 
 type AuthUsecase interface {

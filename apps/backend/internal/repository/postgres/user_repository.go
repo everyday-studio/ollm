@@ -90,3 +90,22 @@ func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 
 	return users, nil
 }
+
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	const query = `
+		SELECT id, name, email, password, roles
+		FROM users
+		WHERE email = $1
+	`
+
+	user := &domain.User{}
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+
+	return user, nil
+}
