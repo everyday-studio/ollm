@@ -35,18 +35,25 @@ func LoggerMiddleware(logger *slog.Logger) echo.MiddlewareFunc {
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			// 공통 로깅 필드 설정
 			baseLogger := logger.With(
-				slog.String("request_id", v.RequestID),     // 요청 고유 ID
-				slog.Int("status", v.Status),               // HTTP 응답 상태 코드
-				slog.String("method", v.Method),            // HTTP 요청 메서드
-				slog.String("path", v.URIPath),             // 실제 요청된 URI 경로
-				slog.String("remote_ip", v.RemoteIP),       // 요청을 보낸 클라이언트의 IP 주소
-				slog.String("user_agent", v.UserAgent),     // 클라이언트의 브라우저, OS 등 식별 정보
-				slog.String("referer", v.Referer),          // 요청이 유입된 이전 페이지 주소
-				slog.String("latency", v.Latency.String()), // 요청 처리에 소요된 시간
+				slog.String("request_id", v.RequestID),                           // 요청 고유 ID
+				slog.Int("status", v.Status),                                     // HTTP 응답 상태 코드
+				slog.String("method", v.Method),                                  // HTTP 요청 메서드
+				slog.String("path", v.URIPath),                                   // 실제 요청된 URI 경로
+				slog.String("remote_ip", v.RemoteIP),                             // 요청을 보낸 클라이언트의 IP 주소
+				slog.String("user_agent", v.UserAgent),                           // 클라이언트의 브라우저, OS 등 식별 정보
+				slog.String("referer", v.Referer),                                // 요청이 유입된 이전 페이지 주소
+				slog.Float64("latency_ms", float64(v.Latency.Nanoseconds())/1e6), // 요청 처리에 소요된 시간
 			)
 			if v.Error != nil {
-				baseLogger.With(slog.String("err", v.Error.Error())).Error("REQUEST_ERROR")
-			} else {
+				baseLogger = baseLogger.With(slog.String("err", v.Error.Error()))
+			}
+
+			switch {
+			case v.Status >= 500:
+				baseLogger.Error("SERVER_ERROR")
+			case v.Status >= 400:
+				baseLogger.Info("CLIENT_ERROR")
+			default:
 				baseLogger.Info("REQUEST_SUCCESS")
 			}
 			return nil
