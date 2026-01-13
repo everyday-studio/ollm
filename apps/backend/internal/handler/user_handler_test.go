@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -66,10 +67,10 @@ func TestGetByID(t *testing.T) {
 		{
 			name:           "Get users by id successfully",
 			pathParam:      "1",
-			mockReturn:     &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
+			mockReturn:     &domain.User{ID: 1, Name: "John", Email: "john@example.com", Role: domain.RoleUser},
 			mockError:      nil,
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"id":1,"name":"John","email":"john@example.com"}`,
+			expectedBody:   `{"id":1,"name":"John","email":"john@example.com","role":"User"}`,
 		},
 		{
 			name:           "Fail to find user",
@@ -100,7 +101,12 @@ func TestGetByID(t *testing.T) {
 			c.SetParamValues(tt.pathParam)
 
 			mockUseCase := new(mocks.UserUseCase)
-			mockUseCase.On("GetByID", mock.Anything).Return(tt.mockReturn, tt.mockError).Maybe()
+			// Convert pathParam to int64 for mock expectation
+			var expectedID int64
+			if id, err := strconv.Atoi(tt.pathParam); err == nil {
+				expectedID = int64(id)
+			}
+			mockUseCase.On("GetByID", mock.Anything, expectedID).Return(tt.mockReturn, tt.mockError).Maybe()
 			handler := NewUserHandler(e, mockUseCase)
 
 			err := handler.GetByID(c)
@@ -125,12 +131,12 @@ func TestGetAll(t *testing.T) {
 		{
 			name: "Get all users successfully",
 			mockReturn: []domain.User{
-				{ID: 1, Name: "John", Email: "john@example.com"},
-				{ID: 2, Name: "Jane", Email: "jane@example.com"},
+				{ID: 1, Name: "John", Email: "john@example.com", Role: domain.RoleUser},
+				{ID: 2, Name: "Jane", Email: "jane@example.com", Role: domain.RoleUser},
 			},
 			mockError:      nil,
 			expectedStatus: http.StatusOK,
-			expectedBody:   `[{"id":1,"name":"John","email":"john@example.com"},{"id":2,"name":"Jane","email":"jane@example.com"}]`,
+			expectedBody:   `[{"id":1,"name":"John","email":"john@example.com","role":"User"},{"id":2,"name":"Jane","email":"jane@example.com","role":"User"}]`,
 		},
 		{
 			name:           "Fail to find any users",
@@ -149,7 +155,7 @@ func TestGetAll(t *testing.T) {
 			c := e.NewContext(req, rec)
 
 			mockUseCase := new(mocks.UserUseCase)
-			mockUseCase.On("GetAll").Return(tt.mockReturn, tt.mockError)
+			mockUseCase.On("GetAll", mock.Anything).Return(tt.mockReturn, tt.mockError)
 			handler := NewUserHandler(e, mockUseCase)
 
 			err := handler.GetAll(c)

@@ -51,7 +51,7 @@ func (r *userRepository) GetByID(ctx context.Context, id int64) (*domain.User, e
 	`
 
 	var user domain.User
-	err := r.db.QueryRow(query, id).Scan(&user.ID, &user.Name, &user.Email)
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrNotFound
@@ -69,7 +69,7 @@ func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 		ORDER BY id ASC
 	`
 
-	rows, err := r.db.Query(query)
+	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all users: %w", err)
 	}

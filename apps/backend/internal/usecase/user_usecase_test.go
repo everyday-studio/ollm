@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/domain/mocks"
@@ -39,7 +40,7 @@ func TestGetByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(mocks.UserRepository)
-			mockRepo.On("GetByID", tt.inputID).Return(tt.mockReturn, tt.mockError)
+			mockRepo.On("GetByID", mock.Anything, tt.inputID).Return(tt.mockReturn, tt.mockError)
 
 			uc := NewUserUseCase(mockRepo)
 			ctx := context.Background()
@@ -85,7 +86,7 @@ func TestGetAll(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(mocks.UserRepository)
-			mockRepo.On("GetAll").Return(tt.mockReturn, tt.mockError)
+			mockRepo.On("GetAll", mock.Anything).Return(tt.mockReturn, tt.mockError)
 
 			uc := NewUserUseCase(mockRepo)
 			ctx := context.Background()
