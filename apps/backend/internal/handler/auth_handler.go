@@ -8,6 +8,8 @@ import (
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
+	"github.com/everyday-studio/ollm/internal/kit/contexts"
+	"github.com/everyday-studio/ollm/internal/kit/security"
 	"github.com/everyday-studio/ollm/internal/middleware"
 	"github.com/labstack/echo/v4"
 )
@@ -124,4 +126,63 @@ func (h *AuthHandler) createRefreshTokenCookie(tokenValue string, expiration tim
 	}
 
 	return cookie
+}
+
+// CreateLogoutCookie creates a cookie that expires the refresh token
+func (h *AuthHandler) CreateLogoutCookie() *http.Cookie {
+	// 빈 값과 과거 만료일로 쿠키를 생성하여 쿠키를 삭제하는 효과를 냅니다
+	return h.createRefreshTokenCookie("", time.Now().Add(-1*time.Hour))
+}
+
+func (h *AuthHandler) Logout(c echo.Context) error {
+	// 컨텍스트에서 사용자 ID 가져오기
+	userID, _, _, err := contexts.TokenToUser(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+	}
+
+	ctx := c.Request().Context()
+	// 로그아웃 처리 - 현재는 간단하게 구현
+	err = h.authUseCase.Logout(ctx, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+	}
+
+	// 리프레시 토큰 쿠키 만료시키기
+	c.SetCookie(h.CreateLogoutCookie())
+
+	// 클라이언트에 응답 - 프론트엔드에서 액세스 토큰을 삭제해야 함을 알림
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Successfully logged out. Please remove the access token from your client storage.",
+		"status":  "success",
+	})
+}
+
+func (h *AuthHandler) RefreshToken(c echo.Context) error {
+	// Get refresh token from cookie
+	cookie, err := c.Cookie(refreshTokenCookieName)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(errors.New("refresh token not found")))
+	}
+
+	ctx := c.Request().Context()
+	// Call usecase to refresh token
+	loginResponse, err := h.authUseCase.RefreshToken(ctx, cookie.Value)
+	if err != nil {
+		switch {
+		case errors.Is(err, security.ErrInvalidToken), errors.Is(err, security.ErrExpiredToken):
+			return c.JSON(http.StatusUnauthorized, ErrResponse(errors.New("invalid or expired refresh token")))
+		case errors.Is(err, domain.ErrUnauthorized):
+			return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+		default:
+			return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+		}
+	}
+
+	// Set new refresh token as HTTP-only cookie
+	newCookie := h.createRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiration)
+	c.SetCookie(newCookie)
+
+	// Return new access token
+	return c.JSON(http.StatusOK, loginResponse)
 }
