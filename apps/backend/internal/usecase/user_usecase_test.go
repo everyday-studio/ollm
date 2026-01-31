@@ -11,7 +11,7 @@ import (
 	"github.com/everyday-studio/ollm/internal/domain/mocks"
 )
 
-func TestGetByID(t *testing.T) {
+func TestUserUsecase_GetByID(t *testing.T) {
 	tests := []struct {
 		name       string
 		inputID    int64
@@ -54,7 +54,7 @@ func TestGetByID(t *testing.T) {
 	}
 }
 
-func TestGetAll(t *testing.T) {
+func TestUserUsecase_GetAll(t *testing.T) {
 	tests := []struct {
 		name       string
 		mockReturn []domain.User

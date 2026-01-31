@@ -16,7 +16,7 @@ import (
 	"github.com/everyday-studio/ollm/internal/domain/mocks"
 )
 
-func TestErrResponse(t *testing.T) {
+func TestUserHandler_ErrResponse(t *testing.T) {
 	type args struct {
 		err error
 	}
@@ -55,7 +55,7 @@ func TestErrResponse(t *testing.T) {
 	}
 }
 
-func TestGetByID(t *testing.T) {
+func TestUserHandler_GetByID(t *testing.T) {
 	tests := []struct {
 		name           string
 		pathParam      string
@@ -119,7 +119,7 @@ func TestGetByID(t *testing.T) {
 	}
 }
 
-func TestGetAll(t *testing.T) {
+func TestUserHandler_GetAll(t *testing.T) {
 
 	tests := []struct {
 		name           string

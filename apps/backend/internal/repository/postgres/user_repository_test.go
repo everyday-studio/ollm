@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSaveUser(t *testing.T) {
+func TestUserRepository_SaveUser(t *testing.T) {
 	repo := NewUserRepository(testDB)
 	cleanDB(t, "users")
 	ctx := context.Background()
@@ -35,7 +35,7 @@ func TestSaveUser(t *testing.T) {
 	})
 }
 
-func TestGetByID(t *testing.T) {
+func TestUserRepository_GetByID(t *testing.T) {
 	repo := NewUserRepository(testDB)
 	cleanDB(t, "users")
 	ctx := context.Background()
@@ -58,7 +58,7 @@ func TestGetByID(t *testing.T) {
 	})
 }
 
-func TestGetAllUsers(t *testing.T) {
+func TestUserRepository_GetAllUsers(t *testing.T) {
 	repo := NewUserRepository(testDB)
 	cleanDB(t, "users")
 	ctx := context.Background()
