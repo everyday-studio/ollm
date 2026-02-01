@@ -32,13 +32,16 @@ func main() {
 		),
 		fx.Provide(
 			usecase.NewUserUseCase,
+			usecase.NewAuthUseCase,
 		),
 		fx.Provide(
 			repository.NewUserRepository,
+			repository.NewAuthRepository,
 		),
 		fx.Invoke(
 			middleware.Setup,
 			handler.NewUserHandler,
+			handler.NewAuthHandler,
 		),
 		fx.Invoke(StartServer),
 	)

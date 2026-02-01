@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/gommon/log"
 
 	"github.com/everyday-studio/ollm/internal/config"
-	"github.com/everyday-studio/ollm/internal/kit/ctx"
+	"github.com/everyday-studio/ollm/internal/kit/contexts"
 )
 
 func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) {
@@ -25,7 +25,7 @@ func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) {
 			req := c.Request()
 			req.Header.Set(echo.HeaderXRequestID, requestID)
 
-			ctx := ctx.WithRequestID(req.Context(), requestID)
+			ctx := contexts.WithRequestID(req.Context(), requestID)
 			c.SetRequest(req.WithContext(ctx))
 		},
 	}))

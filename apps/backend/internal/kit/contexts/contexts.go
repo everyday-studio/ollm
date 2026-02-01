@@ -1,9 +1,11 @@
-package ctx
+package contexts
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 )
 
@@ -36,4 +38,34 @@ func GetRequestID(ctx context.Context) string {
 		return requestID
 	}
 	return "no-request-id-in-context"
+}
+
+func TokenToUser(c echo.Context) (int64, string, string, error) {
+	user, ok := c.Get("user").(*jwt.Token)
+	if !ok {
+		return 0, "", "", errors.New("invalid or missing user token")
+	}
+
+	claims, ok := user.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, "", "", errors.New("invalid token claims")
+	}
+
+	idFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return 0, "", "", errors.New("invalid user_id in token")
+	}
+	id := int64(idFloat)
+
+	email, ok := claims["email"].(string)
+	if !ok {
+		return 0, "", "", errors.New("invalid email in token")
+	}
+
+	role, ok := claims["role"].(string)
+	if !ok {
+		return 0, "", "", errors.New("invalid roles in token")
+	}
+
+	return id, email, role, nil
 }

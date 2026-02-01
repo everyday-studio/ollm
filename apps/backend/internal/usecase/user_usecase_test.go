@@ -5,61 +5,62 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/domain/mocks"
 )
 
-func TestGetByID(t *testing.T) {
+func TestUserUsecase_GetByID(t *testing.T) {
 	tests := []struct {
 		name       string
 		inputID    int64
 		mockReturn *domain.User
 		mockError  error
-		expected   *domain.User
-		expectErr  error
+		want       *domain.User
+		wantErr    error
 	}{
 		{
 			name:       "Find user successfully",
 			inputID:    1,
 			mockReturn: &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
 			mockError:  nil,
-			expected:   &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
-			expectErr:  nil,
+			want:       &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
+			wantErr:    nil,
 		},
 		{
 			name:      "Fail to find user",
 			inputID:   2,
 			mockError: domain.ErrNotFound,
-			expected:  nil,
-			expectErr: domain.ErrNotFound,
+			want:      nil,
+			wantErr:   domain.ErrNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(mocks.UserRepository)
-			mockRepo.On("GetByID", tt.inputID).Return(tt.mockReturn, tt.mockError)
+			mockRepo.On("GetByID", mock.Anything, tt.inputID).Return(tt.mockReturn, tt.mockError)
 
 			uc := NewUserUseCase(mockRepo)
 			ctx := context.Background()
 			result, err := uc.GetByID(ctx, tt.inputID)
 
-			assert.Equal(t, tt.expected, result)
-			assert.Equal(t, tt.expectErr, err)
+			assert.Equal(t, tt.want, result)
+			assert.Equal(t, tt.wantErr, err)
 
 			mockRepo.AssertExpectations(t)
 		})
 	}
 }
 
-func TestGetAll(t *testing.T) {
+func TestUserUsecase_GetAll(t *testing.T) {
 	tests := []struct {
 		name       string
 		mockReturn []domain.User
 		mockError  error
-		expected   []domain.User
-		expectErr  error
+		want       []domain.User
+		wantErr    error
 	}{
 		{
 			name: "Find user successfully",
@@ -68,31 +69,31 @@ func TestGetAll(t *testing.T) {
 				{ID: 2, Name: "Jane", Email: "jane@example.com"},
 			},
 			mockError: nil,
-			expected: []domain.User{
+			want: []domain.User{
 				{ID: 1, Name: "John", Email: "john@example.com"},
 				{ID: 2, Name: "Jane", Email: "jane@example.com"},
 			},
-			expectErr: nil,
+			wantErr: nil,
 		},
 		{
 			name:      "Fail to find any users",
 			mockError: domain.ErrNotFound,
-			expected:  nil,
-			expectErr: domain.ErrNotFound,
+			want:      nil,
+			wantErr:   domain.ErrNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(mocks.UserRepository)
-			mockRepo.On("GetAll").Return(tt.mockReturn, tt.mockError)
+			mockRepo.On("GetAll", mock.Anything).Return(tt.mockReturn, tt.mockError)
 
 			uc := NewUserUseCase(mockRepo)
 			ctx := context.Background()
 			result, err := uc.GetAll(ctx)
 
-			assert.Equal(t, tt.expected, result)
-			assert.Equal(t, tt.expectErr, err)
+			assert.Equal(t, tt.want, result)
+			assert.Equal(t, tt.wantErr, err)
 
 			mockRepo.AssertExpectations(t)
 		})

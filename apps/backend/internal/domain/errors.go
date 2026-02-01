@@ -3,8 +3,10 @@ package domain
 import "errors"
 
 var (
-	ErrNotFound      = errors.New("not found")
-	ErrAlreadyExists = errors.New("already exists")
-	ErrInvalidInput  = errors.New("invalid input")
-	ErrInternal      = errors.New("internal error")
+	ErrNotFound           = errors.New("not found")
+	ErrAlreadyExists      = errors.New("already exists")
+	ErrInvalidInput       = errors.New("invalid input")
+	ErrInternal           = errors.New("internal error")
+	ErrUnauthorized       = errors.New("unauthorized access")
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )

@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSaveUser(t *testing.T) {
+func TestUserRepository_SaveUser(t *testing.T) {
 	repo := NewUserRepository(testDB)
 	cleanDB(t, "users")
 	ctx := context.Background()
 
 	t.Run("Save user successfully", func(t *testing.T) {
-		user := &domain.User{Name: "Jane Doe", Email: "jane@exmaple.com"}
+		user := &domain.User{Name: "Jane Doe", Email: "jane@exmaple.com", Password: "testpassword"}
 		savedUser, err := repo.Save(ctx, user)
 
 		assert.NoError(t, err)
@@ -24,24 +24,24 @@ func TestSaveUser(t *testing.T) {
 	})
 
 	t.Run("Fails to save user due to existing email", func(t *testing.T) {
-		user1 := &domain.User{Name: "Jane Doe", Email: "jane@example.com"}
+		user1 := &domain.User{Name: "Jane Doe", Email: "jane@example.com", Password: "testpassword"}
 		_, err := repo.Save(ctx, user1)
 		assert.NoError(t, err)
 
-		user2 := &domain.User{Name: "Jane Smith", Email: "jane@example.com"}
+		user2 := &domain.User{Name: "Jane Smith", Email: "jane@example.com", Password: "testpassword"}
 		_, err = repo.Save(ctx, user2)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, domain.ErrAlreadyExists)
 	})
 }
 
-func TestGetByID(t *testing.T) {
+func TestUserRepository_GetByID(t *testing.T) {
 	repo := NewUserRepository(testDB)
 	cleanDB(t, "users")
 	ctx := context.Background()
 
 	t.Run("Get users by id successfully", func(t *testing.T) {
-		user := &domain.User{Name: "Alice", Email: "alice@example.com"}
+		user := &domain.User{Name: "Alice", Email: "alice@example.com", Password: "testpassword"}
 		savedUser, _ := repo.Save(ctx, user)
 
 		fetchedUser, err := repo.GetByID(ctx, savedUser.ID)
@@ -58,14 +58,14 @@ func TestGetByID(t *testing.T) {
 	})
 }
 
-func TestGetAllUsers(t *testing.T) {
+func TestUserRepository_GetAllUsers(t *testing.T) {
 	repo := NewUserRepository(testDB)
 	cleanDB(t, "users")
 	ctx := context.Background()
 
 	t.Run("Get all users successfully", func(t *testing.T) {
-		user1 := &domain.User{Name: "User1", Email: "user1@example.com"}
-		user2 := &domain.User{Name: "User2", Email: "user2@example.com"}
+		user1 := &domain.User{Name: "User1", Email: "user1@example.com", Password: "testpassword"}
+		user2 := &domain.User{Name: "User2", Email: "user2@example.com", Password: "testpassword"}
 		repo.Save(ctx, user1)
 		repo.Save(ctx, user2)
 

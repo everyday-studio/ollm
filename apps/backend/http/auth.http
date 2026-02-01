@@ -1,0 +1,26 @@
+### /signup 테스트
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+    "email": "test1234@example.com",
+    "password": "password123"
+}
+
+### /signup 테스트
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+    "email": "test12345@example.com",
+    "password": "password123"
+}
+
+### /login 테스트
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+    "email": "test1234@example.com",
+    "password": "password123"
+}

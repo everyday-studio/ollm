@@ -12,6 +12,7 @@ type SignUpRequest struct {
 
 type SignUpResponse struct {
 	ID    int64  `json:"id"`
+	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
@@ -22,6 +23,7 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	ID                     int64     `json:"id"`
+	Name                   string    `json:"name"`
 	Email                  string    `json:"email"`
 	AccessToken            string    `json:"access_token"`
 	RefreshToken           string    `json:"-"` // Not included in JSON response

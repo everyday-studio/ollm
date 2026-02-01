@@ -89,7 +89,9 @@ func setupSchema() {
 		CREATE TABLE IF NOT EXISTS users (
 			id SERIAL PRIMARY KEY,
 			name TEXT NOT NULL,
-			email TEXT NOT NULL UNIQUE
+			email TEXT NOT NULL UNIQUE,
+			password VARCHAR(255) NOT NULL DEFAULT '',
+			role VARCHAR(255) DEFAULT 'User'
 		);
 	`
 	if _, err := testDB.Exec(schema); err != nil {

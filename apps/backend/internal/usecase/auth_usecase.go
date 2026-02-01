@@ -71,7 +71,25 @@ func (uc *authUseCase) Logout(ctx context.Context, userID int64) error {
 }
 
 func (uc *authUseCase) RefreshToken(ctx context.Context, refreshToken string) (*domain.LoginResponse, error) {
-	return nil, nil
+	claims, err := security.ValidateRefreshToken(refreshToken, uc.publicKey)
+	if err != nil {
+		return nil, domain.ErrUnauthorized
+	}
+
+	user, err := uc.userRepo.GetByID(ctx, claims.UserID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.ErrUnauthorized
+		}
+		return nil, err
+	}
+
+	response, err := uc.generateTokens(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 func (uc *authUseCase) generateTokens(user *domain.User) (*domain.LoginResponse, error) {
