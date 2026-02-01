@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -242,6 +243,113 @@ func TestLogin(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotEmpty(t, result.AccessToken)
 				assert.NotEmpty(t, result.RefreshToken)
+			}
+
+			mockUserRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestAuthUsecase_RefreshToken(t *testing.T) {
+	privateKeyPEM, publicKeyPEM, err := generateTestRSAKeys()
+	if err != nil {
+		t.Fatalf("Failed to generate test RSA keys: %v", err)
+	}
+
+	cfg := &config.Config{
+		Secure: config.SecureConfig{
+			JWT: config.JWTConfig{
+				PrivateKey:           privateKeyPEM,
+				PublicKey:            publicKeyPEM,
+				AccessExpirationMin:  15,
+				RefreshExpirationDay: 7,
+				Cookie: config.CookieConfig{
+					Secure:   false,
+					HTTPOnly: true,
+					SameSite: "Lax",
+					Domain:   "localhost",
+				},
+			},
+		},
+	}
+
+	user := &domain.User{
+		ID:    1,
+		Email: "test@example.com",
+		Role:  domain.RoleUser,
+	}
+
+	// Generate a valid refresh token for testing
+	privateKey, err := security.ParseRSAPrivateKeyFromBase64(privateKeyPEM)
+	if err != nil {
+		t.Fatalf("Failed to parse private key: %v", err)
+	}
+
+	validRefreshToken, err := security.GenerateRefreshToken(user.ID, user.Email, user.Role, privateKey, 7*24*time.Hour)
+	if err != nil {
+		t.Fatalf("Failed to generate valid refresh token: %v", err)
+	}
+
+	tests := []struct {
+		name         string
+		refreshToken string
+		mockUser     *domain.User
+		mockError    error
+		wantErr      error
+	}{
+		{
+			name:         "Success",
+			refreshToken: validRefreshToken,
+			mockUser:     user,
+			mockError:    nil,
+			wantErr:      nil,
+		},
+		{
+			name:         "Invalid Token",
+			refreshToken: "invalid.token.string",
+			mockUser:     nil,
+			mockError:    nil,
+			wantErr:      domain.ErrUnauthorized,
+		},
+		{
+			name:         "User Not Found",
+			refreshToken: validRefreshToken,
+			mockUser:     nil,
+			mockError:    domain.ErrNotFound,
+			wantErr:      domain.ErrUnauthorized,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockAuthRepo := new(mocks.AuthRepository)
+			mockUserRepo := new(mocks.UserRepository)
+
+			// Mock GetByID only if we expect it to be called
+			// (i.e., when token validation succeeds)
+			if tt.name != "Invalid Token" {
+				mockUserRepo.On("GetByID", mock.Anything, int64(1)).Return(tt.mockUser, tt.mockError)
+			}
+
+			uc, err := NewAuthUseCase(mockAuthRepo, mockUserRepo, cfg)
+			if err != nil {
+				t.Fatalf("Failed to create auth usecase: %v", err)
+			}
+
+			ctx := context.Background()
+			result, err := uc.RefreshToken(ctx, tt.refreshToken)
+
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.wantErr, err)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.NotEmpty(t, result.AccessToken)
+				assert.NotEmpty(t, result.RefreshToken)
+				assert.Equal(t, user.ID, result.ID)
+				assert.Equal(t, user.Email, result.Email)
 			}
 
 			mockUserRepo.AssertExpectations(t)
