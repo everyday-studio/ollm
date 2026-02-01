@@ -85,3 +85,59 @@ func GenerateAccessToken(userID int64, email string, role domain.Role, privateKe
 func GenerateRefreshToken(userID int64, email string, role domain.Role, privateKey *rsa.PrivateKey, expirationTime time.Duration) (string, error) {
 	return GenerateToken(userID, email, role, privateKey, expirationTime, RefreshToken)
 }
+
+// ValidateToken validates a JWT token and returns the claims
+func ValidateToken(tokenString string, publicKey *rsa.PublicKey) (*JWTClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, ErrInvalidToken
+		}
+		return publicKey, nil
+	})
+
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrExpiredToken
+		}
+		return nil, ErrInvalidToken
+	}
+
+	if !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	claims, ok := token.Claims.(*JWTClaims)
+	if !ok {
+		return nil, ErrInvalidToken
+	}
+
+	return claims, nil
+}
+
+// ValidateAccessToken validates an access token
+func ValidateAccessToken(tokenString string, publicKey *rsa.PublicKey) (*JWTClaims, error) {
+	claims, err := ValidateToken(tokenString, publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.Type != AccessToken {
+		return nil, ErrInvalidToken
+	}
+
+	return claims, nil
+}
+
+// ValidateRefreshToken validates a refresh token
+func ValidateRefreshToken(tokenString string, publicKey *rsa.PublicKey) (*JWTClaims, error) {
+	claims, err := ValidateToken(tokenString, publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.Type != RefreshToken {
+		return nil, ErrInvalidToken
+	}
+
+	return claims, nil
+}
