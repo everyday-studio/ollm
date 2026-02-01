@@ -57,36 +57,36 @@ func TestUserHandler_ErrResponse(t *testing.T) {
 
 func TestUserHandler_GetByID(t *testing.T) {
 	tests := []struct {
-		name           string
-		pathParam      string
-		mockReturn     interface{}
-		mockError      error
-		expectedStatus int
-		expectedBody   string
+		name       string
+		pathParam  string
+		mockReturn interface{}
+		mockError  error
+		wantStatus int
+		wantBody   string
 	}{
 		{
-			name:           "Get users by id successfully",
-			pathParam:      "1",
-			mockReturn:     &domain.User{ID: 1, Name: "John", Email: "john@example.com", Role: domain.RoleUser},
-			mockError:      nil,
-			expectedStatus: http.StatusOK,
-			expectedBody:   `{"id":1,"name":"John","email":"john@example.com","role":"User"}`,
+			name:       "Get users by id successfully",
+			pathParam:  "1",
+			mockReturn: &domain.User{ID: 1, Name: "John", Email: "john@example.com", Role: domain.RoleUser},
+			mockError:  nil,
+			wantStatus: http.StatusOK,
+			wantBody:   `{"id":1,"name":"John","email":"john@example.com","role":"User"}`,
 		},
 		{
-			name:           "Fail to find user",
-			pathParam:      "1",
-			mockReturn:     nil,
-			mockError:      domain.ErrNotFound,
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
+			name:       "Fail to find user",
+			pathParam:  "1",
+			mockReturn: nil,
+			mockError:  domain.ErrNotFound,
+			wantStatus: http.StatusNotFound,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
 		},
 		{
-			name:           "Fail to find user due to invalid id",
-			pathParam:      "invalid",
-			mockReturn:     nil,
-			mockError:      domain.ErrInvalidInput,
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInvalidInput.Error()),
+			name:       "Fail to find user due to invalid id",
+			pathParam:  "invalid",
+			mockReturn: nil,
+			mockError:  domain.ErrInvalidInput,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInvalidInput.Error()),
 		},
 	}
 
@@ -111,8 +111,8 @@ func TestUserHandler_GetByID(t *testing.T) {
 
 			err := handler.GetByID(c)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedStatus, rec.Code)
-			assert.JSONEq(t, tt.expectedBody, rec.Body.String())
+			assert.Equal(t, tt.wantStatus, rec.Code)
+			assert.JSONEq(t, tt.wantBody, rec.Body.String())
 
 			mockUseCase.AssertExpectations(t)
 		})
@@ -122,11 +122,11 @@ func TestUserHandler_GetByID(t *testing.T) {
 func TestUserHandler_GetAll(t *testing.T) {
 
 	tests := []struct {
-		name           string
-		mockReturn     interface{}
-		mockError      error
-		expectedStatus int
-		expectedBody   string
+		name       string
+		mockReturn interface{}
+		mockError  error
+		wantStatus int
+		wantBody   string
 	}{
 		{
 			name: "Get all users successfully",
@@ -134,16 +134,16 @@ func TestUserHandler_GetAll(t *testing.T) {
 				{ID: 1, Name: "John", Email: "john@example.com", Role: domain.RoleUser},
 				{ID: 2, Name: "Jane", Email: "jane@example.com", Role: domain.RoleUser},
 			},
-			mockError:      nil,
-			expectedStatus: http.StatusOK,
-			expectedBody:   `[{"id":1,"name":"John","email":"john@example.com","role":"User"},{"id":2,"name":"Jane","email":"jane@example.com","role":"User"}]`,
+			mockError:  nil,
+			wantStatus: http.StatusOK,
+			wantBody:   `[{"id":1,"name":"John","email":"john@example.com","role":"User"},{"id":2,"name":"Jane","email":"jane@example.com","role":"User"}]`,
 		},
 		{
-			name:           "Fail to find any users",
-			mockReturn:     nil,
-			mockError:      domain.ErrNotFound,
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
+			name:       "Fail to find any users",
+			mockReturn: nil,
+			mockError:  domain.ErrNotFound,
+			wantStatus: http.StatusNotFound,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
 		},
 	}
 
@@ -160,8 +160,8 @@ func TestUserHandler_GetAll(t *testing.T) {
 
 			err := handler.GetAll(c)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedStatus, rec.Code)
-			assert.JSONEq(t, tt.expectedBody, rec.Body.String())
+			assert.Equal(t, tt.wantStatus, rec.Code)
+			assert.JSONEq(t, tt.wantBody, rec.Body.String())
 
 			mockUseCase.AssertExpectations(t)
 		})

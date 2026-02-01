@@ -17,23 +17,23 @@ func TestUserUsecase_GetByID(t *testing.T) {
 		inputID    int64
 		mockReturn *domain.User
 		mockError  error
-		expected   *domain.User
-		expectErr  error
+		want       *domain.User
+		wantErr    error
 	}{
 		{
 			name:       "Find user successfully",
 			inputID:    1,
 			mockReturn: &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
 			mockError:  nil,
-			expected:   &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
-			expectErr:  nil,
+			want:       &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
+			wantErr:    nil,
 		},
 		{
 			name:      "Fail to find user",
 			inputID:   2,
 			mockError: domain.ErrNotFound,
-			expected:  nil,
-			expectErr: domain.ErrNotFound,
+			want:      nil,
+			wantErr:   domain.ErrNotFound,
 		},
 	}
 
@@ -46,8 +46,8 @@ func TestUserUsecase_GetByID(t *testing.T) {
 			ctx := context.Background()
 			result, err := uc.GetByID(ctx, tt.inputID)
 
-			assert.Equal(t, tt.expected, result)
-			assert.Equal(t, tt.expectErr, err)
+			assert.Equal(t, tt.want, result)
+			assert.Equal(t, tt.wantErr, err)
 
 			mockRepo.AssertExpectations(t)
 		})
@@ -59,8 +59,8 @@ func TestUserUsecase_GetAll(t *testing.T) {
 		name       string
 		mockReturn []domain.User
 		mockError  error
-		expected   []domain.User
-		expectErr  error
+		want       []domain.User
+		wantErr    error
 	}{
 		{
 			name: "Find user successfully",
@@ -69,17 +69,17 @@ func TestUserUsecase_GetAll(t *testing.T) {
 				{ID: 2, Name: "Jane", Email: "jane@example.com"},
 			},
 			mockError: nil,
-			expected: []domain.User{
+			want: []domain.User{
 				{ID: 1, Name: "John", Email: "john@example.com"},
 				{ID: 2, Name: "Jane", Email: "jane@example.com"},
 			},
-			expectErr: nil,
+			wantErr: nil,
 		},
 		{
 			name:      "Fail to find any users",
 			mockError: domain.ErrNotFound,
-			expected:  nil,
-			expectErr: domain.ErrNotFound,
+			want:      nil,
+			wantErr:   domain.ErrNotFound,
 		},
 	}
 
@@ -92,8 +92,8 @@ func TestUserUsecase_GetAll(t *testing.T) {
 			ctx := context.Background()
 			result, err := uc.GetAll(ctx)
 
-			assert.Equal(t, tt.expected, result)
-			assert.Equal(t, tt.expectErr, err)
+			assert.Equal(t, tt.want, result)
+			assert.Equal(t, tt.wantErr, err)
 
 			mockRepo.AssertExpectations(t)
 		})
