@@ -37,9 +37,11 @@ func (r *userRepository) Save(ctx context.Context, user *domain.User) (*domain.U
 	const query = `
 		INSERT INTO users (id, name, email, password, role)
 		VALUES ($1, $2, $3, $4, $5)
+		RETURNING created_at, updated_at
 	`
 
-	_, err := r.db.ExecContext(ctx, query, user.ID, user.Name, user.Email, user.Password, user.Role)
+	err := r.db.QueryRowContext(ctx, query, user.ID, user.Name, user.Email, user.Password, user.Role).
+		Scan(&user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
 			return nil, fmt.Errorf("email %s: %w", user.Email, domain.ErrAlreadyExists)
@@ -52,13 +54,20 @@ func (r *userRepository) Save(ctx context.Context, user *domain.User) (*domain.U
 
 func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	query := `
-		SELECT id, name, email
+		SELECT id, name, email, role, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
 
 	var user domain.User
-	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email)
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrNotFound
@@ -71,9 +80,9 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 
 func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 	query := `
-		SELECT id, name, email, role
+		SELECT id, name, email, role, created_at, updated_at
 		FROM users
-		ORDER BY id ASC
+		ORDER BY created_at DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query)
@@ -85,7 +94,14 @@ func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 	var users []domain.User
 	for rows.Next() {
 		var user domain.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role); err != nil {
+		if err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Role,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
 		users = append(users, user)
@@ -100,13 +116,21 @@ func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	const query = `
-		SELECT id, name, email, password, role
+		SELECT id, name, email, password, role, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
 
 	user := &domain.User{}
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, domain.ErrNotFound

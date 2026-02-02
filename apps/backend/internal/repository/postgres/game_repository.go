@@ -128,10 +128,11 @@ func (r *gameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
 }
 
 // Update updates an existing game
+// Note: updated_at is automatically updated by database trigger
 func (r *gameRepository) Update(ctx context.Context, game *domain.Game) (*domain.Game, error) {
 	const query = `
 		UPDATE games
-		SET title = $1, description = $2, status = $3, is_public = $4, updated_at = NOW()
+		SET title = $1, description = $2, status = $3, is_public = $4
 		WHERE id = $5
 		RETURNING updated_at
 	`
