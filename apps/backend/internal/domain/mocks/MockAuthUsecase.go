@@ -83,7 +83,7 @@ func (_c *AuthUsecase_Login_Call) RunAndReturn(run func(context.Context, string,
 }
 
 // Logout provides a mock function with given fields: ctx, userID
-func (_m *AuthUsecase) Logout(ctx context.Context, userID int64) error {
+func (_m *AuthUsecase) Logout(ctx context.Context, userID string) error {
 	ret := _m.Called(ctx, userID)
 
 	if len(ret) == 0 {
@@ -91,7 +91,7 @@ func (_m *AuthUsecase) Logout(ctx context.Context, userID int64) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, userID)
 	} else {
 		r0 = ret.Error(0)
@@ -107,14 +107,14 @@ type AuthUsecase_Logout_Call struct {
 
 // Logout is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID int64
+//   - userID string
 func (_e *AuthUsecase_Expecter) Logout(ctx interface{}, userID interface{}) *AuthUsecase_Logout_Call {
 	return &AuthUsecase_Logout_Call{Call: _e.mock.On("Logout", ctx, userID)}
 }
 
-func (_c *AuthUsecase_Logout_Call) Run(run func(ctx context.Context, userID int64)) *AuthUsecase_Logout_Call {
+func (_c *AuthUsecase_Logout_Call) Run(run func(ctx context.Context, userID string)) *AuthUsecase_Logout_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int64))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -124,7 +124,7 @@ func (_c *AuthUsecase_Logout_Call) Return(_a0 error) *AuthUsecase_Logout_Call {
 	return _c
 }
 
-func (_c *AuthUsecase_Logout_Call) RunAndReturn(run func(context.Context, int64) error) *AuthUsecase_Logout_Call {
+func (_c *AuthUsecase_Logout_Call) RunAndReturn(run func(context.Context, string) error) *AuthUsecase_Logout_Call {
 	_c.Call.Return(run)
 	return _c
 }
