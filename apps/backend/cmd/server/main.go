@@ -33,15 +33,18 @@ func main() {
 		fx.Provide(
 			usecase.NewUserUseCase,
 			usecase.NewAuthUseCase,
+			usecase.NewGameUseCase,
 		),
 		fx.Provide(
 			repository.NewUserRepository,
 			repository.NewAuthRepository,
+			repository.NewGameRepository,
 		),
 		fx.Invoke(
 			middleware.Setup,
 			handler.NewUserHandler,
 			handler.NewAuthHandler,
+			handler.NewGameHandler,
 		),
 		fx.Invoke(StartServer),
 	)
