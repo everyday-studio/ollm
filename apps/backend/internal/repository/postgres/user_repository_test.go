@@ -52,7 +52,7 @@ func TestUserRepository_GetByID(t *testing.T) {
 	})
 
 	t.Run("Fails to get users", func(t *testing.T) {
-		fetchedUser, err := repo.GetByID(ctx, 9999)
+		fetchedUser, err := repo.GetByID(ctx, "01HQZYX3VQJQZ3Z0Z1Z2NONEXIST")
 		assert.ErrorIs(t, err, domain.ErrNotFound)
 		assert.Nil(t, fetchedUser)
 	})

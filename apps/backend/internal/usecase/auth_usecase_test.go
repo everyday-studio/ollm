@@ -85,14 +85,14 @@ func TestAuthUsecase_SignUpUser(t *testing.T) {
 				Role:     domain.RoleUser,
 			},
 			mockReturn: &domain.User{
-				ID:       1,
+				ID:       "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
 				Email:    "test@example.com",
 				Password: "hashedpassword",
 				Role:     domain.RoleUser,
 			},
 			mockError: nil,
 			want: &domain.User{
-				ID:       1,
+				ID:       "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
 				Email:    "test@example.com",
 				Password: "hashedpassword",
 				Role:     domain.RoleUser,
@@ -171,7 +171,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	user := &domain.User{
-		ID:       1,
+		ID:       "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
 		Email:    "test@example.com",
 		Password: hashedPassword,
 		Role:     domain.RoleUser,
@@ -193,7 +193,7 @@ func TestLogin(t *testing.T) {
 			mockReturn: user,
 			mockError:  nil,
 			want: &domain.LoginResponse{
-				ID:    1,
+				ID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
 				Email: "test@example.com",
 			},
 			wantErr: nil,
@@ -274,7 +274,7 @@ func TestAuthUsecase_RefreshToken(t *testing.T) {
 	}
 
 	user := &domain.User{
-		ID:    1,
+		ID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
 		Email: "test@example.com",
 		Role:  domain.RoleUser,
 	}
@@ -328,7 +328,7 @@ func TestAuthUsecase_RefreshToken(t *testing.T) {
 			// Mock GetByID only if we expect it to be called
 			// (i.e., when token validation succeeds)
 			if tt.name != "Invalid Token" {
-				mockUserRepo.On("GetByID", mock.Anything, int64(1)).Return(tt.mockUser, tt.mockError)
+				mockUserRepo.On("GetByID", mock.Anything, "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5").Return(tt.mockUser, tt.mockError)
 			}
 
 			uc, err := NewAuthUseCase(mockAuthRepo, mockUserRepo, cfg)

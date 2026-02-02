@@ -14,7 +14,7 @@ import (
 func TestUserUsecase_GetByID(t *testing.T) {
 	tests := []struct {
 		name       string
-		inputID    int64
+		inputID    string
 		mockReturn *domain.User
 		mockError  error
 		want       *domain.User
@@ -22,15 +22,15 @@ func TestUserUsecase_GetByID(t *testing.T) {
 	}{
 		{
 			name:       "Find user successfully",
-			inputID:    1,
-			mockReturn: &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
+			inputID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
+			mockReturn: &domain.User{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com"},
 			mockError:  nil,
-			want:       &domain.User{ID: 1, Name: "John", Email: "john@example.com"},
+			want:       &domain.User{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com"},
 			wantErr:    nil,
 		},
 		{
 			name:      "Fail to find user",
-			inputID:   2,
+			inputID:   "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6",
 			mockError: domain.ErrNotFound,
 			want:      nil,
 			wantErr:   domain.ErrNotFound,
@@ -65,13 +65,13 @@ func TestUserUsecase_GetAll(t *testing.T) {
 		{
 			name: "Find user successfully",
 			mockReturn: []domain.User{
-				{ID: 1, Name: "John", Email: "john@example.com"},
-				{ID: 2, Name: "Jane", Email: "jane@example.com"},
+				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com"},
+				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6", Name: "Jane", Email: "jane@example.com"},
 			},
 			mockError: nil,
 			want: []domain.User{
-				{ID: 1, Name: "John", Email: "john@example.com"},
-				{ID: 2, Name: "Jane", Email: "jane@example.com"},
+				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com"},
+				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6", Name: "Jane", Email: "jane@example.com"},
 			},
 			wantErr: nil,
 		},

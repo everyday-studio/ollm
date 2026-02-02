@@ -66,7 +66,7 @@ func (uc *authUseCase) Login(ctx context.Context, email string, password string)
 	return uc.generateTokens(user)
 }
 
-func (uc *authUseCase) Logout(ctx context.Context, userID int64) error {
+func (uc *authUseCase) Logout(ctx context.Context, userID string) error {
 	return nil
 }
 

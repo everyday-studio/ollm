@@ -37,7 +37,7 @@ func (uc *gameUseCase) Create(ctx context.Context, req *domain.CreateGameRequest
 }
 
 // GetByID retrieves a game by its ID
-func (uc *gameUseCase) GetByID(ctx context.Context, id int64) (*domain.Game, error) {
+func (uc *gameUseCase) GetByID(ctx context.Context, id string) (*domain.Game, error) {
 	return uc.gameRepo.GetByID(ctx, id)
 }
 
@@ -47,7 +47,7 @@ func (uc *gameUseCase) GetAll(ctx context.Context) ([]domain.Game, error) {
 }
 
 // Update updates an existing game
-func (uc *gameUseCase) Update(ctx context.Context, id int64, req *domain.UpdateGameRequest) (*domain.Game, error) {
+func (uc *gameUseCase) Update(ctx context.Context, id string, req *domain.UpdateGameRequest) (*domain.Game, error) {
 	// Get existing game
 	existingGame, err := uc.gameRepo.GetByID(ctx, id)
 	if err != nil {
@@ -76,6 +76,6 @@ func (uc *gameUseCase) Update(ctx context.Context, id int64, req *domain.UpdateG
 }
 
 // Delete removes a game by its ID
-func (uc *gameUseCase) Delete(ctx context.Context, id int64) error {
+func (uc *gameUseCase) Delete(ctx context.Context, id string) error {
 	return uc.gameRepo.Delete(ctx, id)
 }

@@ -14,7 +14,7 @@ func NewUserUseCase(userRepo domain.UserRepository) domain.UserUseCase {
 	return &userUseCase{userRepo: userRepo}
 }
 
-func (uc *userUseCase) GetByID(ctx context.Context, id int64) (*domain.User, error) {
+func (uc *userUseCase) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	return uc.userRepo.GetByID(ctx, id)
 }
 

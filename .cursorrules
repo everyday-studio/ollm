@@ -153,6 +153,22 @@
 - 필요 시 `db.BeginTx()` 사용
 - `defer tx.Rollback()`로 실패 시 롤백 보장
 
+# Database Migration (Goose)
+
+## 1. 마이그레이션 도구
+- **Tool**: Goose (`github.com/pressly/goose/v3`)
+- **Migration Directory**: `internal/db/migrations/`
+
+## 2. 마이그레이션 실행 방법
+- **중요**: 사용자가 터미널에서 goose 명령어를 직접 입력합니다.
+
+## 3. 마이그레이션 파일 작성 규칙
+- **안전 우선**: 사용자가 명시적으로 요청하지 않는 한, DROP TABLE, DROP COLUMN, TRUNCATE와 같은 파괴적인 쿼리는 절대 작성하지 마세요.
+- **하위 호환성**: RENAME COLUMN 사용을 피합니다. 대신 새로운 칼럼을 추가하고 기존 데이터를 복사하는 방식을 제안합니다.
+- **잠금 방지**: PostgreSQL의 경우, 인덱스 생성 시 항상 CREATE INDEX CONCURRENTLY 사용을 제안합니다. 이를 위해 -- +goose NO TRANSACTION 을 사용합니다.
+- **멱등성**: 가능한 모든 곳에 IF EXISTS 또는 IF NOT EXISTS 를 사용합니다.
+- **구조 준수**: 항상 -- +goose Up 과 -- +goose Down 섹션을 모두 제공합니다.
+
 # Documentation
 - 주석은 `godoc` 스타일을 따르세요.
 - Public 함수/타입은 반드시 주석을 작성하세요.

@@ -11,7 +11,7 @@ type SignUpRequest struct {
 }
 
 type SignUpResponse struct {
-	ID    int64  `json:"id"`
+	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
@@ -22,7 +22,7 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	ID                     int64     `json:"id"`
+	ID                     string    `json:"id"`
 	Name                   string    `json:"name"`
 	Email                  string    `json:"email"`
 	AccessToken            string    `json:"access_token"`
@@ -36,6 +36,6 @@ type AuthRepository interface {
 type AuthUsecase interface {
 	SignUpUser(ctx context.Context, user *User) (*User, error)
 	Login(ctx context.Context, email string, password string) (*LoginResponse, error)
-	Logout(ctx context.Context, userID int64) error
+	Logout(ctx context.Context, userID string) error
 	RefreshToken(ctx context.Context, refreshToken string) (*LoginResponse, error)
 }
