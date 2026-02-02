@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
+	"time"
+
+	"github.com/oklog/ulid/v2"
 
 	"github.com/everyday-studio/ollm/internal/domain"
 )
@@ -21,10 +25,14 @@ func NewGameRepository(db *sql.DB) domain.GameRepository {
 
 // Create inserts a new game into the database
 func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain.Game, error) {
+	// Generate ULID for the new game
+	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
+	game.ID = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+
 	const query = `
-		INSERT INTO games (title, description, author_id, status, is_public)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, created_at, updated_at
+		INSERT INTO games (id, title, description, author_id, status, is_public)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING created_at, updated_at
 	`
 
 	// Set default values if not provided
@@ -35,12 +43,13 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
+		game.ID,
 		game.Title,
 		game.Description,
 		game.AuthorID,
 		game.Status,
 		game.IsPublic,
-	).Scan(&game.ID, &game.CreatedAt, &game.UpdatedAt)
+	).Scan(&game.CreatedAt, &game.UpdatedAt)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create game: %w", err)
@@ -50,7 +59,7 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 }
 
 // GetByID retrieves a game by its ID
-func (r *gameRepository) GetByID(ctx context.Context, id int64) (*domain.Game, error) {
+func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, error) {
 	const query = `
 		SELECT id, title, description, author_id, status, is_public, created_at, updated_at
 		FROM games
@@ -148,7 +157,7 @@ func (r *gameRepository) Update(ctx context.Context, game *domain.Game) (*domain
 }
 
 // Delete removes a game from the database
-func (r *gameRepository) Delete(ctx context.Context, id int64) error {
+func (r *gameRepository) Delete(ctx context.Context, id string) error {
 	const query = `
 		DELETE FROM games
 		WHERE id = $1

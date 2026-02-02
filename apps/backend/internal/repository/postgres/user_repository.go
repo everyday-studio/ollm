@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/lib/pq"
+	"github.com/oklog/ulid/v2"
 	"github.com/pkg/errors"
 
 	"github.com/everyday-studio/ollm/internal/domain"
@@ -22,18 +25,22 @@ func NewUserRepository(db *sql.DB) domain.UserRepository {
 }
 
 func (r *userRepository) Save(ctx context.Context, user *domain.User) (*domain.User, error) {
-	//Add User Role if no default role
+	// Add User Role if no default role
 	if user.Role == "" {
 		user.Role = domain.RoleUser
 	}
 
+	// Generate ULID for the new user
+	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
+	user.ID = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+
 	const query = `
-		INSERT INTO users (name, email, password, role)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id
+		INSERT INTO users (id, name, email, password, role)
+		VALUES ($1, $2, $3, $4, $5)
 	`
 
-	if err := r.db.QueryRowContext(ctx, query, user.Name, user.Email, user.Password, user.Role).Scan(&user.ID); err != nil {
+	_, err := r.db.ExecContext(ctx, query, user.ID, user.Name, user.Email, user.Password, user.Role)
+	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
 			return nil, fmt.Errorf("email %s: %w", user.Email, domain.ErrAlreadyExists)
 		}
@@ -43,7 +50,7 @@ func (r *userRepository) Save(ctx context.Context, user *domain.User) (*domain.U
 	return user, nil
 }
 
-func (r *userRepository) GetByID(ctx context.Context, id int64) (*domain.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	query := `
 		SELECT id, name, email
 		FROM users
