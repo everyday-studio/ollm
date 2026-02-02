@@ -153,6 +153,58 @@
 - 필요 시 `db.BeginTx()` 사용
 - `defer tx.Rollback()`로 실패 시 롤백 보장
 
+# Database Migration (Goose)
+
+## 1. 마이그레이션 도구
+- **Tool**: Goose (`github.com/pressly/goose/v3`)
+- **Migration Directory**: `internal/db/migrations/`
+- **환경변수**: `.env` 파일에 goose 관련 환경변수 설정됨
+  - `GOOSE_DRIVER`: postgresql
+  - `GOOSE_DBSTRING`: PostgreSQL 연결 문자열
+  - `GOOSE_MIGRATION_DIR`: internal/db/migrations
+
+## 2. 마이그레이션 실행 방법
+- **중요**: 사용자는 터미널에서 `goose up` / `goose down` 명령어만 입력하면 됩니다.
+- 환경변수가 이미 설정되어 있으므로, 복잡한 명령어나 플래그를 추가할 필요가 없습니다.
+- **절대 하지 말아야 할 것**:
+  - `goose -dir internal/db/migrations postgres "host=... ..."` 같은 긴 명령어 제안 금지
+  - 사용자가 직접 connection string을 입력하도록 유도 금지
+  - 불필요한 플래그나 옵션 추가 금지
+
+## 3. 마이그레이션 명령어
+- `goose up`: 최신 버전으로 마이그레이션 적용
+- `goose down`: 마지막 마이그레이션 롤백
+- `goose status`: 현재 마이그레이션 상태 확인
+- `goose create <name> sql`: 새 마이그레이션 파일 생성
+
+## 4. 마이그레이션 파일 작성 규칙
+- 파일명 형식: `YYYYMMDDHHMMSS_description.sql`
+- 파일 내부 구조:
+  ```sql
+  -- +goose Up
+  -- SQL in this section is executed when the migration is applied
+  CREATE TABLE example (...);
+
+  -- +goose Down
+  -- SQL in this section is executed when the migration is rolled back
+  DROP TABLE example;
+  ```
+- `-- +goose Up` 섹션: 마이그레이션 적용 시 실행될 SQL
+- `-- +goose Down` 섹션: 롤백 시 실행될 SQL (Up의 역순 작업)
+
+## 5. 마이그레이션 작성 가이드
+- 각 마이그레이션은 하나의 논리적인 변경사항만 포함하세요.
+- Down 마이그레이션은 Up의 정확한 역순 작업을 수행해야 합니다.
+- 테이블 생성 시 적절한 제약조건(UNIQUE, NOT NULL, CHECK 등)을 포함하세요.
+- Foreign Key 제약조건을 사용할 때는 `ON DELETE` 동작을 명시하세요.
+- 인덱스가 필요한 컬럼은 마이그레이션에서 함께 생성하세요.
+
+## 6. Agent 모드에서의 마이그레이션
+- **절대 금지**: 마이그레이션 파일을 직접 실행하거나 SQL을 수동으로 실행하려는 시도
+- **절대 금지**: 복잡한 goose 명령어 제안
+- **올바른 방법**: 사용자에게 `goose up` 또는 `goose down` 입력을 안내하기만 하면 됩니다.
+- 새 마이그레이션 파일 생성이 필요한 경우, `goose create <name> sql` 명령어만 안내하세요.
+
 # Documentation
 - 주석은 `godoc` 스타일을 따르세요.
 - Public 함수/타입은 반드시 주석을 작성하세요.
