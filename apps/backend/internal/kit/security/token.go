@@ -24,7 +24,7 @@ const (
 )
 
 type JWTClaims struct {
-	UserID int64     `json:"user_id"`
+	UserID string    `json:"user_id"`
 	Email  string    `json:"email"`
 	Role   string    `json:"role"`
 	Type   TokenType `json:"type"`
@@ -57,7 +57,7 @@ func ParseRSAPublicKeyFromBase64(base64Key string) (*rsa.PublicKey, error) {
 	return publicKey, nil
 }
 
-func GenerateToken(userID int64, email string, role domain.Role, privateKey *rsa.PrivateKey, expiratinTime time.Duration, tokenType TokenType) (string, error) {
+func GenerateToken(userID string, email string, role domain.Role, privateKey *rsa.PrivateKey, expiratinTime time.Duration, tokenType TokenType) (string, error) {
 	claims := &JWTClaims{
 		UserID: userID,
 		Email:  email,
@@ -78,11 +78,11 @@ func GenerateToken(userID int64, email string, role domain.Role, privateKey *rsa
 	return tokenString, nil
 }
 
-func GenerateAccessToken(userID int64, email string, role domain.Role, privateKey *rsa.PrivateKey, expirationTime time.Duration) (string, error) {
+func GenerateAccessToken(userID string, email string, role domain.Role, privateKey *rsa.PrivateKey, expirationTime time.Duration) (string, error) {
 	return GenerateToken(userID, email, role, privateKey, expirationTime, AccessToken)
 }
 
-func GenerateRefreshToken(userID int64, email string, role domain.Role, privateKey *rsa.PrivateKey, expirationTime time.Duration) (string, error) {
+func GenerateRefreshToken(userID string, email string, role domain.Role, privateKey *rsa.PrivateKey, expirationTime time.Duration) (string, error) {
 	return GenerateToken(userID, email, role, privateKey, expirationTime, RefreshToken)
 }
 
