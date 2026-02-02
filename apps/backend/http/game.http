@@ -1,0 +1,10 @@
+
+### game post test
+POST http://localhost:8080/games
+Content-Type: application/json
+
+{
+    "title": "test game",
+    "description": "test description",
+    "author_id": "01KGF78ET1XDG1NHF08V66Q4ZB"
+}
