@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -37,13 +36,13 @@ func ErrResponse(err error) map[string]string {
 }
 
 func (h *UserHandler) GetByID(c echo.Context) error {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
+	id := c.Param("id")
+	if id == "" {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
 
 	ctx := c.Request().Context()
-	user, err := h.userUseCase.GetByID(ctx, int64(id))
+	user, err := h.userUseCase.GetByID(ctx, id)
 	if err == nil {
 		return c.JSON(http.StatusOK, user)
 	}

@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -55,8 +54,8 @@ func (h *GameHandler) Create(c echo.Context) error {
 
 // GetByID handles GET /games/:id - retrieves a single game
 func (h *GameHandler) GetByID(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
+	id := c.Param("id")
+	if id == "" {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
 
@@ -94,8 +93,8 @@ func (h *GameHandler) GetAll(c echo.Context) error {
 
 // Update handles PUT /games/:id - updates an existing game
 func (h *GameHandler) Update(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
+	id := c.Param("id")
+	if id == "" {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
 
@@ -122,13 +121,13 @@ func (h *GameHandler) Update(c echo.Context) error {
 
 // Delete handles DELETE /games/:id - deletes a game
 func (h *GameHandler) Delete(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
+	id := c.Param("id")
+	if id == "" {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
 
 	ctx := c.Request().Context()
-	err = h.gameUseCase.Delete(ctx, id)
+	err := h.gameUseCase.Delete(ctx, id)
 	if err == nil {
 		return c.JSON(http.StatusOK, map[string]string{
 			"message": "game deleted successfully",
