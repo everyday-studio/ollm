@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -66,15 +65,15 @@ func TestUserHandler_GetByID(t *testing.T) {
 	}{
 		{
 			name:       "Get users by id successfully",
-			pathParam:  "1",
-			mockReturn: &domain.User{ID: 1, Name: "John", Email: "john@example.com", Role: domain.RoleUser},
+			pathParam:  "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
+			mockReturn: &domain.User{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com", Role: domain.RoleUser},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":1,"name":"John","email":"john@example.com","role":"User"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","email":"john@example.com","role":"User"}`,
 		},
 		{
 			name:       "Fail to find user",
-			pathParam:  "1",
+			pathParam:  "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6",
 			mockReturn: nil,
 			mockError:  domain.ErrNotFound,
 			wantStatus: http.StatusNotFound,
@@ -82,7 +81,7 @@ func TestUserHandler_GetByID(t *testing.T) {
 		},
 		{
 			name:       "Fail to find user due to invalid id",
-			pathParam:  "invalid",
+			pathParam:  "",
 			mockReturn: nil,
 			mockError:  domain.ErrInvalidInput,
 			wantStatus: http.StatusBadRequest,
@@ -101,12 +100,8 @@ func TestUserHandler_GetByID(t *testing.T) {
 			c.SetParamValues(tt.pathParam)
 
 			mockUseCase := new(mocks.UserUseCase)
-			// Convert pathParam to int64 for mock expectation
-			var expectedID int64
-			if id, err := strconv.Atoi(tt.pathParam); err == nil {
-				expectedID = int64(id)
-			}
-			mockUseCase.On("GetByID", mock.Anything, expectedID).Return(tt.mockReturn, tt.mockError).Maybe()
+			// Use pathParam directly as string (ULID)
+			mockUseCase.On("GetByID", mock.Anything, tt.pathParam).Return(tt.mockReturn, tt.mockError).Maybe()
 			handler := NewUserHandler(e, mockUseCase)
 
 			err := handler.GetByID(c)
@@ -131,12 +126,12 @@ func TestUserHandler_GetAll(t *testing.T) {
 		{
 			name: "Get all users successfully",
 			mockReturn: []domain.User{
-				{ID: 1, Name: "John", Email: "john@example.com", Role: domain.RoleUser},
-				{ID: 2, Name: "Jane", Email: "jane@example.com", Role: domain.RoleUser},
+				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com", Role: domain.RoleUser},
+				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6", Name: "Jane", Email: "jane@example.com", Role: domain.RoleUser},
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `[{"id":1,"name":"John","email":"john@example.com","role":"User"},{"id":2,"name":"Jane","email":"jane@example.com","role":"User"}]`,
+			wantBody:   `[{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","email":"john@example.com","role":"User"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6","name":"Jane","email":"jane@example.com","role":"User"}]`,
 		},
 		{
 			name:       "Fail to find any users",

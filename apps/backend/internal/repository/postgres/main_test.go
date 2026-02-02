@@ -87,7 +87,7 @@ func setupPostgresContainer(ctx context.Context) (testcontainers.Container, *sql
 func setupSchema() {
 	const schema = `
 		CREATE TABLE IF NOT EXISTS users (
-			id SERIAL PRIMARY KEY,
+			id VARCHAR(26) PRIMARY KEY,
 			name TEXT NOT NULL,
 			email TEXT NOT NULL UNIQUE,
 			password VARCHAR(255) NOT NULL DEFAULT '',
@@ -101,7 +101,7 @@ func setupSchema() {
 
 func cleanDB(t *testing.T, tables ...string) {
 	for _, table := range tables {
-		_, err := testDB.Exec("TRUNCATE TABLE " + table + " RESTART IDENTITY CASCADE")
+		_, err := testDB.Exec("TRUNCATE TABLE " + table + " CASCADE")
 		assert.NoError(t, err)
 	}
 }
