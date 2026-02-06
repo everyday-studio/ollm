@@ -1,3 +1,6 @@
 # Editor
 .cursor
 .DS_Store
+
+# Agent Rules
+apps/frontend/AGENT_RULES.md
