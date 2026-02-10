@@ -34,17 +34,20 @@ func main() {
 			usecase.NewUserUseCase,
 			usecase.NewAuthUseCase,
 			usecase.NewGameUseCase,
+			usecase.NewMatchUseCase,
 		),
 		fx.Provide(
 			repository.NewUserRepository,
 			repository.NewAuthRepository,
 			repository.NewGameRepository,
+			repository.NewMatchRepository,
 		),
 		fx.Invoke(
 			middleware.Setup,
 			handler.NewUserHandler,
 			handler.NewAuthHandler,
 			handler.NewGameHandler,
+			handler.NewMatchHandler,
 		),
 		fx.Invoke(StartServer),
 	)
