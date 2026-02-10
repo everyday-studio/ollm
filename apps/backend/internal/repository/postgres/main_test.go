@@ -91,11 +91,53 @@ func setupSchema() {
 			name TEXT NOT NULL,
 			email TEXT NOT NULL UNIQUE,
 			password VARCHAR(255) NOT NULL DEFAULT '',
-			role VARCHAR(255) DEFAULT 'User'
+			role VARCHAR(255) DEFAULT 'User',
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Function to automatically update updated_at timestamp
+		CREATE OR REPLACE FUNCTION update_updated_at_column()
+		RETURNS TRIGGER AS $$
+		BEGIN
+			NEW.updated_at = CURRENT_TIMESTAMP;
+			RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql;
+
+		-- Trigger for users table
+		DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+		CREATE TRIGGER update_users_updated_at
+			BEFORE UPDATE ON users
+			FOR EACH ROW
+			EXECUTE FUNCTION update_updated_at_column();
+
+		-- Games table (needed for match foreign key)
+		CREATE TABLE IF NOT EXISTS games (
+			id VARCHAR(26) PRIMARY KEY,
+			title VARCHAR(255) NOT NULL,
+			description TEXT,
+			author_id VARCHAR(26) REFERENCES users(id) ON DELETE SET NULL,
+			status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+			is_public BOOLEAN DEFAULT true,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Matches table
+		CREATE TABLE IF NOT EXISTS matches (
+			id VARCHAR(26) PRIMARY KEY,
+			user_id VARCHAR(26) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			game_id VARCHAR(26) NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+			status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'won', 'lost', 'resigned', 'expired', 'error')),
+			total_tokens INTEGER NOT NULL DEFAULT 0,
+			turn_count INTEGER NOT NULL DEFAULT 0,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
 	`
 	if _, err := testDB.Exec(schema); err != nil {
-		log.Fatalf("Failed to create table: %v", err)
+		log.Fatalf("Failed to create schema: %v", err)
 	}
 }
 
