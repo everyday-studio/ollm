@@ -7,12 +7,12 @@ Content-Type: application/json
     "password": "password123"
 }
 
-### /signup 테스트
+### /signup 테스트 - admin
 POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {
-    "email": "test12345@example.com",
+    "email": "test.admin@example.com",
     "password": "password123"
 }
 

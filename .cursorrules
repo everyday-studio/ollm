@@ -93,10 +93,16 @@
 - **Password Hashing**: Argon2id (`golang.org/x/crypto/argon2`)
   - `internal/kit/security/password.go`에 구현됨
   - 기본 파라미터: Time=3, Memory=64MB, Threads=4, KeyLen=32
-- **JWT**: `github.com/golang-jwt/jwt/v4`
-  - RSA 키 기반 (비대칭 키)
-  - Access Token 및 Refresh Token 지원
-  - `internal/kit/security/token.go`에 구현됨
+- **JWT**: 두 가지 버전을 함께 사용
+  - `github.com/golang-jwt/jwt/v4`: 토큰 생성/검증 (`internal/kit/security/token.go`)
+  - `github.com/golang-jwt/jwt/v5`: echo-jwt 미들웨어 호환 (`internal/middleware/`, `internal/kit/contexts/`)
+  - RSA 키 기반 (비대칭 키), Access Token / Refresh Token 구분
+- **JWT Middleware**: `github.com/labstack/echo-jwt/v4`
+  - `internal/middleware/setup.go`에서 전역 미들웨어로 등록
+  - `TokenLookup: "header:Authorization:Bearer"` (세 번째 인자 필수)
+  - 토큰 없는 요청은 통과 (soft auth), AllowRoles에서 접근 제어
+  - Refresh Token은 SuccessHandler에서 거부 (`c.Set("user", nil)`)
+  - 잘못된 토큰은 `echo.NewHTTPError` 반환 (`c.JSON` 사용 금지 — ContinueOnIgnoredError 우회 방지)
 
 ## Testing
 - **Test Framework**: `github.com/stretchr/testify`
@@ -131,10 +137,12 @@
 - `RolePublic`은 토큰 없이 접근 가능
 
 ## 2. 전역 미들웨어 (middleware.Setup)
+- `Setup` 함수는 `error`를 반환하며, FX에서 시작 실패 시 앱 중단
 - RequestID: 각 요청에 고유 ID 부여
 - Logger: 요청/응답 로깅
 - Recover: 패닉 복구
 - Timeout: 핸들러 실행 시간 제한 (30초)
+- JWT: echo-jwt를 통한 토큰 검증 (soft auth 방식)
 
 # Database Guidelines
 
@@ -176,6 +184,16 @@
 
 # Safety
 - 보안에 민감한 정보(비밀번호 등)는 하드코딩하지 말고 환경변수나 설정 파일을 통해 로드하도록 안내하세요.
+
+# Git Branch Naming
+- **Format**: `{type}/{kebab-case-description}`
+- **Types**: Feat, Fix, Refactor, Chore, Test, Design
+- **Examples**:
+  - `Feat/jwt-middleware`
+  - `Feat/auth-handler`
+  - `Refactor/db-id-to-ulid`
+  - `Test/game-entity`
+  - `Chore/rename-module`
 
 # Git Commit Message Guidelines
 - 커밋 메시지는 Conventional Commits 규칙을 따르며, 소문자로 시작합니다.

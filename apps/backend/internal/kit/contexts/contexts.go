@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -40,9 +40,11 @@ func GetRequestID(ctx context.Context) string {
 	return "no-request-id-in-context"
 }
 
+// TokenToUser extracts user information (id, email, role) from the JWT token
+// stored in echo.Context. Returns an error if the token is missing or invalid.
 func TokenToUser(c echo.Context) (string, string, string, error) {
 	user, ok := c.Get("user").(*jwt.Token)
-	if !ok {
+	if !ok || user == nil {
 		return "", "", "", errors.New("invalid or missing user token")
 	}
 
@@ -63,7 +65,7 @@ func TokenToUser(c echo.Context) (string, string, string, error) {
 
 	role, ok := claims["role"].(string)
 	if !ok {
-		return "", "", "", errors.New("invalid roles in token")
+		return "", "", "", errors.New("invalid role in token")
 	}
 
 	return id, email, role, nil
