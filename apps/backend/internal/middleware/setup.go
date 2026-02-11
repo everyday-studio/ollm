@@ -1,19 +1,24 @@
 package middleware
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/kit/contexts"
+	"github.com/everyday-studio/ollm/internal/kit/security"
 )
 
-func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) {
+func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) error {
 	// ✅ Trailing Slash 제거 및 301 리디렉트 설정
 	e.Pre(middleware.RemoveTrailingSlashWithConfig(middleware.TrailingSlashConfig{
 		RedirectCode: http.StatusMovedPermanently, // 301 리디렉트
@@ -79,4 +84,87 @@ func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) {
 			CookieSameSite: http.SameSiteLaxMode, // 동일 출처 외 요청 차단
 		}))
 	}
+
+	// ✅ JWT Authentication
+	// Parse the RSA public key at startup; fail fast if the key is invalid.
+	publicKey, err := security.ParseRSAPublicKeyFromBase64(cfg.Secure.JWT.PublicKey)
+	if err != nil {
+		return fmt.Errorf("failed to parse RSA public key: %w", err)
+	}
+
+	e.Use(echojwt.WithConfig(echojwt.Config{
+		SigningKey:    publicKey,
+		SigningMethod: "RS256",
+		TokenLookup:   "header:Authorization:Bearer",
+
+		// Reject refresh tokens used as access tokens.
+		// Setting "user" to nil makes AllowRoles treat the request as unauthenticated.
+		SuccessHandler: func(c echo.Context) {
+			token := c.Get("user").(*jwt.Token)
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				c.Set("user", nil)
+				return
+			}
+			tokenType, _ := claims["type"].(string)
+			if tokenType != string(security.AccessToken) {
+				c.Set("user", nil)
+			}
+		},
+
+		ErrorHandler: func(c echo.Context, err error) error {
+			// Allow requests without token to pass through (public endpoints).
+			// AllowRoles middleware handles authorization downstream.
+			if errors.Is(err, echojwt.ErrJWTMissing) {
+				return nil
+			}
+
+			// For invalid tokens, return echo.HTTPError so the middleware
+			// stops the request. Using c.JSON() would return nil and
+			// ContinueOnIgnoredError would let the request through.
+			var statusCode int
+			var errorMsg string
+
+			switch {
+			case errors.Is(err, jwt.ErrTokenExpired):
+				statusCode = http.StatusUnauthorized
+				errorMsg = "Token has expired"
+				if cfg.App.Debug {
+					logger.Info("JWT token expired",
+						"path", c.Path(),
+						"method", c.Request().Method)
+				}
+			case errors.Is(err, jwt.ErrTokenSignatureInvalid):
+				statusCode = http.StatusUnauthorized
+				errorMsg = "Invalid token signature"
+				logger.Warn("JWT token has invalid signature",
+					"path", c.Path(),
+					"method", c.Request().Method)
+			case errors.Is(err, jwt.ErrTokenNotValidYet):
+				statusCode = http.StatusUnauthorized
+				errorMsg = "Token not valid yet"
+				if cfg.App.Debug {
+					logger.Info("JWT token not valid yet",
+						"path", c.Path(),
+						"method", c.Request().Method)
+				}
+			default:
+				statusCode = http.StatusUnauthorized
+				errorMsg = "Invalid or malformed token"
+				if cfg.App.Debug {
+					logger.Warn("JWT validation failed",
+						"error", err.Error(),
+						"path", c.Path(),
+						"method", c.Request().Method)
+				}
+			}
+
+			return echo.NewHTTPError(statusCode, map[string]string{
+				"error": errorMsg,
+			})
+		},
+		ContinueOnIgnoredError: true,
+	}))
+
+	return nil
 }
