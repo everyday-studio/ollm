@@ -1,16 +1,30 @@
-### match post test
+### 1. Login (Admin) - run this first
+# NOTE: You must update the user's role to 'Admin' in the DB first:
+#   UPDATE users SET role = 'Admin' WHERE email = 'test.admin@example.com';
+
+# @name login
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+    "email": "test.admin@example.com",
+    "password": "password123"
+}
+
+### 2. Create match (with Admin token)
+# @name createMatch
 POST http://localhost:8080/matches
 Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
 
 {
     "user_id": "01KGF78ET1XDG1NHF08V66Q4ZB",
-    "game_id": "01KGFESCKQX1EG9EJ964Y2019S"
+    "game_id": "01KGF8MD6Z9ECNC6DB5QR1S80A"
 }
 
-### match delete test
-DELETE http://localhost:8080/matches/01KGFESCKQX1EG9EJ964Y2019S
-Content-Type: application/json
+### 3. Delete match (Admin only) - uses id from createMatch response
+DELETE http://localhost:8080/matches/{{createMatch.response.body.id}}
+Authorization: Bearer {{login.response.body.access_token}}
 
-{
-    "id": "01KH2X62JYSJFC0SVASVE043SG"
-}
+### 4. Delete match (without token - should return 403)
+DELETE http://localhost:8080/matches/{{createMatch.response.body.id}}
