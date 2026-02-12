@@ -95,10 +95,10 @@ func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) error {
 	e.Use(echojwt.WithConfig(echojwt.Config{
 		SigningKey:    publicKey,
 		SigningMethod: "RS256",
-		TokenLookup:   "header:Authorization:Bearer",
 
 		// Reject refresh tokens used as access tokens.
 		// Setting "user" to nil makes AllowRoles treat the request as unauthenticated.
+		// Extract user_id, email, role from token claims and set them in the context.
 		SuccessHandler: func(c echo.Context) {
 			token := c.Get("user").(*jwt.Token)
 			claims, ok := token.Claims.(jwt.MapClaims)
@@ -106,9 +106,23 @@ func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) error {
 				c.Set("user", nil)
 				return
 			}
+
 			tokenType, _ := claims["type"].(string)
 			if tokenType != string(security.AccessToken) {
 				c.Set("user", nil)
+				return
+			}
+
+			// Extract and set user_id, email, role from token claims
+			// This allows handlers to access these values directly without re-parsing the token
+			if userID, ok := claims["user_id"].(string); ok {
+				c.Set("user_id", userID)
+			}
+			if email, ok := claims["email"].(string); ok {
+				c.Set("email", email)
+			}
+			if role, ok := claims["role"].(string); ok {
+				c.Set("role", role)
 			}
 		},
 
