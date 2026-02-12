@@ -18,13 +18,25 @@ Content-Type: application/json
 Authorization: Bearer {{login.response.body.access_token}}
 
 {
-    "user_id": "01KGF78ET1XDG1NHF08V66Q4ZB",
     "game_id": "01KGF8MD6Z9ECNC6DB5QR1S80A"
 }
 
-### 3. Delete match (Admin only) - uses id from createMatch response
-DELETE http://localhost:8080/matches/{{createMatch.response.body.id}}
+### 3. Get user's matches - retrieves matches for authenticated user from JWT token
+GET http://localhost:8080/matches/me
 Authorization: Bearer {{login.response.body.access_token}}
 
-### 4. Delete match (without token - should return 403)
+### 3-1. Get user's matches with game_id query param
+GET http://localhost:8080/matches/me?game_id=01KGF8MD6Z9ECNC6DB5QR1S80A
+Authorization: Bearer {{login.response.body.access_token}}
+
+### 4. Get specific match
+GET http://localhost:8080/matches/{{createMatch.response.body.id}}
+Authorization: Bearer {{login.response.body.access_token}}
+
+### 4-1. Get specific match which is not belongs to the authenticated user - should return 403
+GET http://localhost:8080/matches/01KH2X62JYSJFC0SVASVE043SG
+Authorization: Bearer {{login.response.body.access_token}}
+
+### 5. Delete match (Admin only) - uses id from createMatch response
 DELETE http://localhost:8080/matches/{{createMatch.response.body.id}}
+Authorization: Bearer {{login.response.body.access_token}}

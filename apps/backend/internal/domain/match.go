@@ -31,7 +31,7 @@ type Match struct {
 
 // CreateMatchRequest is the DTO for creating a new match
 type CreateMatchRequest struct {
-	UserID string `json:"user_id"`
+	UserID string `json:"-"`
 	GameID string `json:"game_id"`
 }
 
@@ -40,6 +40,7 @@ type MatchRepository interface {
 	Create(ctx context.Context, match *Match) (*Match, error)
 	GetByID(ctx context.Context, id string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
+	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
 	Delete(ctx context.Context, id string) error
 }
 
@@ -48,5 +49,6 @@ type MatchUseCase interface {
 	Create(ctx context.Context, req *CreateMatchRequest) (*Match, error)
 	GetByID(ctx context.Context, id string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
+	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
 	Delete(ctx context.Context, id string) error
 }

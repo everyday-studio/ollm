@@ -46,6 +46,11 @@ func (uc *matchUseCase) GetByUserID(ctx context.Context, userID string) ([]domai
 	return uc.matchRepo.GetByUserID(ctx, userID)
 }
 
+// GetByUserIDAndGameID retrieves all matches for a specific user and game
+func (uc *matchUseCase) GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]domain.Match, error) {
+	return uc.matchRepo.GetByUserIDAndGameID(ctx, userID, gameID)
+}
+
 // Delete removes a match by its ID
 func (uc *matchUseCase) Delete(ctx context.Context, id string) error {
 	return uc.matchRepo.Delete(ctx, id)

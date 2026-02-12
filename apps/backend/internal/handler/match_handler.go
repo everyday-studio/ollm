@@ -21,13 +21,13 @@ func NewMatchHandler(e *echo.Echo, matchUseCase domain.MatchUseCase) *MatchHandl
 		matchUseCase: matchUseCase,
 	}
 
-	// Public routes
-	group := e.Group("/matches", middleware.AllowRoles(domain.RolePublic))
-	group.POST("", handler.Create)
-	group.GET("/:id", handler.GetByID)
-	group.GET("/user/:userId", handler.GetByUserID)
+	// User routes
+	userGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleUser))
+	userGroup.POST("", handler.Create)
+	userGroup.GET("/me", handler.GetMyMatches)
+	userGroup.GET("/:id", handler.GetByID) // TODO: add specific chat & response history
 
-	// Admin-only routes
+	// Admin routes
 	adminGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleAdmin))
 	adminGroup.DELETE("/:id", handler.Delete)
 
@@ -40,6 +40,12 @@ func (h *MatchHandler) Create(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
+
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+	}
+	req.UserID = userID
 
 	ctx := c.Request().Context()
 	match, err := h.matchUseCase.Create(ctx, req)
@@ -62,9 +68,19 @@ func (h *MatchHandler) GetByID(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
 
+	// Extract user ID from JWT token
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+	}
+
 	ctx := c.Request().Context()
 	match, err := h.matchUseCase.GetByID(ctx, id)
 	if err == nil {
+		// Check if the match belongs to the authenticated user
+		if match.UserID != userID {
+			return c.JSON(http.StatusForbidden, ErrResponse(domain.ErrForbidden))
+		}
 		return c.JSON(http.StatusOK, match)
 	}
 
@@ -78,25 +94,33 @@ func (h *MatchHandler) GetByID(c echo.Context) error {
 	}
 }
 
-// GetByUserID handles GET /matches/user/:userId - retrieves all matches for a user
-func (h *MatchHandler) GetByUserID(c echo.Context) error {
-	userID := c.Param("userId")
-	if userID == "" {
-		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+// GetMyMatches handles GET /matches/me - retrieves all matches for the authenticated user
+// Supports optional query parameter: game_id (filters matches by specific game)
+func (h *MatchHandler) GetMyMatches(c echo.Context) error {
+	// Extract user ID from JWT token
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
 	}
 
 	ctx := c.Request().Context()
-	matches, err := h.matchUseCase.GetByUserID(ctx, userID)
+	gameID := c.QueryParam("game_id")
+
+	var matches []domain.Match
+	var err error
+
+	// If game_id is provided, filter by game_id as well
+	if gameID != "" {
+		matches, err = h.matchUseCase.GetByUserIDAndGameID(ctx, userID, gameID)
+	} else {
+		matches, err = h.matchUseCase.GetByUserID(ctx, userID)
+	}
+
 	if err == nil {
 		return c.JSON(http.StatusOK, matches)
 	}
 
-	switch {
-	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
-	default:
-		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
-	}
+	return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 }
 
 // Delete handles DELETE /matches/:id - deletes a match (admin only)
