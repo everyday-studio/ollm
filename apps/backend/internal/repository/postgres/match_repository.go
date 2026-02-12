@@ -2,9 +2,8 @@ package postgres
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
-	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -26,8 +25,7 @@ func NewMatchRepository(db *sql.DB) domain.MatchRepository {
 // Create inserts a new match into the database
 func (r *matchRepository) Create(ctx context.Context, match *domain.Match) (*domain.Match, error) {
 	// Generate ULID for the new match
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
-	match.ID = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+	match.ID = ulid.MustNew(ulid.Timestamp(time.Now()), ulid.Monotonic(rand.Reader, 0)).String()
 
 	const query = `
 		INSERT INTO matches (id, user_id, game_id, status, total_tokens, turn_count)
@@ -47,7 +45,7 @@ func (r *matchRepository) Create(ctx context.Context, match *domain.Match) (*dom
 	).Scan(&match.CreatedAt, &match.UpdatedAt)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create match: %w", err)
+		return nil, mapDBError(err)
 	}
 
 	return match, nil
@@ -74,10 +72,7 @@ func (r *matchRepository) GetByID(ctx context.Context, id string) (*domain.Match
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, domain.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to get match by ID: %w", err)
+		return nil, mapDBError(err)
 	}
 
 	return &match, nil
@@ -94,11 +89,11 @@ func (r *matchRepository) GetByUserID(ctx context.Context, userID string) ([]dom
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get matches by user ID: %w", err)
+		return nil, mapDBError(err)
 	}
 	defer rows.Close()
 
-	var matches []domain.Match
+	matches := []domain.Match{}
 	for rows.Next() {
 		var match domain.Match
 		if err := rows.Scan(
@@ -111,13 +106,53 @@ func (r *matchRepository) GetByUserID(ctx context.Context, userID string) ([]dom
 			&match.CreatedAt,
 			&match.UpdatedAt,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan match: %w", err)
+			return nil, mapDBError(err)
 		}
 		matches = append(matches, match)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over matches: %w", err)
+		return nil, mapDBError(err)
+	}
+
+	return matches, nil
+}
+
+// GetByUserIDAndGameID retrieves all matches for a specific user and game, ordered by creation date (newest first)
+func (r *matchRepository) GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]domain.Match, error) {
+	const query = `
+		SELECT id, user_id, game_id, status, total_tokens, turn_count, created_at, updated_at
+		FROM matches
+		WHERE user_id = $1 AND game_id = $2
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID, gameID)
+	if err != nil {
+		return nil, mapDBError(err)
+	}
+	defer rows.Close()
+
+	matches := []domain.Match{}
+	for rows.Next() {
+		var match domain.Match
+		if err := rows.Scan(
+			&match.ID,
+			&match.UserID,
+			&match.GameID,
+			&match.Status,
+			&match.TotalTokens,
+			&match.TurnCount,
+			&match.CreatedAt,
+			&match.UpdatedAt,
+		); err != nil {
+			return nil, mapDBError(err)
+		}
+		matches = append(matches, match)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, mapDBError(err)
 	}
 
 	return matches, nil
@@ -132,12 +167,12 @@ func (r *matchRepository) Delete(ctx context.Context, id string) error {
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete match: %w", err)
+		return mapDBError(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return mapDBError(err)
 	}
 
 	if rowsAffected == 0 {

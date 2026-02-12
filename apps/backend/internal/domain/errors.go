@@ -8,5 +8,7 @@ var (
 	ErrInvalidInput       = errors.New("invalid input")
 	ErrInternal           = errors.New("internal error")
 	ErrUnauthorized       = errors.New("unauthorized access")
+	ErrForbidden          = errors.New("forbidden access")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrConflict           = errors.New("conflict")
 )

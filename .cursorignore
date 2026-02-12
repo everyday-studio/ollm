@@ -1,2 +1,8 @@
-#frontend
-/apps/frontend/*
+# Frontend
+/apps/frontend/
+
+# Go Dependencies & Build
+go.sum
+
+# Generated files
+/apps/backend/internal/domain/mocks/

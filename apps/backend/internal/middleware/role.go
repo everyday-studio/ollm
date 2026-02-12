@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/everyday-studio/ollm/internal/domain"
-	"github.com/everyday-studio/ollm/internal/kit/contexts"
 	"github.com/labstack/echo/v4"
 )
 
@@ -23,9 +22,10 @@ func AllowRoles(allowedRole domain.Role) echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			_, _, roleInToken, err := contexts.TokenToUser(c)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusForbidden, err.Error())
+			// Get role from context (set by JWT middleware)
+			roleInToken, ok := c.Get("role").(string)
+			if !ok || roleInToken == "" {
+				return echo.NewHTTPError(http.StatusForbidden, "authentication required")
 			}
 
 			if rolePriority[domain.Role(roleInToken)] >= rolePriority[allowedRole] {
