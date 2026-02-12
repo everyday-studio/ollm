@@ -23,18 +23,6 @@ func NewUserHandler(e *echo.Echo, userUseCase domain.UserUseCase) *UserHandler {
 	return handler
 }
 
-func ErrResponse(err error) map[string]string {
-	if err == nil {
-		return map[string]string{
-			"error": "unknown error",
-		}
-	}
-
-	return map[string]string{
-		"error": err.Error(),
-	}
-}
-
 func (h *UserHandler) GetByID(c echo.Context) error {
 	id := c.Param("id")
 	if id == "" {

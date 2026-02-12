@@ -8,7 +8,6 @@ import (
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
-	"github.com/everyday-studio/ollm/internal/kit/contexts"
 	"github.com/everyday-studio/ollm/internal/kit/security"
 	"github.com/everyday-studio/ollm/internal/middleware"
 	"github.com/labstack/echo/v4"
@@ -135,15 +134,15 @@ func (h *AuthHandler) CreateLogoutCookie() *http.Cookie {
 }
 
 func (h *AuthHandler) Logout(c echo.Context) error {
-	// 컨텍스트에서 사용자 ID 가져오기
-	userID, _, _, err := contexts.TokenToUser(c)
-	if err != nil {
+	// Get user ID from context (set by JWT middleware)
+	userID, ok := c.Get("user_id").(string)
+	if !ok || userID == "" {
 		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
 	}
 
 	ctx := c.Request().Context()
 	// 로그아웃 처리 - 현재는 간단하게 구현
-	err = h.authUseCase.Logout(ctx, userID)
+	err := h.authUseCase.Logout(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
