@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// MatchStatus represents the current state of a match
 type MatchStatus string
 
 const (

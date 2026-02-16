@@ -32,7 +32,7 @@ func TestGameUseCase_Create(t *testing.T) {
 				Title:       "Adventure Quest",
 				Description: "A text-based adventure game",
 				AuthorID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 				IsPublic:    true,
 			},
 			mockError: nil,
@@ -41,7 +41,7 @@ func TestGameUseCase_Create(t *testing.T) {
 				Title:       "Adventure Quest",
 				Description: "A text-based adventure game",
 				AuthorID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 				IsPublic:    true,
 			},
 			wantErr: false,
@@ -194,7 +194,8 @@ func TestGameUseCase_Update(t *testing.T) {
 		mockUpdReturn *domain.Game
 		mockUpdError  error
 		want          *domain.Game
-		wantErr       error
+		wantErr       bool
+		checkErr      error
 	}{
 		{
 			name:    "Update game successfully",
@@ -209,7 +210,7 @@ func TestGameUseCase_Update(t *testing.T) {
 				Title:       "Original Title",
 				Description: "Original description",
 				AuthorID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 				IsPublic:    false,
 			},
 			mockGetError: nil,
@@ -218,7 +219,7 @@ func TestGameUseCase_Update(t *testing.T) {
 				Title:       "Updated Title",
 				Description: "Updated description",
 				AuthorID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 				IsPublic:    true,
 			},
 			mockUpdError: nil,
@@ -227,10 +228,11 @@ func TestGameUseCase_Update(t *testing.T) {
 				Title:       "Updated Title",
 				Description: "Updated description",
 				AuthorID:    "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 				IsPublic:    true,
 			},
-			wantErr: nil,
+			wantErr:  false,
+			checkErr: nil,
 		},
 		{
 			name:    "Partial update - title only",
@@ -242,23 +244,24 @@ func TestGameUseCase_Update(t *testing.T) {
 				ID:          "01HQZYX3VQJQZ3Z0Z1Z2GAME01",
 				Title:       "Original Title",
 				Description: "Original description",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 			},
 			mockGetError: nil,
 			mockUpdReturn: &domain.Game{
 				ID:          "01HQZYX3VQJQZ3Z0Z1Z2GAME01",
 				Title:       "Updated Title",
 				Description: "Original description",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 			},
 			mockUpdError: nil,
 			want: &domain.Game{
 				ID:          "01HQZYX3VQJQZ3Z0Z1Z2GAME01",
 				Title:       "Updated Title",
 				Description: "Original description",
-				Status:      "active",
+				Status:      domain.GameStatusActive,
 			},
-			wantErr: nil,
+			wantErr:  false,
+			checkErr: nil,
 		},
 		{
 			name:          "Fail to update non-existent game",
@@ -267,7 +270,8 @@ func TestGameUseCase_Update(t *testing.T) {
 			mockGetReturn: nil,
 			mockGetError:  domain.ErrNotFound,
 			want:          nil,
-			wantErr:       domain.ErrNotFound,
+			wantErr:       true,
+			checkErr:      domain.ErrNotFound,
 		},
 	}
 
@@ -284,7 +288,14 @@ func TestGameUseCase_Update(t *testing.T) {
 			result, err := uc.Update(ctx, tt.inputID, tt.req)
 
 			assert.Equal(t, tt.want, result)
-			assert.Equal(t, tt.wantErr, err)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.checkErr != nil {
+					assert.ErrorIs(t, err, tt.checkErr)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
 
 			mockRepo.AssertExpectations(t)
 		})

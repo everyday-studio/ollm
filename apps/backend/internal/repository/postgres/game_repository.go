@@ -2,9 +2,8 @@ package postgres
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
-	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -26,19 +25,13 @@ func NewGameRepository(db *sql.DB) domain.GameRepository {
 // Create inserts a new game into the database
 func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain.Game, error) {
 	// Generate ULID for the new game
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
-	game.ID = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+	game.ID = ulid.MustNew(ulid.Timestamp(time.Now()), ulid.Monotonic(rand.Reader, 0)).String()
 
 	const query = `
 		INSERT INTO games (id, title, description, author_id, status, is_public)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING created_at, updated_at
 	`
-
-	// Set default values if not provided
-	if game.Status == "" {
-		game.Status = "active"
-	}
 
 	err := r.db.QueryRowContext(
 		ctx,
@@ -52,7 +45,7 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 	).Scan(&game.CreatedAt, &game.UpdatedAt)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create game: %w", err)
+		return nil, mapDBError(err)
 	}
 
 	return game, nil
@@ -79,10 +72,7 @@ func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, domain.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to get game by ID: %w", err)
+		return nil, mapDBError(err)
 	}
 
 	return &game, nil
@@ -98,11 +88,11 @@ func (r *gameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all games: %w", err)
+		return nil, mapDBError(err)
 	}
 	defer rows.Close()
 
-	var games []domain.Game
+	games := []domain.Game{}
 	for rows.Next() {
 		var game domain.Game
 		if err := rows.Scan(
@@ -115,13 +105,13 @@ func (r *gameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
 			&game.CreatedAt,
 			&game.UpdatedAt,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan game: %w", err)
+			return nil, mapDBError(err)
 		}
 		games = append(games, game)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over games: %w", err)
+		return nil, mapDBError(err)
 	}
 
 	return games, nil
@@ -148,10 +138,7 @@ func (r *gameRepository) Update(ctx context.Context, game *domain.Game) (*domain
 	).Scan(&game.UpdatedAt)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, domain.ErrNotFound
-		}
-		return nil, fmt.Errorf("failed to update game: %w", err)
+		return nil, mapDBError(err)
 	}
 
 	return game, nil
@@ -166,12 +153,12 @@ func (r *gameRepository) Delete(ctx context.Context, id string) error {
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete game: %w", err)
+		return mapDBError(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return mapDBError(err)
 	}
 
 	if rowsAffected == 0 {

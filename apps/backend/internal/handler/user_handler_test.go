@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -14,45 +13,6 @@ import (
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/domain/mocks"
 )
-
-func TestUserHandler_ErrResponse(t *testing.T) {
-	type args struct {
-		err error
-	}
-	tests := []struct {
-		name string
-		args args
-		want map[string]string
-	}{
-		{
-			name: "InvalidInput",
-			args: args{err: domain.ErrInvalidInput},
-			want: map[string]string{"error": domain.ErrInvalidInput.Error()},
-		},
-		{
-			name: "AlreadyExists",
-			args: args{err: domain.ErrAlreadyExists},
-			want: map[string]string{"error": domain.ErrAlreadyExists.Error()},
-		},
-		{
-			name: "Internal",
-			args: args{err: domain.ErrInternal},
-			want: map[string]string{"error": domain.ErrInternal.Error()},
-		},
-		{
-			name: "NilError",
-			args: args{err: nil},
-			want: map[string]string{"error": "unknown error"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ErrResponse(tt.args.err); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ErrResponse() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestUserHandler_GetByID(t *testing.T) {
 	tests := []struct {

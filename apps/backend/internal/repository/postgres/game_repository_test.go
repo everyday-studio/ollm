@@ -29,6 +29,8 @@ func TestGameRepository_Create(t *testing.T) {
 			Title:       "Adventure Quest",
 			Description: "A text-based adventure game",
 			AuthorID:    author.ID,
+			Status:      domain.GameStatusActive,
+			IsPublic:    false,
 		}
 
 		createdGame, err := repo.Create(ctx, game)
@@ -38,8 +40,8 @@ func TestGameRepository_Create(t *testing.T) {
 		assert.Equal(t, "Adventure Quest", createdGame.Title)
 		assert.Equal(t, "A text-based adventure game", createdGame.Description)
 		assert.Equal(t, author.ID, createdGame.AuthorID)
-		assert.Equal(t, "active", createdGame.Status) // default status
-		assert.False(t, createdGame.IsPublic)         // default is false from Go zero value
+		assert.Equal(t, domain.GameStatusActive, createdGame.Status) // default status
+		assert.False(t, createdGame.IsPublic)                        // default is false from Go zero value
 		assert.NotZero(t, createdGame.CreatedAt)
 		assert.NotZero(t, createdGame.UpdatedAt)
 	})
@@ -49,14 +51,14 @@ func TestGameRepository_Create(t *testing.T) {
 			Title:       "Mystery Dungeon",
 			Description: "A mystery game",
 			AuthorID:    author.ID,
-			Status:      "inactive",
+			Status:      domain.GameStatusInactive,
 			IsPublic:    true,
 		}
 
 		createdGame, err := repo.Create(ctx, game)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "inactive", createdGame.Status)
+		assert.Equal(t, domain.GameStatusInactive, createdGame.Status)
 		assert.True(t, createdGame.IsPublic)
 	})
 
@@ -65,6 +67,7 @@ func TestGameRepository_Create(t *testing.T) {
 			Title:       "Ghost Game",
 			Description: "Author does not exist",
 			AuthorID:    "01HQZYX3VQJQZ3Z0Z1Z2NONEXIST",
+			Status:      domain.GameStatusActive,
 		}
 
 		createdGame, err := repo.Create(ctx, game)
@@ -98,6 +101,7 @@ func TestGameRepository_GetByID(t *testing.T) {
 			Title:       "Adventure Quest",
 			Description: "A text-based adventure game",
 			AuthorID:    author.ID,
+			Status:      domain.GameStatusActive,
 		}
 		createdGame, _ := repo.Create(ctx, game)
 
@@ -125,8 +129,8 @@ func TestGameRepository_GetAll(t *testing.T) {
 	author := createTestUser(t)
 
 	t.Run("Get all games successfully", func(t *testing.T) {
-		game1 := &domain.Game{Title: "Game 1", Description: "First game", AuthorID: author.ID}
-		game2 := &domain.Game{Title: "Game 2", Description: "Second game", AuthorID: author.ID}
+		game1 := &domain.Game{Title: "Game 1", Description: "First game", AuthorID: author.ID, Status: domain.GameStatusActive}
+		game2 := &domain.Game{Title: "Game 2", Description: "Second game", AuthorID: author.ID, Status: domain.GameStatusActive}
 		repo.Create(ctx, game1)
 		repo.Create(ctx, game2)
 
@@ -160,6 +164,7 @@ func TestGameRepository_Update(t *testing.T) {
 			Title:       "Original Title",
 			Description: "Original description",
 			AuthorID:    author.ID,
+			Status:      domain.GameStatusActive,
 		}
 		createdGame, _ := repo.Create(ctx, game)
 
@@ -200,6 +205,7 @@ func TestGameRepository_Delete(t *testing.T) {
 			Title:       "To Be Deleted",
 			Description: "This game will be deleted",
 			AuthorID:    author.ID,
+			Status:      domain.GameStatusActive,
 		}
 		createdGame, _ := repo.Create(ctx, game)
 
