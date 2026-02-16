@@ -7,15 +7,6 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-// 2. 사용자 (User) - ULID 사용
-export interface User {
-  id: string; // ULID
-  email: string;
-  username: string;
-  role: 'ADMIN' | 'USER';
-  created_at: string; // ISO 8601
-}
-
 // 3. 게임 (Game)
 export interface Game {
   id: string; // ULID
@@ -24,12 +15,6 @@ export interface Game {
   genre: string;
   image_url?: string;
   created_at: string;
-}
-
-// 4. 인증 응답 (로그인 시 받는 데이터)
-export interface AuthResponse {
-  access_token: string;
-  user: User;
 }
 
 // 5. 에러 응답

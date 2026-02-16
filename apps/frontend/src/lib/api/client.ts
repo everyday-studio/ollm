@@ -1,13 +1,13 @@
-// src/lib/api.ts
+// src/lib/api/client.ts
 import axios from 'axios';
 import { get } from 'svelte/store';
-import { authStore } from './stores/auth';
+import { authStore } from '$lib/features/auth/model';
 
 // 환경변수에서 API 주소 가져오기 (없으면 로컬호스트)
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 // Axios 인스턴스 생성
-const api = axios.create({
+const client = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -16,7 +16,7 @@ const api = axios.create({
 });
 
 // [요청 인터셉터] : 모든 요청 헤더에 Access Token 자동 주입
-api.interceptors.request.use(
+client.interceptors.request.use(
   (config) => {
     const state = get(authStore);
     if (state.accessToken) {
@@ -28,7 +28,7 @@ api.interceptors.request.use(
 );
 
 // [응답 인터셉터] : 401 에러 발생 시 토큰 갱신 시도
-api.interceptors.response.use(
+client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
@@ -53,7 +53,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
 
         // 4. 원래 요청 재실행
-        return api(originalRequest);
+        return client(originalRequest);
 
       } catch (refreshError) {
         // 갱신마저 실패하면 진짜 로그아웃 처리
@@ -70,4 +70,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default client;

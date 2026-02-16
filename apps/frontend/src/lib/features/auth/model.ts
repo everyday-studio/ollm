@@ -1,6 +1,6 @@
 // src/lib/stores/auth.ts
 import { writable } from 'svelte/store';
-import type { User } from '../types';
+import type { User } from './types';
 
 interface AuthState {
   user: User | null;
