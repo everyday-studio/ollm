@@ -10,6 +10,7 @@ import (
 	"github.com/everyday-studio/ollm/internal/middleware"
 )
 
+// GameHandler handles HTTP requests for game resources
 type GameHandler struct {
 	gameUseCase domain.GameUseCase
 }
@@ -20,13 +21,16 @@ func NewGameHandler(e *echo.Echo, gameUseCase domain.GameUseCase) *GameHandler {
 		gameUseCase: gameUseCase,
 	}
 
-	// All routes are public for now
-	group := e.Group("/games", middleware.AllowRoles(domain.RolePublic))
-	group.POST("", handler.Create)
-	group.GET("", handler.GetAll)
-	group.GET("/:id", handler.GetByID)
-	group.PUT("/:id", handler.Update)
-	group.DELETE("/:id", handler.Delete)
+	// Public routes
+	publicGroup := e.Group("/games", middleware.AllowRoles(domain.RolePublic))
+	publicGroup.GET("", handler.GetAll)
+	publicGroup.GET("/:id", handler.GetByID)
+
+	// Admin routes
+	adminGroup := e.Group("/games", middleware.AllowRoles(domain.RoleAdmin))
+	adminGroup.POST("", handler.Create)
+	adminGroup.PUT("/:id", handler.Update)
+	adminGroup.DELETE("/:id", handler.Delete)
 
 	return handler
 }
@@ -47,6 +51,8 @@ func (h *GameHandler) Create(c echo.Context) error {
 	switch {
 	case errors.Is(err, domain.ErrInvalidInput):
 		return c.JSON(http.StatusBadRequest, ErrResponse(err))
+	case errors.Is(err, domain.ErrConflict):
+		return c.JSON(http.StatusConflict, ErrResponse(err))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
@@ -83,12 +89,7 @@ func (h *GameHandler) GetAll(c echo.Context) error {
 		return c.JSON(http.StatusOK, games)
 	}
 
-	switch {
-	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
-	default:
-		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
-	}
+	return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 }
 
 // Update handles PUT /games/:id - updates an existing game
