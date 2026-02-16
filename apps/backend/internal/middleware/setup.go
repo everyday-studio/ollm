@@ -85,6 +85,28 @@ func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) error {
 		}))
 	}
 
+	// ✅ CORS 설정
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: cfg.Secure.CORSAllowOrigins,
+		AllowMethods: []string{
+			echo.GET,
+			echo.POST,
+			echo.PUT,
+			echo.DELETE,
+			echo.PATCH,
+			echo.OPTIONS,
+		},
+		AllowHeaders: []string{
+			echo.HeaderOrigin,
+			echo.HeaderContentType,
+			echo.HeaderAccept,
+			echo.HeaderAuthorization,
+		},
+		AllowCredentials: true,
+		ExposeHeaders:    []string{echo.HeaderXRequestID},
+		MaxAge:           86400,
+	}))
+
 	// ✅ JWT Authentication
 	// Parse the RSA public key at startup; fail fast if the key is invalid.
 	publicKey, err := security.ParseRSAPublicKeyFromBase64(cfg.Secure.JWT.PublicKey)
