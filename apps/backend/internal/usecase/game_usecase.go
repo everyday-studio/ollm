@@ -24,7 +24,7 @@ func (uc *gameUseCase) Create(ctx context.Context, req *domain.CreateGameRequest
 		Title:       req.Title,
 		Description: req.Description,
 		AuthorID:    req.AuthorID,
-		Status:      "active",
+		Status:      domain.GameStatusActive,
 		IsPublic:    true,
 	}
 
@@ -51,7 +51,7 @@ func (uc *gameUseCase) Update(ctx context.Context, id string, req *domain.Update
 	// Get existing game
 	existingGame, err := uc.gameRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get game by id: %w", err)
 	}
 
 	// Update only provided fields
@@ -71,8 +71,12 @@ func (uc *gameUseCase) Update(ctx context.Context, id string, req *domain.Update
 		existingGame.IsPublic = *req.IsPublic
 	}
 
-	// Save updated game
-	return uc.gameRepo.Update(ctx, existingGame)
+	updatedGame, err := uc.gameRepo.Update(ctx, existingGame)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update game: %w", err)
+	}
+
+	return updatedGame, nil
 }
 
 // Delete removes a game by its ID
