@@ -13,7 +13,8 @@ db:
   sslmode: "disable"
 
 secure:
-  cors_allow_origins: ""
+  cors_allow_origins:
+    - "http://localhost:5173"
   jwt:
     private_key_base64: ""
     public_key_base64: ""
