@@ -5,16 +5,23 @@ import (
 	"time"
 )
 
+type GameStatus string
+
+const (
+	GameStatusActive   GameStatus = "active"
+	GameStatusInactive GameStatus = "inactive"
+)
+
 // Game represents a text-based game in the platform
 type Game struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	AuthorID    string    `json:"author_id"`
-	Status      string    `json:"status"`
-	IsPublic    bool      `json:"is_public"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string     `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	AuthorID    string     `json:"author_id"`
+	Status      GameStatus `json:"status"`
+	IsPublic    bool       `json:"is_public"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // CreateGameRequest is the DTO for creating a new game
@@ -27,10 +34,10 @@ type CreateGameRequest struct {
 // UpdateGameRequest is the DTO for updating an existing game
 // All fields are optional (pointers indicate optional fields)
 type UpdateGameRequest struct {
-	Title       *string `json:"title"`
-	Description *string `json:"description"`
-	Status      *string `json:"status"`
-	IsPublic    *bool   `json:"is_public"`
+	Title       *string     `json:"title"`
+	Description *string     `json:"description"`
+	Status      *GameStatus `json:"status"`
+	IsPublic    *bool       `json:"is_public"`
 }
 
 // GameRepository defines the interface for game data access
