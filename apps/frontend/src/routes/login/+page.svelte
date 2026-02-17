@@ -3,7 +3,6 @@
   import { goto } from '$app/navigation';
   import { toast } from 'svelte-french-toast';
 
-  // ✅ [변경] 새로 만든 API와 Store 가져오기
   import { authApi } from '$lib/features/auth/api';
   import { authStore } from '$lib/features/auth/model';
 
@@ -11,6 +10,10 @@
   let showRegisterModal = false;
   let isLoading = false;
   
+  // ✅ [추가] 비밀번호 보임/숨김 상태 관리
+  let showLoginPassword = false;
+  let showRegPassword = false;
+
   // 로그인용 입력값
   let loginEmail = '';
   let loginPassword = '';
@@ -29,6 +32,7 @@
     regEmail = '';
     regNickname = '';
     regPassword = '';
+    showRegPassword = false; // 모달 열 때 비밀번호 숨김 초기화
   };
 
   const closeModal = () => {
@@ -36,7 +40,7 @@
     errorMessage = '';
   };
 
-  // ✅ [실제] 로그인 처리
+  // 로그인 처리
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
       errorMessage = "이메일과 비밀번호를 입력해주세요.";
@@ -47,16 +51,12 @@
     errorMessage = '';
 
     try {
-      // 1. 실제 API 호출
       const res = await authApi.login({ 
         email: loginEmail, 
         password: loginPassword 
       });
 
-      // 2. 응답 데이터 처리
       const { access_token, ...userData } = res.data;
-      
-      // 3. Store에 저장 (로그인 상태 유지)
       authStore.loginSuccess(access_token, userData);
 
       toast.success(`로그인 성공!`, {
@@ -65,20 +65,26 @@
         icon: '✅',
       });
 
-      // 4. 로비로 이동
       goto('/lobby');
 
     } catch (err: any) {
-      console.error(err);
-      // 백엔드 에러 메시지 표시
-      errorMessage = err.response?.data?.error || "로그인에 실패했습니다.";
+      if (err.response) {
+        const status = err.response.status;
+        if (status === 400 || status === 401 || status === 404) {
+          errorMessage = "아이디 또는 비밀번호가 일치하지 않습니다.";
+        } else {
+          errorMessage = "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        }
+      } else {
+        errorMessage = "서버와 통신할 수 없습니다.";
+      }
       toast.error(errorMessage, { position: 'top-center' });
     } finally {
       isLoading = false;
     }
   };
 
-  // ✅ [실제] 회원가입 처리
+  // 회원가입 처리
   const handleRegister = async () => {
     if (!regEmail || !regPassword) {
       toast.error("이메일과 비밀번호는 필수입니다.", {
@@ -88,14 +94,12 @@
     }
 
     isLoading = true;
-    errorMessage = ''; // 모달 내 에러 초기화
+    errorMessage = ''; 
 
     try {
-      // 1. 실제 회원가입 API 호출
       await authApi.signup({
         email: regEmail,
         password: regPassword,
-        // name: regNickname // 백엔드 스펙에 따라 필요하면 주석 해제
       });
 
       toast.success(`가입 완료! 로그인을 진행해주세요.`, {
@@ -104,22 +108,36 @@
         icon: '👏',
       });
 
-      // 2. 편의 기능: 로그인 폼에 자동 입력
       loginEmail = regEmail;
       loginPassword = '';
       
       closeModal(); 
 
     } catch (err: any) {
-      console.error(err);
-      const msg = err.response?.data?.error || "회원가입 중 오류가 발생했습니다.";
-      errorMessage = msg; // 모달 안에 에러 표시
+      if (err.response) {
+        switch (err.response.status) {
+          case 409:
+            errorMessage = "이미 존재하는 이메일입니다.";
+            break;
+          case 400:
+            errorMessage = "입력한 형식이 올바르지 않습니다.";
+            break;
+          case 500:
+            errorMessage = "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+            break;
+          default:
+            errorMessage = err.response.data?.error || "회원가입에 실패했습니다.";
+        }
+      } else {
+        errorMessage = "서버와 통신할 수 없습니다.";
+      }
+      toast.error(errorMessage, { position: 'top-center' });
     } finally {
       isLoading = false;
     }
   };
 
-  // [MOCK] 구글 로그인은 아직 백엔드 미구현이므로 유지
+  // 구글 로그인 (Mock)
   const handleGoogleLogin = () => {
     toast.error("아직 지원하지 않는 기능입니다.", { position: 'top-center' });
   };
@@ -130,7 +148,11 @@
   <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative p-8 md:p-10">
       
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">LLM GAMES</h1>
+        <img 
+          src="/logo.png" 
+          alt="LLM GAMES Logo" 
+          class="mx-auto h-16 w-auto mb-4" 
+        />
         <p class="text-gray-500 mt-2 text-sm">프롬프트 인젝션 플레이그라운드</p>
       </div>
 
@@ -145,15 +167,34 @@
                 class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
             />
         </div>
+        
         <div class="space-y-1.5">
             <label for="login-password" class="block text-sm font-medium text-gray-700">비밀번호</label>
-            <input 
-                type="password" 
-                id="login-password"
-                bind:value={loginPassword}
-                placeholder="••••••••"
-                class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
-            />
+            <div class="relative">
+                <input 
+                    type={showLoginPassword ? 'text' : 'password'} 
+                    id="login-password"
+                    bind:value={loginPassword}
+                    placeholder="••••••••"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 pr-10"
+                />
+                <button 
+                    type="button"
+                    class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+                    on:click={() => showLoginPassword = !showLoginPassword}
+                >
+                    {#if showLoginPassword}
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    {:else}
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.059 10.059 0 013.945-5.301m1.966-1.967a9.96 9.96 0 013.631-.732c4.478 0 8.268 2.943 9.542 7a10.059 10.059 0 01-3.23 5.485m-1.55 1.55l-9.32-9.32" />
+                        </svg>
+                    {/if}
+                </button>
+            </div>
         </div>
 
         {#if errorMessage && !showRegisterModal}
@@ -268,13 +309,31 @@
 
                     <div class="space-y-1.5">
                         <label for="reg-password" class="block text-sm font-medium text-gray-700">비밀번호</label>
-                        <input 
-                            type="password" 
-                            id="reg-password"
-                            bind:value={regPassword}
-                            placeholder="••••••••"
-                            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
+                        <div class="relative">
+                            <input 
+                                type={showRegPassword ? 'text' : 'password'} 
+                                id="reg-password"
+                                bind:value={regPassword}
+                                placeholder="••••••••"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                            />
+                            <button 
+                                type="button"
+                                class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+                                on:click={() => showRegPassword = !showRegPassword}
+                            >
+                                {#if showRegPassword}
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                {:else}
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.059 10.059 0 013.945-5.301m1.966-1.967a9.96 9.96 0 013.631-.732c4.478 0 8.268 2.943 9.542 7a10.059 10.059 0 01-3.23 5.485m-1.55 1.55l-9.32-9.32" />
+                                    </svg>
+                                {/if}
+                            </button>
+                        </div>
                     </div>
 
                     {#if errorMessage}
