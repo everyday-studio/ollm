@@ -4,3 +4,6 @@
 
 # Agent Rules
 apps/frontend/AGENT_RULES.md
+
+#dummydata
+apps/frontend/static/data/games.json
