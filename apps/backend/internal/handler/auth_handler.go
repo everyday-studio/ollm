@@ -26,9 +26,13 @@ func NewAuthHandler(e *echo.Echo, authUseCase domain.AuthUsecase, config *config
 		config:      config,
 	}
 
-	group := e.Group("/auth", middleware.AllowRoles(domain.RolePublic))
-	group.POST("/signup", handler.SignUpUser)
-	group.POST("/login", handler.Login)
+	publicGroup := e.Group("/auth", middleware.AllowRoles(domain.RolePublic))
+	publicGroup.POST("/signup", handler.SignUpUser)
+	publicGroup.POST("/login", handler.Login)
+	publicGroup.POST("/refresh", handler.RefreshToken)
+
+	userGroup := e.Group("/auth", middleware.AllowRoles(domain.RoleUser))
+	userGroup.POST("/logout", handler.Logout)
 
 	return handler
 }
@@ -93,8 +97,8 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	}
 
 	switch {
-	case errors.Is(err, domain.ErrInvalidInput):
-		return c.JSON(http.StatusUnauthorized, ErrResponse(errors.New("invalid email or password")))
+	case errors.Is(err, domain.ErrUnauthorized):
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}

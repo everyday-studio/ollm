@@ -24,3 +24,12 @@ Content-Type: application/json
     "email": "test1234@example.com",
     "password": "password123"
 }
+
+### /login 테스트 - 존재하지 않는 이메일
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+    "email": "nonexistent@example.com",
+    "password": "password123"
+}

@@ -44,7 +44,10 @@ func LoggerMiddleware(logger *slog.Logger) echo.MiddlewareFunc {
 				slog.String("referer", v.Referer),                                // 요청이 유입된 이전 페이지 주소
 				slog.Float64("latency_ms", float64(v.Latency.Nanoseconds())/1e6), // 요청 처리에 소요된 시간
 			)
-			if v.Error != nil {
+
+			if detailError, ok := c.Get("detail_error").(error); ok {
+				baseLogger = baseLogger.With(slog.String("detail_error", detailError.Error()))
+			} else if v.Error != nil {
 				baseLogger = baseLogger.With(slog.String("err", v.Error.Error()))
 			}
 
