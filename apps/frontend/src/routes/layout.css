@@ -1,3 +1,21 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+@theme {
+  /* Font Family - Noto Sans Korean */
+  --font-family-sans: 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* 폰트 렌더링 최적화 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-feature-settings: "kern" 1;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
