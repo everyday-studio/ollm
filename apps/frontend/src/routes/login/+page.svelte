@@ -164,7 +164,7 @@
                 type="email" 
                 id="login-email"
                 bind:value={loginEmail}
-                placeholder="name@example.com"
+                placeholder="이메일 주소"
                 class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
             />
         </div>
@@ -251,7 +251,7 @@
   </div>
   
   <div class="absolute bottom-4 text-center text-xs text-gray-400">
-    &copy; 2025 LLM GAMES. All rights reserved.
+    &copy; 2025 LLM GAMES. 모든 권리 보유.
   </div>
 
   {#if showRegisterModal}
@@ -292,7 +292,7 @@
                             type="email" 
                             id="reg-email"
                             bind:value={regEmail}
-                            placeholder="name@example.com"
+                            placeholder="이메일 주소"
                             class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>

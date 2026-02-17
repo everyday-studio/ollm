@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { fade, slide, scale } from 'svelte/transition';
-  import { onMount, tick } from 'svelte';
-  // Import 'invalidateAll' to force reload server data on logout
+  import { fade, fly, scale } from 'svelte/transition';
+  import { onMount, getContext } from 'svelte';
 
   // Imports for API and Types
   import { gameApi } from '$lib/features/game/api';
@@ -13,6 +12,7 @@
   import type { GameDTO, GameUI, MatchDTO, MatchUI } from '$lib/features/game/types';
 
   const themeColor = "#FF4D00";
+  const theme = getContext<{ isDark: boolean }>('theme');
 
   // ----------------------------------------------------------------
   // State Management (Svelte 5 Runes)
@@ -21,17 +21,20 @@
   let games = $state<GameUI[]>([]);
   let matches = $state<MatchUI[]>([]);
   
-  let activeTab = $state<'matches' | 'scenarios'>('matches');
   let selectedGame = $state<GameUI | null>(null);
-  let selectedMatch = $state<MatchUI | null>(null);
+  let showGameModal = $state(false);
   
   let isLoading = $state(true);
-  let isImageLoaded = $state(false);
-  let imgEl = $state<HTMLImageElement | null>(null);
+  let activeCategory = $state<'all' | 'action' | 'adventure' | 'puzzle' | 'strategy'>('all');
+  let activeSection = $state<'games' | 'matches'>('games');
 
-  // Derived, safe values from authStore to use in template
-  let currentUserEmail = $derived($authStore?.user?.email ?? 'Guest');
-  let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
+  let filteredGames = $derived(
+    activeCategory === 'all' 
+      ? games 
+      : games.filter(g => g.tags?.includes(activeCategory))
+  );
+
+  let isDarkMode = $derived(theme.isDark);
 
   // ----------------------------------------------------------------
   // Lifecycle & Logic
@@ -39,10 +42,9 @@
 
   onMount(async () => {
     try {
-      // First, restore user from server by refreshing token (in case page was refreshed)
+      // Restore user session
       try {
         const refreshRes = await authApi.refresh();
-        // RefreshToken returns { id, name, email, access_token }
         if (refreshRes?.data) {
           const { access_token, id, name, email } = refreshRes.data as any;
           if (access_token && email) {
@@ -84,13 +86,8 @@
         rawMatches = [];
       }
 
-      // Transform DTOs to UI models
       games = rawGames.map(toGameUI);
       matches = rawMatches.map(m => toMatchUI(m, rawGames));
-
-      // Set initial selection
-      if (games.length > 0) selectedGame = games[0];
-      if (matches.length > 0) selectedMatch = matches[0];
 
     } catch (error) {
       console.error("Failed to load lobby data:", error);
@@ -99,40 +96,18 @@
     }
   });
 
-  // Effect to handle image fade-in
-  $effect(() => {
-    if (selectedGame && imgEl?.complete) {
-      isImageLoaded = true;
-    }
-  });
-
-  function switchTab(tab: 'matches' | 'scenarios') {
-    activeTab = tab;
-  }
-
-  async function selectGame(game: GameUI) {
-    isImageLoaded = false;
+  function openGameModal(game: GameUI) {
     selectedGame = game;
-    await tick(); 
-    if (imgEl?.complete) isImageLoaded = true;
+    showGameModal = true;
   }
 
-  function selectMatch(match: MatchUI) {
-    selectedMatch = match;
-  }
-
-  async function startNewMatch() {
-    if (!selectedGame) return;
-
+  async function startNewMatch(game: GameUI) {
     try {
-      const res = await gameApi.createMatch(selectedGame.id);
-      
+      const res = await gameApi.createMatch(game.id);
       const newMatchUI = toMatchUI(res.data, games); 
       matches = [newMatchUI, ...matches];
-      
-      selectedMatch = newMatchUI;
-      activeTab = 'matches';
-
+      showGameModal = false;
+      activeSection = 'matches';
     } catch (error) {
       console.error("Failed to create match:", error);
     }
@@ -140,218 +115,287 @@
 
 </script>
 
-<div class="min-h-screen bg-gray-50 text-[#333] font-sans">
-  <main class="max-w-7xl mx-auto px-4 py-8 lg:px-6 lg:py-12">
+<div class={`min-h-screen transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
+  <main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
     
     {#if isLoading}
       <div class="flex items-center justify-center h-[700px]">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF4D00]"></div>
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-[#FF4D00] border-t-transparent"></div>
       </div>
     {:else}
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[750px] lg:h-[700px]">
-        
-        <aside class="lg:col-span-4 flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          
-          <div class="flex border-b border-gray-100">
-            <button 
-              onclick={() => switchTab('matches')}
-              class="flex-1 py-4 text-sm font-extrabold tracking-wider uppercase transition-colors relative
-                     {activeTab === 'matches' ? 'text-[#FF4D00] bg-gray-50' : 'text-gray-400 hover:text-gray-600'}"
-            >
-              Matches
-              {#if activeTab === 'matches'}
-                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF4D00]" transition:slide={{ axis: 'x', duration: 200 }}></div>
-              {/if}
-            </button>
+      <!-- Hero Banner -->
+      <section class="mb-8">
+        <div class="relative h-[320px] md:h-[400px] rounded-3xl overflow-hidden shadow-2xl group">
+          {#if games.length > 0}
+            <img 
+              src={games[0].image} 
+              alt={games[0].title}
+              class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
             
-            <button 
-              onclick={() => switchTab('scenarios')}
-              class="flex-1 py-4 text-sm font-extrabold tracking-wider uppercase transition-colors relative
-                     {activeTab === 'scenarios' ? 'text-[#FF4D00] bg-gray-50' : 'text-gray-400 hover:text-gray-600'}"
-            >
-              New Match
-              {#if activeTab === 'scenarios'}
-                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF4D00]" transition:slide={{ axis: 'x', duration: 200 }}></div>
-              {/if}
-            </button>
-          </div>
-
-          <div class="flex-1 overflow-y-auto custom-scrollbar p-2">
-            {#if activeTab === 'matches'}
-              <div in:fade={{ duration: 200 }} class="flex flex-col gap-1">
-                {#each matches as match}
-                  <button 
-                    onclick={() => selectMatch(match)}
-                    class="w-full text-left p-4 rounded-xl transition-all duration-200 border border-transparent group
-                           {selectedMatch?.id === match.id 
-                             ? 'bg-[#FF4D00]/5 border-[#FF4D00]/20 shadow-sm' 
-                             : 'hover:bg-gray-50 hover:border-gray-100'}"
-                  >
-                    <div class="flex justify-between items-start mb-1">
-                      <span class="font-bold text-gray-800 text-sm line-clamp-1 group-hover:text-[#FF4D00] transition-colors">
-                        {match.gameTitle}
-                      </span>
-                      <span class="text-xs text-gray-400 shrink-0 ml-2">{match.displayTime}</span>
-                    </div>
-                    <div class="text-xs text-gray-500 line-clamp-2">
-                      {match.lastMessage}
-                    </div>
-                  </button>
-                {/each}
-
-                {#if matches.length === 0}
-                  <div class="text-center py-10 text-gray-400 text-sm">
-                    No active matches found.<br>Start a new game!
-                  </div>
-                {/if}
-              </div>
-
-            {:else}
-              <div in:fade={{ duration: 200 }} class="flex flex-col gap-2">
-                {#each games as game}
-                  <button 
-                    onclick={() => selectGame(game)}
-                    class="group w-full text-left p-4 rounded-xl transition-all duration-200 border-2 relative overflow-hidden
-                           {selectedGame?.id === game.id 
-                             ? 'bg-white border-[#FF4D00] shadow-md' 
-                             : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}"
-                  >
-                    {#if selectedGame?.id === game.id}
-                      <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FF4D00]"></div>
-                    {/if}
-                    <div class="pl-2">
-                      <div class="text-xs font-bold uppercase tracking-wider mb-1 transition-colors"
-                           class:text-[#FF4D00]={selectedGame?.id === game.id}
-                           class:text-gray-400={selectedGame?.id !== game.id}
-                      >
-                        {game.subtitle}
-                      </div>
-                      <div class="font-bold text-lg text-gray-800 group-hover:text-black">
-                        {game.title}
-                      </div>
-                    </div>
-                  </button>
+            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-16">
+              <div class="flex gap-2 mb-4 flex-wrap">
+                {#each games[0].tags as tag}
+                  <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-white border border-white/20">
+                    #{tag}
+                  </span>
                 {/each}
               </div>
-            {/if}
-          </div>
-
-          <div class="mt-auto"></div>
-        </aside>
-
-        <section class="lg:col-span-8 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col relative h-full">
-          
-          {#if activeTab === 'matches' && selectedMatch}
-            <div class="flex flex-col h-full" in:fade={{ duration: 200 }}>
-              <div class="h-16 border-b border-gray-100 flex items-center px-6 bg-white shrink-0 justify-between">
-                <h2 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  {selectedMatch.gameTitle}
-                </h2>
-                <span class="text-xs font-medium px-2 py-1 rounded bg-gray-100 text-gray-600 uppercase">
-                  {selectedMatch.status}
-                </span>
-              </div>
-
-              <div class="flex-1 bg-gray-50 p-6 overflow-y-auto flex flex-col gap-4 items-center justify-center text-gray-400">
-                <p>Chat history will be implemented here.</p>
-                <p class="text-xs">Match ID: {selectedMatch.id}</p>
-              </div>
-
-              <div class="p-4 bg-white border-t border-gray-100 shrink-0">
-                <div class="relative">
-                  <input 
-                    type="text" 
-                    placeholder="Enter command..." 
-                    class="w-full bg-gray-100 text-gray-700 rounded-full pl-5 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/50 transition-all text-sm"
-                    disabled
-                  />
-                  <button class="absolute right-2 top-1.5 p-1.5 bg-[#FF4D00] text-white rounded-full hover:bg-[#ff3300] transition-colors disabled:opacity-50" aria-label="Send command" title="Send command">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path></svg>
-                  </button>
-                </div>
-              </div>
+              <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-3 md:mb-4 drop-shadow-2xl">
+                {games[0].title}
+              </h1>
+              <p class="text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mb-4 md:mb-6 line-clamp-2">
+                {games[0].description}
+              </p>
+              <button 
+                onclick={() => openGameModal(games[0])}
+                class="self-start px-6 py-3 md:px-8 md:py-4 bg-[#FF4D00] text-white rounded-full font-bold text-base md:text-lg hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-xl"
+              >
+                지금 플레이
+              </button>
             </div>
+          {/if}
+        </div>
+      </section>
 
-          {:else if activeTab === 'scenarios' && selectedGame}
-            {#key selectedGame.id}
-              <div class="flex flex-col h-full" in:fade={{ duration: 300 }}>
-                <div class="relative h-[55%] w-full bg-gray-200 group overflow-hidden shrink-0">
-                  <div class="absolute inset-0 flex items-center justify-center text-gray-400">Loading...</div>
-                  
+      <!-- Section Toggle -->
+      <div class="flex gap-4 mb-6">
+        <button 
+          onclick={() => activeSection = 'games'}
+          class="px-5 md:px-6 py-2 md:py-3 rounded-full font-bold text-base md:text-lg transition-all
+                 {activeSection === 'games' 
+                   ? 'bg-[#FF4D00] text-white shadow-lg' 
+                   : isDarkMode ? 'bg-gray-900 text-gray-300 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}"
+        >
+          게임 둘러보기
+        </button>
+        <button 
+          onclick={() => activeSection = 'matches'}
+          class="px-5 md:px-6 py-2 md:py-3 rounded-full font-bold text-base md:text-lg transition-all
+                 {activeSection === 'matches' 
+                   ? 'bg-[#FF4D00] text-white shadow-lg' 
+                   : isDarkMode ? 'bg-gray-900 text-gray-300 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}"
+        >
+          내 매치 {matches.length > 0 ? `(${matches.length})` : ''}
+        </button>
+      </div>
+
+      <!-- Games Section -->
+      {#if activeSection === 'games'}
+        <div in:fly={{ y: 20, duration: 300 }}>
+          <!-- Category Filters -->
+          <nav class="flex gap-2 md:gap-3 mb-6 md:mb-8 flex-wrap">
+            <button 
+              onclick={() => activeCategory = 'all'}
+              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'all' 
+                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
+                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+            >
+              모든 게임
+            </button>
+            <button 
+              onclick={() => activeCategory = 'action'}
+              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'action' 
+                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
+                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+            >
+              액션
+            </button>
+            <button 
+              onclick={() => activeCategory = 'adventure'}
+              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'adventure' 
+                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
+                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+            >
+              어드벤처
+            </button>
+            <button 
+              onclick={() => activeCategory = 'puzzle'}
+              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'puzzle' 
+                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
+                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+            >
+              퍼즐
+            </button>
+            <button 
+              onclick={() => activeCategory = 'strategy'}
+              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'strategy' 
+                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
+                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+            >
+              전략
+            </button>
+          </nav>
+
+          <!-- Games Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+            {#each filteredGames as game}
+              <button 
+                onclick={() => openGameModal(game)}
+                class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
+              >
+                <div class="relative aspect-[16/10] bg-gray-200 overflow-hidden">
                   <img 
-                    bind:this={imgEl} 
-                    src={selectedGame.image} 
-                    alt={selectedGame.title} 
-                    class="absolute inset-0 w-full h-full object-cover transition-opacity duration-700
-                           {isImageLoaded ? 'opacity-100' : 'opacity-0'}"
-                    onload={() => isImageLoaded = true}
+                    src={game.image} 
+                    alt={game.title}
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                  <div class="absolute top-2 left-2 flex gap-1 flex-wrap">
+                    {#each game.tags as tag}
+                      <span class="bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-bold text-white">
+                        {tag}
+                      </span>
+                    {/each}
+                  </div>
                   
-                  <div class="absolute bottom-6 left-8 text-white">
-                    <div class="flex gap-2 mb-2">
-                      {#each selectedGame.tags as tag}
-                        <span class="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded text-xs font-bold border border-white/10">
-                          #{tag}
-                        </span>
-                      {/each}
-                    </div>
-                    <h1 class="text-4xl md:text-5xl font-black tracking-tight drop-shadow-lg">
-                      {selectedGame.title}
-                    </h1>
-                  </div>
-                </div>
-
-                <div class="flex-1 p-8 md:p-10 flex flex-col justify-between bg-white overflow-y-auto">
-                  <div>
-                    <h3 class="text-xs font-bold text-[#FF4D00] uppercase tracking-widest mb-2">
-                      Mission Briefing
-                    </h3>
-                    <p class="text-gray-600 text-lg leading-relaxed">
-                      {selectedGame.description}
-                    </p>
-                  </div>
-
-                  <div class="flex items-center justify-end mt-4 pt-4 border-t border-gray-100 shrink-0">
-                    <button 
-                      onclick={startNewMatch}
-                      class="pl-6 pr-8 py-3 rounded-full font-black text-xl border-2 transition-all duration-300 flex items-center gap-2 active:scale-95 cursor-pointer
-                             bg-transparent text-[var(--theme-color)] border-transparent
-                             hover:bg-[var(--theme-color)] hover:text-white hover:border-transparent hover:shadow-md
-                             focus:outline-none" 
-                      style="--theme-color: {themeColor};"
-                    >
-                      <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                  <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#FF4D00] flex items-center justify-center shadow-xl">
+                      <svg class="w-5 h-5 md:w-6 md:h-6 fill-white ml-1" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                       </svg>
-                      START NEW MATCH
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            {/key}
-          {/if}
+                
+                <div class="p-3 md:p-4 flex-1 flex flex-col">
+                  <h3 class={`font-bold text-base md:text-lg group-hover:text-[#FF4D00] transition-colors mb-1 line-clamp-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                    {game.title}
+                  </h3>
+                  <p class={`text-xs line-clamp-2 flex-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {game.description}
+                  </p>
+                </div>
+              </button>
+            {/each}
+          </div>
 
-        </section>
-      </div>
+          {#if filteredGames.length === 0}
+            <div class={`text-center py-20 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+              <p class="text-lg font-semibold">이 카테고리에 게임이 없습니다.</p>
+            </div>
+          {/if}
+        </div>
+
+      {:else}
+        <!-- Matches Section -->
+        <div in:fly={{ y: 20, duration: 300 }}>
+          {#if matches.length === 0}
+            <div class={`text-center py-16 md:py-20 rounded-2xl shadow-lg border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+              <p class={`text-lg mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>아직 활성 매치가 없습니다.</p>
+              <button 
+                onclick={() => activeSection = 'games'}
+                class="px-6 py-3 bg-[#FF4D00] text-white rounded-full font-bold hover:bg-[#ff3300] transition-colors"
+              >
+                첫 게임 시작하기
+              </button>
+            </div>
+          {:else}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {#each matches as match}
+                <div class={`rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-100 border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+                  <div class="flex justify-between items-start mb-3">
+                    <h3 class={`font-bold text-lg md:text-xl line-clamp-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                      {match.gameTitle}
+                    </h3>
+                    <span class={`text-xs font-medium px-2 py-1 rounded uppercase shrink-0 ml-2 ${isDarkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-700'}`}>
+                      {match.status}
+                    </span>
+                  </div>
+                  <p class={`text-sm line-clamp-2 mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {match.lastMessage}
+                  </p>
+                  <div class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                    {match.displayTime}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
     {/if}
   </main>
 </div>
 
-<style>
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #f3f4f6;
-    border-radius: 20px;
-  }
-  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    background-color: #d1d5db;
-  }
-</style>
+<!-- Game Detail Modal -->
+{#if showGameModal && selectedGame}
+  <div 
+    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" 
+    transition:fade={{ duration: 200 }}
+    onclick={() => showGameModal = false}
+    onkeydown={(e) => e.key === 'Escape' && (showGameModal = false)}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div 
+      class={`rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl border transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`} 
+      transition:fly={{ y: 50, duration: 300 }}
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+      role="presentation"
+    >
+      <div class="relative h-[250px] md:h-[300px] bg-gray-200">
+        <img 
+          src={selectedGame.image} 
+          alt={selectedGame.title}
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+        
+        <button 
+          onclick={() => showGameModal = false}
+          class="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
+          aria-label="모달 닫기"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        
+        <div class="absolute bottom-4 md:bottom-6 left-4 md:left-6">
+          <div class="flex gap-2 mb-2 md:mb-3 flex-wrap">
+            {#each selectedGame.tags as tag}
+              <span class="bg-white/20 backdrop-blur-md px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-bold text-white border border-white/20">
+                #{tag}
+              </span>
+            {/each}
+          </div>
+          <h2 class="text-3xl md:text-4xl font-black text-white drop-shadow-lg">
+            {selectedGame.title}
+          </h2>
+        </div>
+      </div>
+      
+      <div class="p-6 md:p-8">
+        <h3 class="text-xs font-bold text-[#FF4D00] uppercase tracking-widest mb-3">
+          게임 소개
+        </h3>
+        <p class={`text-base md:text-lg leading-relaxed mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          {selectedGame.description}
+        </p>
+        
+        <div class="flex justify-end gap-3">
+          <button 
+            onclick={() => showGameModal = false}
+            class={`px-5 md:px-6 py-2 md:py-3 rounded-full font-bold transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            취소
+          </button>
+          <button 
+            onclick={() => { if (selectedGame) startNewMatch(selectedGame); showGameModal = false; }}
+            class="px-6 md:px-8 py-2 md:py-3 bg-[#FF4D00] text-white rounded-full font-bold hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2"
+          >
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            게임 시작
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
