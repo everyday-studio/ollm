@@ -4,7 +4,7 @@
 export interface User {
   id: string;
   email: string;
-  username: string; // 백엔드 명세에 'name'이면 name으로 수정
+  name: string; // 백엔드 명세에 'name'이면 name으로 수정
   role: 'ADMIN' | 'USER';
   created_at: string;
 }
