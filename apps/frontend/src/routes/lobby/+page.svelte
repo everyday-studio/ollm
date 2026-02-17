@@ -2,15 +2,15 @@
   import { fade, slide, scale } from 'svelte/transition';
   import { onMount, tick } from 'svelte';
   // Import 'invalidateAll' to force reload server data on logout
-  import { goto, invalidateAll } from '$app/navigation'; 
 
   // Imports for API and Types
   import { gameApi } from '$lib/features/game/api';
+  import { loadMockGames } from '$lib/features/game/mockData';
   import { authApi } from '$lib/features/auth/api';     
   import { authStore } from '$lib/features/auth/model'; 
   import type { User } from '$lib/features/auth/types';
   import { toGameUI, toMatchUI } from './adapter';
-  import type { GameUI, MatchUI } from '$lib/features/game/types';
+  import type { GameDTO, GameUI, MatchDTO, MatchUI } from '$lib/features/game/types';
 
   const themeColor = "#FF4D00";
 
@@ -27,8 +27,7 @@
   
   let isLoading = $state(true);
   let isImageLoaded = $state(false);
-  let imgEl: HTMLImageElement | null = null;
-  let showLogoutConfirm = $state(false);
+  let imgEl = $state<HTMLImageElement | null>(null);
 
   // Derived, safe values from authStore to use in template
   let currentUserEmail = $derived($authStore?.user?.email ?? 'Guest');
@@ -61,13 +60,29 @@
         console.warn('Failed to restore user session:', refreshErr);
       }
 
-      const [gamesRes, matchesRes] = await Promise.all([
-        gameApi.getGames(),
-        gameApi.getMyMatches()
-      ]);
+      let rawGames: GameDTO[] = [];
+      let rawMatches: MatchDTO[] = [];
 
-      const rawGames = gamesRes.data;
-      const rawMatches = matchesRes.data;
+      try {
+        const gamesRes = await gameApi.getGames();
+        const apiGames = gamesRes.data;
+        if (Array.isArray(apiGames) && apiGames.length > 0) {
+          rawGames = apiGames;
+        } else {
+          rawGames = await loadMockGames();
+        }
+      } catch (gamesError) {
+        console.warn('Games API failed. Using mock data.', gamesError);
+        rawGames = await loadMockGames();
+      }
+
+      try {
+        const matchesRes = await gameApi.getMyMatches();
+        rawMatches = matchesRes.data;
+      } catch (matchesError) {
+        console.warn('Matches API failed. Using empty list.', matchesError);
+        rawMatches = [];
+      }
 
       // Transform DTOs to UI models
       games = rawGames.map(toGameUI);
@@ -123,49 +138,6 @@
     }
   }
 
-  // [FIXED] Logout Handler
-  async function handleLogout() {
-    try {
-      // 1. Request server to delete HTTP-only cookie
-      await authApi.logout();
-    } catch (e: any) {
-      // If logout failed due to missing/expired access token (403/401),
-      // try refreshing via cookie and retry once.
-      const status = e?.response?.status;
-      if (status === 401 || status === 403) {
-        try {
-          const refreshRes = await authApi.refresh();
-          // update access token in memory
-          if (refreshRes?.data?.access_token) {
-            authStore.updateToken(refreshRes.data.access_token);
-          }
-
-          // retry logout once
-          await authApi.logout();
-        } catch (refreshErr) {
-          console.warn('Refresh or retry logout failed', refreshErr);
-        }
-      } else {
-        // Other errors: network, server 5xx, etc. Log and continue client-side logout
-        console.warn('Logout request failed', e);
-      }
-    } finally {
-      // 2. Clear client-side store
-      authStore.logout();
-
-      // 3. Force reload all data to trigger server-side hooks (+layout.server.ts)
-      // This ensures the browser realizes the cookie is gone
-      try {
-        await invalidateAll();
-      } catch (e) {
-        // ignore invalidation errors
-        console.warn('invalidateAll failed', e);
-      }
-
-      // 4. Redirect to login page
-      await goto('/login');
-    }
-  }
 </script>
 
 <div class="min-h-screen bg-gray-50 text-[#333] font-sans">
@@ -264,80 +236,8 @@
             {/if}
           </div>
 
-          <div class="p-4 border-t border-gray-100 bg-gray-50/50 mt-auto">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-green-400 to-green-600 flex items-center justify-center text-white font-bold shadow-sm">
-                  {currentUserInitial}
-                </div>
-                
-                <div class="flex flex-col">
-                  <span class="text-sm font-bold text-gray-800 leading-tight">
-                    {$authStore.user?.name || 'Player'}
-                  </span>
-                  <span class="text-[10px] text-gray-500 font-mono">
-                    {currentUserEmail}
-                  </span>
-                </div>
-              </div>
-
-              <button 
-                type="button"
-                onclick={() => showLogoutConfirm = true}
-                class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                title="Logout"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
-          </div>
+          <div class="mt-auto"></div>
         </aside>
-
-        {#if showLogoutConfirm}
-          <div 
-            class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 cursor-pointer"
-            transition:fade={{ duration: 200 }}
-            onclick={() => showLogoutConfirm = false}
-            onkeydown={(e) => e.key === 'Escape' && (showLogoutConfirm = false)}
-            role="button"
-            tabindex="0"
-          >
-            <div 
-              class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative cursor-default z-60"
-              transition:scale={{ duration: 200, start: 0.95 }}
-              onclick={(e) => e.stopPropagation()}
-              onkeydown={(e) => e.stopPropagation()}
-              role="dialog"
-              tabindex="-1"
-            >
-              <button 
-                onclick={() => showLogoutConfirm = false}
-                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                aria-label="모달 닫기"
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
-
-              <div class="p-8">
-                <div class="text-center mb-6">
-                  <h2 class="text-2xl font-bold text-gray-900">로그아웃</h2>
-                  <p class="text-gray-500 text-sm mt-1">계정에서 로그아웃하시겠습니까?</p>
-                </div>
-
-                <div class="text-sm text-gray-600 mb-6 text-center">
-                  로그아웃 하시려는 계정: <span class="font-mono">{currentUserEmail}</span>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                  <button class="px-4 py-2 rounded bg-gray-100 text-gray-700" onclick={() => showLogoutConfirm = false}>취소</button>
-                  <button class="px-4 py-2 rounded bg-red-500 text-white" onclick={async () => { await handleLogout(); showLogoutConfirm = false; }}>로그아웃</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        {/if}
 
         <section class="lg:col-span-8 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col relative h-full">
           
@@ -366,7 +266,7 @@
                     class="w-full bg-gray-100 text-gray-700 rounded-full pl-5 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-[#FF4D00]/50 transition-all text-sm"
                     disabled
                   />
-                  <button class="absolute right-2 top-1.5 p-1.5 bg-[#FF4D00] text-white rounded-full hover:bg-[#ff3300] transition-colors disabled:opacity-50">
+                  <button class="absolute right-2 top-1.5 p-1.5 bg-[#FF4D00] text-white rounded-full hover:bg-[#ff3300] transition-colors disabled:opacity-50" aria-label="Send command" title="Send command">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path></svg>
                   </button>
                 </div>
