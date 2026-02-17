@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/everyday-studio/ollm/internal/config"
@@ -52,15 +53,15 @@ func (uc *authUseCase) SignUpUser(ctx context.Context, user *domain.User) (*doma
 func (uc *authUseCase) Login(ctx context.Context, email string, password string) (*domain.LoginResponse, error) {
 	user, err := uc.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
-		return nil, err
+		return nil, domain.ErrUnauthorized
 	}
 
 	match, err := security.ComparePasswordHash(password, user.Password)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to compare password hash: %w", err)
 	}
 	if !match {
-		return nil, errors.New("invalid credentials")
+		return nil, domain.ErrUnauthorized
 	}
 
 	return uc.generateTokens(user)
