@@ -52,7 +52,7 @@
 
 <header class="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 h-24">
   <div class="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
-    <div class="flex flex-wrap items-center gap-6">
+    <div class="flex flex-wrap items-center gap-8">
       <a href="/lobby" class="flex items-center gap-3 hover:opacity-90 transition">
         <img
           src="/logo.png"
@@ -63,24 +63,24 @@
         />
       </a>
 
-      <nav class="flex items-center gap-0 text-sm font-semibold">
+      <nav class="flex items-stretch gap-0 text-base font-semibold h-24">
         <a
           href="/lobby"
-          class={`px-3 py-2 border-b-2 transition-colors ${currentPath.startsWith('/lobby') ? 'text-[#FF4D00] border-[#FF4D00]' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/lobby') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
         >
           Home
         </a>
-        <span class="mx-2 text-gray-300">|</span>
+        <span class="mx-2 self-center text-gray-300">|</span>
         <a
           href="/mypage"
-          class={`px-3 py-2 border-b-2 transition-colors ${currentPath.startsWith('/mypage') ? 'text-[#FF4D00] border-[#FF4D00]' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/mypage') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
         >
           My Page
         </a>
-        <span class="mx-2 text-gray-300">|</span>
+        <span class="mx-2 self-center text-gray-300">|</span>
         <a
           href="/leaderboard"
-          class={`px-3 py-2 border-b-2 transition-colors ${currentPath.startsWith('/leaderboard') ? 'text-[#FF4D00] border-[#FF4D00]' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/leaderboard') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
         >
           Leaderboard
         </a>
@@ -88,18 +88,31 @@
     </div>
 
     <div class="flex items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-green-400 to-green-600 flex items-center justify-center text-white font-bold shadow-sm">
-          {currentUserInitial}
+      <div class="relative group">
+        <div class="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors group-hover:bg-gray-100">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-green-400 to-green-600 flex items-center justify-center text-white font-bold shadow-sm">
+            {currentUserInitial}
+          </div>
+
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-gray-800 leading-tight">
+              {$authStore.user?.name || 'Player'}
+            </span>
+            <span class="text-[10px] text-gray-500 font-mono">
+              {currentUserEmail}
+            </span>
+          </div>
         </div>
 
-        <div class="flex flex-col">
-          <span class="text-sm font-bold text-gray-800 leading-tight">
-            {$authStore.user?.name || 'Player'}
-          </span>
-          <span class="text-[10px] text-gray-500 font-mono">
-            {currentUserEmail}
-          </span>
+        <div class="absolute right-0 top-full mt-0 w-56 rounded-2xl border border-gray-200 bg-white shadow-lg opacity-0 translate-y-1 pointer-events-none transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto">
+          <div class="px-4 py-3 border-b border-gray-100">
+            <div class="text-sm font-semibold text-gray-900">{$authStore.user?.name || 'Player'}</div>
+            <div class="text-xs text-gray-500 font-mono">{currentUserEmail}</div>
+          </div>
+          <div class="py-2">
+            <a href="/mypage" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Page</a>
+            <a href="/leaderboard" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Leaderboard</a>
+          </div>
         </div>
       </div>
 
