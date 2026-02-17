@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade, slide } from 'svelte/transition';
+  import { fade, slide, scale } from 'svelte/transition';
   import { onMount, tick } from 'svelte';
   // Import 'invalidateAll' to force reload server data on logout
   import { goto, invalidateAll } from '$app/navigation'; 
@@ -8,6 +8,7 @@
   import { gameApi } from '$lib/features/game/api';
   import { authApi } from '$lib/features/auth/api';     
   import { authStore } from '$lib/features/auth/model'; 
+  import type { User } from '$lib/features/auth/types';
   import { toGameUI, toMatchUI } from './adapter';
   import type { GameUI, MatchUI } from '$lib/features/game/types';
 
@@ -27,6 +28,11 @@
   let isLoading = $state(true);
   let isImageLoaded = $state(false);
   let imgEl: HTMLImageElement | null = null;
+  let showLogoutConfirm = $state(false);
+
+  // Derived, safe values from authStore to use in template
+  let currentUserEmail = $derived($authStore?.user?.email ?? 'Guest');
+  let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
 
   // ----------------------------------------------------------------
   // Lifecycle & Logic
@@ -34,6 +40,27 @@
 
   onMount(async () => {
     try {
+      // First, restore user from server by refreshing token (in case page was refreshed)
+      try {
+        const refreshRes = await authApi.refresh();
+        // RefreshToken returns { id, name, email, access_token }
+        if (refreshRes?.data) {
+          const { access_token, id, name, email } = refreshRes.data as any;
+          if (access_token && email) {
+            const user: User = { 
+              id: id || '', 
+              name: name || 'Player', 
+              email, 
+              role: 'USER',
+              created_at: new Date().toISOString()
+            };
+            authStore.loginSuccess(access_token, user);
+          }
+        }
+      } catch (refreshErr) {
+        console.warn('Failed to restore user session:', refreshErr);
+      }
+
       const [gamesRes, matchesRes] = await Promise.all([
         gameApi.getGames(),
         gameApi.getMyMatches()
@@ -101,18 +128,42 @@
     try {
       // 1. Request server to delete HTTP-only cookie
       await authApi.logout();
-    } catch (e) {
-      // Even if API fails (e.g. network error), force client logout
-      console.warn("Logout request failed", e);
+    } catch (e: any) {
+      // If logout failed due to missing/expired access token (403/401),
+      // try refreshing via cookie and retry once.
+      const status = e?.response?.status;
+      if (status === 401 || status === 403) {
+        try {
+          const refreshRes = await authApi.refresh();
+          // update access token in memory
+          if (refreshRes?.data?.access_token) {
+            authStore.updateToken(refreshRes.data.access_token);
+          }
+
+          // retry logout once
+          await authApi.logout();
+        } catch (refreshErr) {
+          console.warn('Refresh or retry logout failed', refreshErr);
+        }
+      } else {
+        // Other errors: network, server 5xx, etc. Log and continue client-side logout
+        console.warn('Logout request failed', e);
+      }
     } finally {
       // 2. Clear client-side store
       authStore.logout();
-      
+
       // 3. Force reload all data to trigger server-side hooks (+layout.server.ts)
       // This ensures the browser realizes the cookie is gone
-      
+      try {
+        await invalidateAll();
+      } catch (e) {
+        // ignore invalidation errors
+        console.warn('invalidateAll failed', e);
+      }
+
       // 4. Redirect to login page
-      await goto('/login', { invalidateAll: true });
+      await goto('/login');
     }
   }
 </script>
@@ -217,7 +268,7 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-green-400 to-green-600 flex items-center justify-center text-white font-bold shadow-sm">
-                  {$authStore.user?.email?.[0].toUpperCase() || 'U'}
+                  {currentUserInitial}
                 </div>
                 
                 <div class="flex flex-col">
@@ -225,14 +276,14 @@
                     {$authStore.user?.name || 'Player'}
                   </span>
                   <span class="text-[10px] text-gray-500 font-mono">
-                    {$authStore.user?.email || 'Guest'}
+                    {currentUserEmail}
                   </span>
                 </div>
               </div>
 
               <button 
                 type="button"
-                onclick={handleLogout}
+                onclick={() => showLogoutConfirm = true}
                 class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                 title="Logout"
               >
@@ -243,6 +294,50 @@
             </div>
           </div>
         </aside>
+
+        {#if showLogoutConfirm}
+          <div 
+            class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 cursor-pointer"
+            transition:fade={{ duration: 200 }}
+            onclick={() => showLogoutConfirm = false}
+            onkeydown={(e) => e.key === 'Escape' && (showLogoutConfirm = false)}
+            role="button"
+            tabindex="0"
+          >
+            <div 
+              class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative cursor-default z-60"
+              transition:scale={{ duration: 200, start: 0.95 }}
+              onclick={(e) => e.stopPropagation()}
+              onkeydown={(e) => e.stopPropagation()}
+              role="dialog"
+              tabindex="-1"
+            >
+              <button 
+                onclick={() => showLogoutConfirm = false}
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                aria-label="모달 닫기"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+
+              <div class="p-8">
+                <div class="text-center mb-6">
+                  <h2 class="text-2xl font-bold text-gray-900">로그아웃</h2>
+                  <p class="text-gray-500 text-sm mt-1">계정에서 로그아웃하시겠습니까?</p>
+                </div>
+
+                <div class="text-sm text-gray-600 mb-6 text-center">
+                  로그아웃 하시려는 계정: <span class="font-mono">{currentUserEmail}</span>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                  <button class="px-4 py-2 rounded bg-gray-100 text-gray-700" onclick={() => showLogoutConfirm = false}>취소</button>
+                  <button class="px-4 py-2 rounded bg-red-500 text-white" onclick={async () => { await handleLogout(); showLogoutConfirm = false; }}>로그아웃</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
 
         <section class="lg:col-span-8 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col relative h-full">
           
