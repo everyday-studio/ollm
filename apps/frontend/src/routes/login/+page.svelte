@@ -5,6 +5,7 @@
 
   import { authApi } from '$lib/features/auth/api';
   import { authStore } from '$lib/features/auth/model';
+  import type { AuthResponse } from '$lib/features/auth/types';
 
   // 상태 변수들
   let showRegisterModal = false;
@@ -56,8 +57,8 @@
         password: loginPassword 
       });
 
-      const { access_token, ...userData } = res.data;
-      authStore.loginSuccess(access_token, userData);
+      const { access_token, user } = res.data as AuthResponse;
+      authStore.loginSuccess(access_token, user);
 
       toast.success(`로그인 성공!`, {
         duration: 3000,
