@@ -6,4 +6,4 @@
 apps/frontend/AGENT_RULES.md
 
 #dummydata
-apps\frontend\static\data\games.json
+apps/frontend/static/data/games.json
