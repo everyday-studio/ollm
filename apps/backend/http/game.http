@@ -1,10 +1,20 @@
+# @name login
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+    "email": "test.admin@example.com",
+    "password": "password123"
+}
+
 
 ### game post test
 POST http://localhost:8080/games
 Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
 
 {
     "title": "test game",
     "description": "test description",
-    "author_id": "01KGF78ET1XDG1NHF08V66Q4ZB"
+    "author_id": "01KHK281ZRYYH35KQH56XZH215"
 }

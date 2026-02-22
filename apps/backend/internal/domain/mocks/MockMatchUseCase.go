@@ -128,9 +128,9 @@ func (_c *MatchUseCase_Delete_Call) RunAndReturn(run func(context.Context, strin
 	return _c
 }
 
-// GetByID provides a mock function with given fields: ctx, id
-func (_m *MatchUseCase) GetByID(ctx context.Context, id string) (*domain.Match, error) {
-	ret := _m.Called(ctx, id)
+// GetByID provides a mock function with given fields: ctx, id, userID
+func (_m *MatchUseCase) GetByID(ctx context.Context, id string, userID string) (*domain.Match, error) {
+	ret := _m.Called(ctx, id, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByID")
@@ -138,19 +138,19 @@ func (_m *MatchUseCase) GetByID(ctx context.Context, id string) (*domain.Match, 
 
 	var r0 *domain.Match
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Match, error)); ok {
-		return rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*domain.Match, error)); ok {
+		return rf(ctx, id, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Match); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *domain.Match); ok {
+		r0 = rf(ctx, id, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Match)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, id, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -166,13 +166,14 @@ type MatchUseCase_GetByID_Call struct {
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id string
-func (_e *MatchUseCase_Expecter) GetByID(ctx interface{}, id interface{}) *MatchUseCase_GetByID_Call {
-	return &MatchUseCase_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
+//   - userID string
+func (_e *MatchUseCase_Expecter) GetByID(ctx interface{}, id interface{}, userID interface{}) *MatchUseCase_GetByID_Call {
+	return &MatchUseCase_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id, userID)}
 }
 
-func (_c *MatchUseCase_GetByID_Call) Run(run func(ctx context.Context, id string)) *MatchUseCase_GetByID_Call {
+func (_c *MatchUseCase_GetByID_Call) Run(run func(ctx context.Context, id string, userID string)) *MatchUseCase_GetByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -182,7 +183,7 @@ func (_c *MatchUseCase_GetByID_Call) Return(_a0 *domain.Match, _a1 error) *Match
 	return _c
 }
 
-func (_c *MatchUseCase_GetByID_Call) RunAndReturn(run func(context.Context, string) (*domain.Match, error)) *MatchUseCase_GetByID_Call {
+func (_c *MatchUseCase_GetByID_Call) RunAndReturn(run func(context.Context, string, string) (*domain.Match, error)) *MatchUseCase_GetByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
