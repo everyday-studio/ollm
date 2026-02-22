@@ -75,18 +75,16 @@ func (h *MatchHandler) GetByID(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	match, err := h.matchUseCase.GetByID(ctx, id)
+	match, err := h.matchUseCase.GetByID(ctx, id, userID)
 	if err == nil {
-		// Check if the match belongs to the authenticated user
-		if match.UserID != userID {
-			return c.JSON(http.StatusForbidden, ErrResponse(domain.ErrForbidden))
-		}
 		return c.JSON(http.StatusOK, match)
 	}
 
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		return c.JSON(http.StatusNotFound, ErrResponse(err))
+	case errors.Is(err, domain.ErrForbidden):
+		return c.JSON(http.StatusForbidden, ErrResponse(err))
 	case errors.Is(err, domain.ErrInvalidInput):
 		return c.JSON(http.StatusBadRequest, ErrResponse(err))
 	default:

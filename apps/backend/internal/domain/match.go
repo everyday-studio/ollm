@@ -46,7 +46,7 @@ type MatchRepository interface {
 // MatchUseCase defines the interface for match business logic
 type MatchUseCase interface {
 	Create(ctx context.Context, req *CreateMatchRequest) (*Match, error)
-	GetByID(ctx context.Context, id string) (*Match, error)
+	GetByID(ctx context.Context, id string, userID string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
 	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
 	Delete(ctx context.Context, id string) error

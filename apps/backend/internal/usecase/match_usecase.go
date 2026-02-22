@@ -36,9 +36,18 @@ func (uc *matchUseCase) Create(ctx context.Context, req *domain.CreateMatchReque
 	return createdMatch, nil
 }
 
-// GetByID retrieves a match by its ID
-func (uc *matchUseCase) GetByID(ctx context.Context, id string) (*domain.Match, error) {
-	return uc.matchRepo.GetByID(ctx, id)
+// GetByID retrieves a match by its ID and validates ownership
+func (uc *matchUseCase) GetByID(ctx context.Context, id string, userID string) (*domain.Match, error) {
+	match, err := uc.matchRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get match: %w", err)
+	}
+
+	if match.UserID != userID {
+		return nil, domain.ErrForbidden
+	}
+
+	return match, nil
 }
 
 // GetByUserID retrieves all matches for a specific user
