@@ -38,8 +38,8 @@ type MessageRepository interface {
 
 // MessageUseCase defines the interface for message business logic
 type MessageUseCase interface {
-	Create(ctx context.Context, req *CreateMessageRequest) (*Message, error)
+	Create(ctx context.Context, matchID string, userID string, req *CreateMessageRequest) (*Message, error)
 	GetByID(ctx context.Context, id string) (*Message, error)
-	GetByMatchID(ctx context.Context, matchID string) ([]Message, error)
+	GetByMatchID(ctx context.Context, matchID string, userID string) ([]Message, error)
 	Delete(ctx context.Context, id string) error
 }
