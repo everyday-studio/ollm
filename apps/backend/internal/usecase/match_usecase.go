@@ -69,6 +69,30 @@ func (uc *matchUseCase) GetByUserIDAndGameID(ctx context.Context, userID string,
 	return uc.matchRepo.GetByUserIDAndGameID(ctx, userID, gameID)
 }
 
+// Resign allows a user to voluntarily forfeit a match
+func (uc *matchUseCase) Resign(ctx context.Context, id string, userID string) error {
+	match, err := uc.matchRepo.GetByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get match for resignation: %w", err)
+	}
+
+	if match.UserID != userID {
+		return domain.ErrForbidden
+	}
+
+	if match.Status != domain.MatchStatusActive {
+		return fmt.Errorf("%w: match is not active", domain.ErrConflict)
+	}
+
+	match.Status = domain.MatchStatusResigned
+	_, err = uc.matchRepo.Update(ctx, match)
+	if err != nil {
+		return fmt.Errorf("failed to update match status to resigned: %w", err)
+	}
+
+	return nil
+}
+
 // Delete removes a match by its ID
 func (uc *matchUseCase) Delete(ctx context.Context, id string) error {
 	return uc.matchRepo.Delete(ctx, id)

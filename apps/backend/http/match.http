@@ -37,6 +37,10 @@ Authorization: Bearer {{login.response.body.access_token}}
 GET http://localhost:8080/matches/01KJ2XH1QAA1JH9CSWC3W86ZE6
 Authorization: Bearer {{login.response.body.access_token}}
 
+### 4-2. Resign from match
+POST http://localhost:8080/matches/{{createMatch.response.body.id}}/resign
+Authorization: Bearer {{login.response.body.access_token}}
+
 ### 5. Delete match (Admin only) - uses id from createMatch response
 DELETE http://localhost:8080/matches/{{createMatch.response.body.id}}
 Authorization: Bearer {{login.response.body.access_token}}

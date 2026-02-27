@@ -7,7 +7,7 @@ trigger: always_on
 2. Variable Naming: CamelCase 사용 (상수는 PascalCase). 인터페이스명은 동사형으로 끝나지 않게 작성.
 3. Context: 모든 Repo/UseCase 메서드는 첫 파라미터로 `context.Context` 수신. Handler에서 `c.Request().Context()` 추출하여 전달.
 4. DI (Uber FX): `main.go`에서 `fx.Provide()`, `fx.Invoke()` 사용. 생성자는 `New` 접두사 사용.
-5. Documentation: Public 함수/타입은 `godoc` 스타일로 주석 필수 작성.
+5. Documentation: Public 함수/타입은 `godoc` 스타일로 주석 필수 작성(영어로).
 
 # Libraries & Database
 - Core: Echo v4, PostgreSQL + `database/sql` + `lib/pq` (ORM 금지), Uber FX, Viper + godotenv.

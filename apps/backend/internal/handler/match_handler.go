@@ -25,7 +25,8 @@ func NewMatchHandler(e *echo.Echo, matchUseCase domain.MatchUseCase) *MatchHandl
 	userGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("", handler.Create)
 	userGroup.GET("/me", handler.GetMyMatches)
-	userGroup.GET("/:id", handler.GetByID) // TODO: add specific chat & response history
+	userGroup.GET("/:id", handler.GetByID)
+	userGroup.POST("/:id/resign", handler.Resign)
 
 	// Admin routes
 	adminGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleAdmin))
@@ -139,6 +140,38 @@ func (h *MatchHandler) Delete(c echo.Context) error {
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		return c.JSON(http.StatusNotFound, ErrResponse(err))
+	default:
+		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+	}
+}
+
+// Resign handles POST /matches/:id/resign - allows user to forfeit a match
+func (h *MatchHandler) Resign(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+	}
+
+	ctx := c.Request().Context()
+	err := h.matchUseCase.Resign(ctx, id, userID)
+	if err == nil {
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "successfully resigned from match",
+		})
+	}
+
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return c.JSON(http.StatusNotFound, ErrResponse(err))
+	case errors.Is(err, domain.ErrForbidden):
+		return c.JSON(http.StatusForbidden, ErrResponse(err))
+	case errors.Is(err, domain.ErrConflict):
+		return c.JSON(http.StatusConflict, ErrResponse(err))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}

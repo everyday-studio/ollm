@@ -51,5 +51,6 @@ type MatchUseCase interface {
 	GetByID(ctx context.Context, id string, userID string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
 	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
+	Resign(ctx context.Context, id string, userID string) error
 	Delete(ctx context.Context, id string) error
 }
