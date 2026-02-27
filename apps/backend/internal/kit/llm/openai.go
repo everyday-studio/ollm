@@ -24,7 +24,8 @@ func NewOpenAIService(apiKey string) domain.LLMService {
 }
 
 // GenerateResponse calls the OpenAI Chat Completions API with the provided history.
-func (s *openAIService) GenerateResponse(ctx context.Context, history []domain.Message) (string, error) {
+// Returns: (content string, promptTokens int, completionTokens int, err error)
+func (s *openAIService) GenerateResponse(ctx context.Context, history []domain.Message) (string, int, int, error) {
 	openaiMessages := make([]openai.ChatCompletionMessage, 0, len(history))
 
 	for _, msg := range history {
@@ -53,12 +54,12 @@ func (s *openAIService) GenerateResponse(ctx context.Context, history []domain.M
 
 	resp, err := s.client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate response from OpenAI: %w", err)
+		return "", 0, 0, fmt.Errorf("failed to generate response from OpenAI: %w", err)
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("openAI returned an empty response")
+		return "", 0, 0, fmt.Errorf("openAI returned an empty response")
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	return resp.Choices[0].Message.Content, resp.Usage.PromptTokens, resp.Usage.CompletionTokens, nil
 }

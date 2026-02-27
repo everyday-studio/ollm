@@ -20,6 +20,11 @@ func NewGameUseCase(gameRepo domain.GameRepository) domain.GameUseCase {
 
 // Create creates a new game with the provided request data
 func (uc *gameUseCase) Create(ctx context.Context, req *domain.CreateGameRequest) (*domain.Game, error) {
+	maxTurns := req.MaxTurns
+	if maxTurns <= 0 {
+		maxTurns = 5 // Default to 5 turns if not specified
+	}
+
 	game := &domain.Game{
 		Title:        req.Title,
 		Description:  req.Description,
@@ -28,6 +33,7 @@ func (uc *gameUseCase) Create(ctx context.Context, req *domain.CreateGameRequest
 		IsPublic:     true,
 		SystemPrompt: req.SystemPrompt,
 		TargetWord:   req.TargetWord,
+		MaxTurns:     maxTurns,
 	}
 
 	createdGame, err := uc.gameRepo.Create(ctx, game)
@@ -79,6 +85,10 @@ func (uc *gameUseCase) Update(ctx context.Context, id string, req *domain.Update
 
 	if req.TargetWord != nil {
 		existingGame.TargetWord = *req.TargetWord
+	}
+
+	if req.MaxTurns != nil {
+		existingGame.MaxTurns = *req.MaxTurns
 	}
 
 	updatedGame, err := uc.gameRepo.Update(ctx, existingGame)

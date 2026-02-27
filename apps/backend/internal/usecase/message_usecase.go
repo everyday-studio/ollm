@@ -37,15 +37,25 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 		return nil, fmt.Errorf("failed to get match for authorization: %w", err)
 	}
 	if match.UserID != userID {
-		return nil, domain.ErrForbidden // 내 게임이 아니면 접근 차단!
+		return nil, domain.ErrForbidden
 	}
+
+	if match.Status != domain.MatchStatusActive {
+		return nil, domain.ErrConflict
+	}
+
+	// 매치 턴 증가
+	match.TurnCount++
+	currentTurn := match.TurnCount
 
 	// 2. 유저의 메시지를 DB에 먼저 저장 (Role: User 강제 고정)
 	userMsg := &domain.Message{
-		MatchID:   matchID,
-		Role:      domain.MessageRoleUser,
-		Content:   req.Content,
-		IsVisible: true,
+		MatchID:    matchID,
+		Role:       domain.MessageRoleUser,
+		Content:    req.Content,
+		IsVisible:  true,
+		TurnCount:  currentTurn,
+		TokenCount: 0, // LLM 호출 전이므로 0. 프롬프트 토큰은 나중에 Assistant 메시지에 합산
 	}
 	if _, err := uc.messageRepo.Create(ctx, userMsg); err != nil {
 		return nil, fmt.Errorf("failed to save user message: %w", err)
@@ -73,23 +83,41 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 	fullHistory = append(fullHistory, history...)
 
 	// 5. 외부 LLM(OpenAI) 호출 (동기식 대기)
-	aiContent, err := uc.llmService.GenerateResponse(ctx, fullHistory)
+	aiContent, promptTokens, completionTokens, err := uc.llmService.GenerateResponse(ctx, fullHistory)
 	if err != nil {
 		return nil, fmt.Errorf("llm failed to generate response: %w", err)
+	}
+
+	// Update user message token count with promptTokens
+	userMsg.TokenCount = promptTokens
+	if _, err := uc.messageRepo.Update(ctx, userMsg); err != nil {
+		// Log error but continue
 	}
 
 	// TODO: 게임의 TargetWord를 DB에서 조회하여, AI의 응답(aiContent)에 해당 단어가 포함되어 있다면 매치를 승리(MatchStatusWon) 상태로 변경하는 로직 추가
 
 	// 6. 무사히 도착한 AI의 답변을 DB에 저장
 	aiMsg := &domain.Message{
-		MatchID:   matchID,
-		Role:      domain.MessageRoleAssistant,
-		Content:   aiContent,
-		IsVisible: true,
+		MatchID:    matchID,
+		Role:       domain.MessageRoleAssistant,
+		Content:    aiContent,
+		IsVisible:  true,
+		TurnCount:  currentTurn,
+		TokenCount: completionTokens,
 	}
 	savedAIMsg, err := uc.messageRepo.Create(ctx, aiMsg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save ai message: %w", err)
+	}
+
+	// 7. 매치의 총 토큰 소비량 갱신 (유저의 프롬프트 토큰만) 및 최대 턴수 도달 여부 체크
+	match.TotalTokens += promptTokens
+	if match.TurnCount >= match.MaxTurns {
+		match.Status = domain.MatchStatusExpired
+	}
+
+	if _, err := uc.matchRepo.Update(ctx, match); err != nil {
+		return nil, fmt.Errorf("failed to update match status/tokens: %w", err)
 	}
 
 	return savedAIMsg, nil

@@ -9,21 +9,30 @@ import (
 
 type matchUseCase struct {
 	matchRepo domain.MatchRepository
+	gameRepo  domain.GameRepository
 }
 
 // NewMatchUseCase creates a new match use case
-func NewMatchUseCase(matchRepo domain.MatchRepository) domain.MatchUseCase {
+func NewMatchUseCase(matchRepo domain.MatchRepository, gameRepo domain.GameRepository) domain.MatchUseCase {
 	return &matchUseCase{
 		matchRepo: matchRepo,
+		gameRepo:  gameRepo,
 	}
 }
 
 // Create creates a new match with the provided request data
 func (uc *matchUseCase) Create(ctx context.Context, req *domain.CreateMatchRequest) (*domain.Match, error) {
+	// Get game to copy max_turns
+	game, err := uc.gameRepo.GetByID(ctx, req.GameID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get game for match creation: %w", err)
+	}
+
 	match := &domain.Match{
 		UserID:      req.UserID,
 		GameID:      req.GameID,
 		Status:      domain.MatchStatusActive,
+		MaxTurns:    game.MaxTurns,
 		TotalTokens: 0,
 		TurnCount:   0,
 	}
