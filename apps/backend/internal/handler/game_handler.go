@@ -42,6 +42,12 @@ func (h *GameHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	}
 
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+	}
+	req.AuthorID = userID
+
 	ctx := c.Request().Context()
 	game, err := h.gameUseCase.Create(ctx, req)
 	if err == nil {

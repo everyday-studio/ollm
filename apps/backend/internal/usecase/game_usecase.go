@@ -21,11 +21,13 @@ func NewGameUseCase(gameRepo domain.GameRepository) domain.GameUseCase {
 // Create creates a new game with the provided request data
 func (uc *gameUseCase) Create(ctx context.Context, req *domain.CreateGameRequest) (*domain.Game, error) {
 	game := &domain.Game{
-		Title:       req.Title,
-		Description: req.Description,
-		AuthorID:    req.AuthorID,
-		Status:      domain.GameStatusActive,
-		IsPublic:    true,
+		Title:        req.Title,
+		Description:  req.Description,
+		AuthorID:     req.AuthorID,
+		Status:       domain.GameStatusActive,
+		IsPublic:     true,
+		SystemPrompt: req.SystemPrompt,
+		TargetWord:   req.TargetWord,
 	}
 
 	createdGame, err := uc.gameRepo.Create(ctx, game)
@@ -69,6 +71,14 @@ func (uc *gameUseCase) Update(ctx context.Context, id string, req *domain.Update
 
 	if req.IsPublic != nil {
 		existingGame.IsPublic = *req.IsPublic
+	}
+
+	if req.SystemPrompt != nil {
+		existingGame.SystemPrompt = *req.SystemPrompt
+	}
+
+	if req.TargetWord != nil {
+		existingGame.TargetWord = *req.TargetWord
 	}
 
 	updatedGame, err := uc.gameRepo.Update(ctx, existingGame)

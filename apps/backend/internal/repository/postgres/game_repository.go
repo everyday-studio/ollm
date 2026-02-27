@@ -28,8 +28,8 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 	game.ID = ulid.MustNew(ulid.Timestamp(time.Now()), ulid.Monotonic(rand.Reader, 0)).String()
 
 	const query = `
-		INSERT INTO games (id, title, description, author_id, status, is_public)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO games (id, title, description, author_id, status, is_public, system_prompt, target_word)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING created_at, updated_at
 	`
 
@@ -42,6 +42,8 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 		game.AuthorID,
 		game.Status,
 		game.IsPublic,
+		game.SystemPrompt,
+		game.TargetWord,
 	).Scan(&game.CreatedAt, &game.UpdatedAt)
 
 	if err != nil {
@@ -54,7 +56,7 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 // GetByID retrieves a game by its ID
 func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, error) {
 	const query = `
-		SELECT id, title, description, author_id, status, is_public, created_at, updated_at
+		SELECT id, title, description, author_id, status, is_public, system_prompt, target_word, created_at, updated_at
 		FROM games
 		WHERE id = $1
 	`
@@ -67,6 +69,8 @@ func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 		&game.AuthorID,
 		&game.Status,
 		&game.IsPublic,
+		&game.SystemPrompt,
+		&game.TargetWord,
 		&game.CreatedAt,
 		&game.UpdatedAt,
 	)
@@ -81,7 +85,7 @@ func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 // GetAll retrieves all games, ordered by creation date (newest first)
 func (r *gameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
 	const query = `
-		SELECT id, title, description, author_id, status, is_public, created_at, updated_at
+		SELECT id, title, description, author_id, status, is_public, system_prompt, target_word, created_at, updated_at
 		FROM games
 		ORDER BY created_at DESC
 	`
@@ -102,6 +106,8 @@ func (r *gameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
 			&game.AuthorID,
 			&game.Status,
 			&game.IsPublic,
+			&game.SystemPrompt,
+			&game.TargetWord,
 			&game.CreatedAt,
 			&game.UpdatedAt,
 		); err != nil {
@@ -122,8 +128,8 @@ func (r *gameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
 func (r *gameRepository) Update(ctx context.Context, game *domain.Game) (*domain.Game, error) {
 	const query = `
 		UPDATE games
-		SET title = $1, description = $2, status = $3, is_public = $4
-		WHERE id = $5
+		SET title = $1, description = $2, status = $3, is_public = $4, system_prompt = $5, target_word = $6
+		WHERE id = $7
 		RETURNING updated_at
 	`
 
@@ -134,6 +140,8 @@ func (r *gameRepository) Update(ctx context.Context, game *domain.Game) (*domain
 		game.Description,
 		game.Status,
 		game.IsPublic,
+		game.SystemPrompt,
+		game.TargetWord,
 		game.ID,
 	).Scan(&game.UpdatedAt)
 
