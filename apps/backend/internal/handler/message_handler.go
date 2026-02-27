@@ -62,6 +62,8 @@ func (h *MessageHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, ErrResponse(err))
 	case errors.Is(err, domain.ErrInvalidInput):
 		return c.JSON(http.StatusBadRequest, ErrResponse(err))
+	case errors.Is(err, domain.ErrConflict):
+		return c.JSON(http.StatusConflict, ErrResponse(err))
 	default:
 		c.Logger().Error(err)
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
