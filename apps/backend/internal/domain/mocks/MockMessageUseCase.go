@@ -22,9 +22,9 @@ func (_m *MessageUseCase) EXPECT() *MessageUseCase_Expecter {
 	return &MessageUseCase_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: ctx, req
-func (_m *MessageUseCase) Create(ctx context.Context, req *domain.CreateMessageRequest) (*domain.Message, error) {
-	ret := _m.Called(ctx, req)
+// Create provides a mock function with given fields: ctx, matchID, userID, req
+func (_m *MessageUseCase) Create(ctx context.Context, matchID string, userID string, req *domain.CreateMessageRequest) (*domain.Message, error) {
+	ret := _m.Called(ctx, matchID, userID, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -32,19 +32,19 @@ func (_m *MessageUseCase) Create(ctx context.Context, req *domain.CreateMessageR
 
 	var r0 *domain.Message
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.CreateMessageRequest) (*domain.Message, error)); ok {
-		return rf(ctx, req)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *domain.CreateMessageRequest) (*domain.Message, error)); ok {
+		return rf(ctx, matchID, userID, req)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.CreateMessageRequest) *domain.Message); ok {
-		r0 = rf(ctx, req)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *domain.CreateMessageRequest) *domain.Message); ok {
+		r0 = rf(ctx, matchID, userID, req)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Message)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.CreateMessageRequest) error); ok {
-		r1 = rf(ctx, req)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *domain.CreateMessageRequest) error); ok {
+		r1 = rf(ctx, matchID, userID, req)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -59,14 +59,16 @@ type MessageUseCase_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
+//   - matchID string
+//   - userID string
 //   - req *domain.CreateMessageRequest
-func (_e *MessageUseCase_Expecter) Create(ctx interface{}, req interface{}) *MessageUseCase_Create_Call {
-	return &MessageUseCase_Create_Call{Call: _e.mock.On("Create", ctx, req)}
+func (_e *MessageUseCase_Expecter) Create(ctx interface{}, matchID interface{}, userID interface{}, req interface{}) *MessageUseCase_Create_Call {
+	return &MessageUseCase_Create_Call{Call: _e.mock.On("Create", ctx, matchID, userID, req)}
 }
 
-func (_c *MessageUseCase_Create_Call) Run(run func(ctx context.Context, req *domain.CreateMessageRequest)) *MessageUseCase_Create_Call {
+func (_c *MessageUseCase_Create_Call) Run(run func(ctx context.Context, matchID string, userID string, req *domain.CreateMessageRequest)) *MessageUseCase_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.CreateMessageRequest))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(*domain.CreateMessageRequest))
 	})
 	return _c
 }
@@ -76,7 +78,7 @@ func (_c *MessageUseCase_Create_Call) Return(_a0 *domain.Message, _a1 error) *Me
 	return _c
 }
 
-func (_c *MessageUseCase_Create_Call) RunAndReturn(run func(context.Context, *domain.CreateMessageRequest) (*domain.Message, error)) *MessageUseCase_Create_Call {
+func (_c *MessageUseCase_Create_Call) RunAndReturn(run func(context.Context, string, string, *domain.CreateMessageRequest) (*domain.Message, error)) *MessageUseCase_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -187,9 +189,9 @@ func (_c *MessageUseCase_GetByID_Call) RunAndReturn(run func(context.Context, st
 	return _c
 }
 
-// GetByMatchID provides a mock function with given fields: ctx, matchID
-func (_m *MessageUseCase) GetByMatchID(ctx context.Context, matchID string) ([]domain.Message, error) {
-	ret := _m.Called(ctx, matchID)
+// GetByMatchID provides a mock function with given fields: ctx, matchID, userID
+func (_m *MessageUseCase) GetByMatchID(ctx context.Context, matchID string, userID string) ([]domain.Message, error) {
+	ret := _m.Called(ctx, matchID, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByMatchID")
@@ -197,19 +199,19 @@ func (_m *MessageUseCase) GetByMatchID(ctx context.Context, matchID string) ([]d
 
 	var r0 []domain.Message
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.Message, error)); ok {
-		return rf(ctx, matchID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]domain.Message, error)); ok {
+		return rf(ctx, matchID, userID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.Message); ok {
-		r0 = rf(ctx, matchID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []domain.Message); ok {
+		r0 = rf(ctx, matchID, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]domain.Message)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, matchID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, matchID, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -225,13 +227,14 @@ type MessageUseCase_GetByMatchID_Call struct {
 // GetByMatchID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - matchID string
-func (_e *MessageUseCase_Expecter) GetByMatchID(ctx interface{}, matchID interface{}) *MessageUseCase_GetByMatchID_Call {
-	return &MessageUseCase_GetByMatchID_Call{Call: _e.mock.On("GetByMatchID", ctx, matchID)}
+//   - userID string
+func (_e *MessageUseCase_Expecter) GetByMatchID(ctx interface{}, matchID interface{}, userID interface{}) *MessageUseCase_GetByMatchID_Call {
+	return &MessageUseCase_GetByMatchID_Call{Call: _e.mock.On("GetByMatchID", ctx, matchID, userID)}
 }
 
-func (_c *MessageUseCase_GetByMatchID_Call) Run(run func(ctx context.Context, matchID string)) *MessageUseCase_GetByMatchID_Call {
+func (_c *MessageUseCase_GetByMatchID_Call) Run(run func(ctx context.Context, matchID string, userID string)) *MessageUseCase_GetByMatchID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -241,7 +244,7 @@ func (_c *MessageUseCase_GetByMatchID_Call) Return(_a0 []domain.Message, _a1 err
 	return _c
 }
 
-func (_c *MessageUseCase_GetByMatchID_Call) RunAndReturn(run func(context.Context, string) ([]domain.Message, error)) *MessageUseCase_GetByMatchID_Call {
+func (_c *MessageUseCase_GetByMatchID_Call) RunAndReturn(run func(context.Context, string, string) ([]domain.Message, error)) *MessageUseCase_GetByMatchID_Call {
 	_c.Call.Return(run)
 	return _c
 }

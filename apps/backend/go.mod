@@ -12,6 +12,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
+	github.com/sashabaranov/go-openai v1.41.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
