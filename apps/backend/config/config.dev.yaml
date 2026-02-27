@@ -25,3 +25,6 @@ secure:
       http_only: true
       same_site: "Lax"
       domain: "localhost"
+
+llm:
+  openai_api_key: ""

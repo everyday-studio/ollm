@@ -14,6 +14,7 @@ type Config struct {
 	App    AppConfig    `mapstructure:"app"`
 	DB     DBConfig     `mapstructure:"db"`
 	Secure SecureConfig `mapstructure:"secure"`
+	LLM    LLMConfig    `mapstructure:"llm"`
 }
 
 type AppConfig struct {
@@ -50,6 +51,10 @@ type CookieConfig struct {
 	HTTPOnly bool   `mapstructure:"http_only"`
 	SameSite string `mapstructure:"same_site"`
 	Domain   string `mapstructure:"domain"`
+}
+
+type LLMConfig struct {
+	OpenAIAPIKey string `mapstructure:"openai_api_key"`
 }
 
 func LoadConfig(env string) (*Config, error) {

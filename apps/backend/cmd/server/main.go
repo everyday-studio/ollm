@@ -16,7 +16,9 @@ import (
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/db"
+	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/handler"
+	"github.com/everyday-studio/ollm/internal/kit/llm"
 	"github.com/everyday-studio/ollm/internal/middleware"
 	repository "github.com/everyday-studio/ollm/internal/repository/postgres"
 	"github.com/everyday-studio/ollm/internal/usecase"
@@ -29,18 +31,23 @@ func main() {
 			NewLogger,
 			NewDB,
 			echo.New,
+			func(cfg *config.Config) domain.LLMService {
+				return llm.NewOpenAIService(cfg.LLM.OpenAIAPIKey)
+			},
 		),
 		fx.Provide(
 			usecase.NewUserUseCase,
 			usecase.NewAuthUseCase,
 			usecase.NewGameUseCase,
 			usecase.NewMatchUseCase,
+			usecase.NewMessageUseCase,
 		),
 		fx.Provide(
 			repository.NewUserRepository,
 			repository.NewAuthRepository,
 			repository.NewGameRepository,
 			repository.NewMatchRepository,
+			repository.NewMessageRepository,
 		),
 		fx.Invoke(
 			middleware.Setup,
@@ -48,6 +55,7 @@ func main() {
 			handler.NewAuthHandler,
 			handler.NewGameHandler,
 			handler.NewMatchHandler,
+			handler.NewMessageHandler,
 		),
 		fx.Invoke(StartServer),
 	)
