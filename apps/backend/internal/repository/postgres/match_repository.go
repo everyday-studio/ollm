@@ -28,8 +28,8 @@ func (r *matchRepository) Create(ctx context.Context, match *domain.Match) (*dom
 	match.ID = ulid.MustNew(ulid.Timestamp(time.Now()), ulid.Monotonic(rand.Reader, 0)).String()
 
 	const query = `
-		INSERT INTO matches (id, user_id, game_id, status, total_tokens, turn_count)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO matches (id, user_id, game_id, status, max_turns, total_tokens, turn_count)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING created_at, updated_at
 	`
 
@@ -40,6 +40,7 @@ func (r *matchRepository) Create(ctx context.Context, match *domain.Match) (*dom
 		match.UserID,
 		match.GameID,
 		match.Status,
+		match.MaxTurns,
 		match.TotalTokens,
 		match.TurnCount,
 	).Scan(&match.CreatedAt, &match.UpdatedAt)
@@ -54,7 +55,7 @@ func (r *matchRepository) Create(ctx context.Context, match *domain.Match) (*dom
 // GetByID retrieves a match by its ID
 func (r *matchRepository) GetByID(ctx context.Context, id string) (*domain.Match, error) {
 	const query = `
-		SELECT id, user_id, game_id, status, total_tokens, turn_count, created_at, updated_at
+		SELECT id, user_id, game_id, status, max_turns, total_tokens, turn_count, created_at, updated_at
 		FROM matches
 		WHERE id = $1
 	`
@@ -65,6 +66,7 @@ func (r *matchRepository) GetByID(ctx context.Context, id string) (*domain.Match
 		&match.UserID,
 		&match.GameID,
 		&match.Status,
+		&match.MaxTurns,
 		&match.TotalTokens,
 		&match.TurnCount,
 		&match.CreatedAt,
@@ -81,7 +83,7 @@ func (r *matchRepository) GetByID(ctx context.Context, id string) (*domain.Match
 // GetByUserID retrieves all matches for a specific user, ordered by creation date (newest first)
 func (r *matchRepository) GetByUserID(ctx context.Context, userID string) ([]domain.Match, error) {
 	const query = `
-		SELECT id, user_id, game_id, status, total_tokens, turn_count, created_at, updated_at
+		SELECT id, user_id, game_id, status, max_turns, total_tokens, turn_count, created_at, updated_at
 		FROM matches
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -101,6 +103,7 @@ func (r *matchRepository) GetByUserID(ctx context.Context, userID string) ([]dom
 			&match.UserID,
 			&match.GameID,
 			&match.Status,
+			&match.MaxTurns,
 			&match.TotalTokens,
 			&match.TurnCount,
 			&match.CreatedAt,
@@ -121,7 +124,7 @@ func (r *matchRepository) GetByUserID(ctx context.Context, userID string) ([]dom
 // GetByUserIDAndGameID retrieves all matches for a specific user and game, ordered by creation date (newest first)
 func (r *matchRepository) GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]domain.Match, error) {
 	const query = `
-		SELECT id, user_id, game_id, status, total_tokens, turn_count, created_at, updated_at
+		SELECT id, user_id, game_id, status, max_turns, total_tokens, turn_count, created_at, updated_at
 		FROM matches
 		WHERE user_id = $1 AND game_id = $2
 		ORDER BY created_at DESC
@@ -141,6 +144,7 @@ func (r *matchRepository) GetByUserIDAndGameID(ctx context.Context, userID strin
 			&match.UserID,
 			&match.GameID,
 			&match.Status,
+			&match.MaxTurns,
 			&match.TotalTokens,
 			&match.TurnCount,
 			&match.CreatedAt,
@@ -156,6 +160,32 @@ func (r *matchRepository) GetByUserIDAndGameID(ctx context.Context, userID strin
 	}
 
 	return matches, nil
+}
+
+// Update updates an existing match
+func (r *matchRepository) Update(ctx context.Context, match *domain.Match) (*domain.Match, error) {
+	const query = `
+		UPDATE matches
+		SET status = $1, max_turns = $2, total_tokens = $3, turn_count = $4
+		WHERE id = $5
+		RETURNING updated_at
+	`
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		match.Status,
+		match.MaxTurns,
+		match.TotalTokens,
+		match.TurnCount,
+		match.ID,
+	).Scan(&match.UpdatedAt)
+
+	if err != nil {
+		return nil, mapDBError(err)
+	}
+
+	return match, nil
 }
 
 // Delete removes a match from the database
