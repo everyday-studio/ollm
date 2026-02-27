@@ -15,12 +15,14 @@ const (
 
 // Message represents a single conversation turn within a Match
 type Message struct {
-	ID        string      `json:"id"`
-	MatchID   string      `json:"match_id"`
-	Role      MessageRole `json:"role"`
-	Content   string      `json:"content"`
-	IsVisible bool        `json:"is_visible"`
-	CreatedAt time.Time   `json:"created_at"`
+	ID         string      `json:"id"`
+	MatchID    string      `json:"match_id"`
+	Role       MessageRole `json:"role"`
+	Content    string      `json:"content"`
+	IsVisible  bool        `json:"is_visible"`
+	TurnCount  int         `json:"turn_count"`
+	TokenCount int         `json:"token_count"`
+	CreatedAt  time.Time   `json:"created_at"`
 }
 
 // CreateMessageRequest is the DTO for creating a new message
@@ -33,6 +35,7 @@ type MessageRepository interface {
 	Create(ctx context.Context, message *Message) (*Message, error)
 	GetByID(ctx context.Context, id string) (*Message, error)
 	GetByMatchID(ctx context.Context, matchID string) ([]Message, error)
+	Update(ctx context.Context, message *Message) (*Message, error)
 	Delete(ctx context.Context, id string) error
 }
 

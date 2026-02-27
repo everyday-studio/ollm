@@ -22,6 +22,7 @@ type Match struct {
 	UserID      string      `json:"user_id"`
 	GameID      string      `json:"game_id"`
 	Status      MatchStatus `json:"status"`
+	MaxTurns    int         `json:"max_turns"`
 	TotalTokens int         `json:"total_tokens"`
 	TurnCount   int         `json:"turn_count"`
 	CreatedAt   time.Time   `json:"created_at"`
@@ -40,6 +41,7 @@ type MatchRepository interface {
 	GetByID(ctx context.Context, id string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
 	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
+	Update(ctx context.Context, match *Match) (*Match, error)
 	Delete(ctx context.Context, id string) error
 }
 

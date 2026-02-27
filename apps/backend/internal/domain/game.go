@@ -22,6 +22,7 @@ type Game struct {
 	IsPublic     bool       `json:"is_public"`
 	SystemPrompt string     `json:"system_prompt"`
 	TargetWord   string     `json:"target_word"`
+	MaxTurns     int        `json:"max_turns"`
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
@@ -33,6 +34,7 @@ type CreateGameRequest struct {
 	AuthorID     string `json:"author_id"`
 	SystemPrompt string `json:"system_prompt"`
 	TargetWord   string `json:"target_word"`
+	MaxTurns     int    `json:"max_turns"`
 }
 
 // UpdateGameRequest is the DTO for updating an existing game
@@ -44,6 +46,7 @@ type UpdateGameRequest struct {
 	IsPublic     *bool       `json:"is_public"`
 	SystemPrompt *string     `json:"system_prompt"`
 	TargetWord   *string     `json:"target_word"`
+	MaxTurns     *int        `json:"max_turns"`
 }
 
 // GameRepository defines the interface for game data access
