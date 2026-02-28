@@ -15,7 +15,6 @@ type messageUseCase struct {
 	gameRepo    domain.GameRepository
 }
 
-// NewMessageUseCase creates a new message use case
 func NewMessageUseCase(
 	messageRepo domain.MessageRepository,
 	matchRepo domain.MatchRepository,
@@ -30,9 +29,11 @@ func NewMessageUseCase(
 	}
 }
 
-// Create handles the core game turn: User Input -> Save -> Fetch History -> LLM -> Save AI Output
+// Create handles the core game turn
 func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID string, req *domain.CreateMessageRequest) (*domain.Message, error) {
-	// 1. 권한 검증: 이 매치(게임)가 존재하는지, 그리고 현재 요청한 유저의 게임이 맞는지 확인
+	// ==========================================
+	// 1. 검증 및 상태 락 (Validation & Lock)
+	// ==========================================
 	match, err := uc.matchRepo.GetByID(ctx, matchID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get match for authorization: %w", err)
@@ -40,72 +41,89 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 	if match.UserID != userID {
 		return nil, domain.ErrForbidden
 	}
-
 	if match.Status != domain.MatchStatusActive {
 		return nil, domain.ErrConflict
 	}
 
-	// 매치 턴 증가
-	match.TurnCount++
-	currentTurn := match.TurnCount
+	match.Status = domain.MatchStatusGenerating
+	if _, err := uc.matchRepo.Update(ctx, match); err != nil {
+		return nil, fmt.Errorf("failed to lock match state: %w", err)
+	}
 
-	// 2. 유저의 메시지를 DB에 먼저 저장 (Role: User 강제 고정)
+	// ==========================================
+	// 2. 롤백 안전장치 (Safety Net)
+	// ==========================================
+	userMessageSaved := false
+
+	defer func() {
+		if match.Status == domain.MatchStatusGenerating {
+			if userMessageSaved {
+				match.Status = domain.MatchStatusError
+			} else {
+				match.Status = domain.MatchStatusActive
+			}
+			_, _ = uc.matchRepo.Update(context.WithoutCancel(ctx), match)
+		}
+	}()
+
+	// ==========================================
+	// 3. 유저 데이터 저장 및 대화 컨텍스트 구성
+	// ==========================================
+	currentTurn := match.TurnCount + 1
+
 	userMsg := &domain.Message{
 		MatchID:    matchID,
 		Role:       domain.MessageRoleUser,
 		Content:    req.Content,
 		IsVisible:  true,
 		TurnCount:  currentTurn,
-		TokenCount: 0, // LLM 호출 전이므로 0. 프롬프트 토큰은 나중에 Assistant 메시지에 합산
+		TokenCount: 0,
 	}
+
 	if _, err := uc.messageRepo.Create(ctx, userMsg); err != nil {
 		return nil, fmt.Errorf("failed to save user message: %w", err)
 	}
 
-	// 3. AI에게 문맥을 전달하기 위해, 방금 저장한 메시지를 포함한 전체 대화 내역(History)을 가져옵니다.
-	// (Repository에서 ORDER BY created_at ASC 로 정렬해두었기 때문에 완벽합니다)
+	userMessageSaved = true
+	match.TurnCount = currentTurn
+
+	// 대화 내역 및 게임 시스템 프롬프트 조회
 	history, err := uc.messageRepo.GetByMatchID(ctx, matchID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get match history: %w", err)
 	}
 
-	// 4. 게임의 시스템 프롬프트를 조회하여 대화 내역 맨 앞에 덧붙입니다.
 	game, err := uc.gameRepo.GetByID(ctx, match.GameID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get game for system prompt: %w", err)
 	}
 
-	fullHistory := []domain.Message{
-		{
-			Role:    domain.MessageRoleSystem,
-			Content: game.SystemPrompt,
-		},
-	}
+	fullHistory := make([]domain.Message, 0, len(history)+1)
+	fullHistory = append(fullHistory, domain.Message{
+		Role:    domain.MessageRoleSystem,
+		Content: game.SystemPrompt,
+	})
 	fullHistory = append(fullHistory, history...)
 
-	// 5. 외부 LLM(OpenAI) 호출 (동기식 대기)
+	// ==========================================
+	// 4. 외부 LLM 연동 및 결과 처리
+	// ==========================================
 	aiContent, promptTokens, completionTokens, err := uc.llmService.GenerateResponse(ctx, fullHistory)
 	if err != nil {
 		match.Status = domain.MatchStatusError
-		if _, updateErr := uc.matchRepo.Update(ctx, match); updateErr != nil {
-			return nil, fmt.Errorf("llm failed to generate response and also failed to update match status: %v (original err: %w)", updateErr, err)
+		if _, updateErr := uc.matchRepo.Update(context.WithoutCancel(ctx), match); updateErr != nil {
+			return nil, fmt.Errorf("llm failed and status update also failed: %v (original: %w)", updateErr, err)
 		}
 		return nil, fmt.Errorf("llm failed to generate response: %w", err)
 	}
 
-	// Update user message token count with promptTokens
+	// 유저 메시지 토큰 업데이트
 	userMsg.TokenCount = promptTokens
 	if _, err := uc.messageRepo.Update(ctx, userMsg); err != nil {
-		// Log error but continue
+		// 에러를 무시하고 진행 (핵심 로직이 아니므로)
 	}
 
-	// 게임의 TargetWord가 AI의 응답(aiContent)에 포함되어 있다면 매치를 승리(MatchStatusWon) 상태로 변경
-	// TODO: LLM 통해서 JUDGE
-	if game.TargetWord != "" && strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.TargetWord)) {
-		match.Status = domain.MatchStatusWon
-	}
-
-	// 6. 무사히 도착한 AI의 답변을 DB에 저장
+	// AI 메시지 저장
 	aiMsg := &domain.Message{
 		MatchID:    matchID,
 		Role:       domain.MessageRoleAssistant,
@@ -119,16 +137,27 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 		return nil, fmt.Errorf("failed to save ai message: %w", err)
 	}
 
-	// 7. 매치의 총 토큰 소비량 갱신 (유저의 프롬프트 토큰만) 및 최대 턴수 도달 여부 체크
+	// ==========================================
+	// 5. 최종 매치 상태 갱신 (Finalize)
+	// ==========================================
 	match.TotalTokens += promptTokens
+	nextStatus := domain.MatchStatusActive
 
-	// 승리(won) 상태가 아직 아니며, 턴을 다 쓴 상태라면 패배(lost) 처리
-	if match.Status == domain.MatchStatusActive && match.TurnCount >= match.MaxTurns {
-		match.Status = domain.MatchStatusLost
+	// 승리 판정 (TODO: LLM 통해서 JUDGE)
+	if game.TargetWord != "" && strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.TargetWord)) {
+		nextStatus = domain.MatchStatusWon
 	}
 
+	// 패배 판정
+	if nextStatus == domain.MatchStatusActive && match.TurnCount >= match.MaxTurns {
+		nextStatus = domain.MatchStatusLost
+	}
+
+	match.Status = nextStatus
 	if _, err := uc.matchRepo.Update(ctx, match); err != nil {
-		return nil, fmt.Errorf("failed to update match status/tokens: %w", err)
+		match.Status = domain.MatchStatusError
+		_, _ = uc.matchRepo.Update(context.WithoutCancel(ctx), match)
+		return nil, fmt.Errorf("failed to update final match status: %w", err)
 	}
 
 	return savedAIMsg, nil
