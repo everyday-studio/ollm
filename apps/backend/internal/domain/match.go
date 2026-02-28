@@ -8,12 +8,13 @@ import (
 type MatchStatus string
 
 const (
-	MatchStatusActive   MatchStatus = "active"
-	MatchStatusWon      MatchStatus = "won"
-	MatchStatusLost     MatchStatus = "lost"
-	MatchStatusResigned MatchStatus = "resigned"
-	MatchStatusExpired  MatchStatus = "expired"
-	MatchStatusError    MatchStatus = "error"
+	MatchStatusActive     MatchStatus = "active"
+	MatchStatusWon        MatchStatus = "won"
+	MatchStatusLost       MatchStatus = "lost"
+	MatchStatusGenerating MatchStatus = "generating"
+	MatchStatusResigned   MatchStatus = "resigned"
+	MatchStatusExpired    MatchStatus = "expired"
+	MatchStatusError      MatchStatus = "error"
 )
 
 // Match represents an individual play record of a game
