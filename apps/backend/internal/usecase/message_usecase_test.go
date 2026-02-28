@@ -167,6 +167,29 @@ func TestMessageUseCase_Create(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name:    "Final update fails resulting in Error status fallback",
+			matchID: "01HQZYX3VQJQZ3Z0ZMATCH1",
+			userID:  "01HQZYX3VQJQZ3Z0ZUSER1",
+			req:     &domain.CreateMessageRequest{Content: "Hello"},
+			mockMatchGet: &domain.Match{
+				ID:        "01HQZYX3VQJQZ3Z0ZMATCH1",
+				UserID:    "01HQZYX3VQJQZ3Z0ZUSER1",
+				GameID:    "01HQZYX3VQJQZ3Z0ZGAME1",
+				Status:    domain.MatchStatusActive,
+				TurnCount: 0,
+				MaxTurns:  5,
+			},
+			mockUserMsgCreateRet: &domain.Message{Role: domain.MessageRoleUser},
+			mockMsgGetHistoryRet: []domain.Message{},
+			mockGameGet: &domain.Game{
+				ID: "01HQZYX3VQJQZ3Z0ZGAME1",
+			},
+			mockLLMResp:        "Hello back",
+			mockAIMsgCreateRet: &domain.Message{Role: domain.MessageRoleAssistant},
+			mockMatchUpdErr:    domain.ErrInternal,
+			wantErr:            true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -180,6 +203,10 @@ func TestMessageUseCase_Create(t *testing.T) {
 			mockMatchRepo.On("GetByID", mock.Anything, tt.matchID).Return(tt.mockMatchGet, tt.mockMatchGetErr)
 
 			if tt.mockMatchGetErr == nil && tt.mockMatchGet != nil && tt.mockMatchGet.UserID == tt.userID && tt.mockMatchGet.Status == domain.MatchStatusActive {
+				mockMatchRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Match) bool {
+					return m.Status == domain.MatchStatusGenerating
+				})).Return(&domain.Match{Status: domain.MatchStatusGenerating}, nil).Once()
+
 				mockMsgRepo.On("Create", mock.Anything, mock.MatchedBy(func(m *domain.Message) bool {
 					return m.Role == domain.MessageRoleUser
 				})).Return(tt.mockUserMsgCreateRet, tt.mockUserMsgCreateErr)
@@ -203,10 +230,23 @@ func TestMessageUseCase_Create(t *testing.T) {
 								})).Return(tt.mockAIMsgCreateRet, tt.mockAIMsgCreateErr)
 
 								if tt.mockAIMsgCreateErr == nil {
-									mockMatchRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Match) bool {
-										assert.Equal(t, tt.validateMatchStatus, m.Status)
-										return true
-									})).Return(tt.mockMatchUpdRet, tt.mockMatchUpdErr)
+									if tt.mockMatchUpdErr == nil {
+										mockMatchRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Match) bool {
+											assert.Equal(t, tt.validateMatchStatus, m.Status)
+											return true
+										})).Return(tt.mockMatchUpdRet, nil).Once()
+									} else {
+										// Final DB update fails
+										mockMatchRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Match) bool {
+											// First it tries to save the next status (e.g. Active)
+											return m.Status != domain.MatchStatusError && m.Status != domain.MatchStatusGenerating
+										})).Return(nil, tt.mockMatchUpdErr).Once()
+
+										// Then it forces the status to Error to prevent zombie matches
+										mockMatchRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Match) bool {
+											return m.Status == domain.MatchStatusError
+										})).Return(&domain.Match{Status: domain.MatchStatusError}, nil).Once()
+									}
 								}
 							} else {
 								// When LLM fails, MatchStatusError update runs
