@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/everyday-studio/ollm/internal/domain"
 )
@@ -85,6 +86,10 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 	// 5. 외부 LLM(OpenAI) 호출 (동기식 대기)
 	aiContent, promptTokens, completionTokens, err := uc.llmService.GenerateResponse(ctx, fullHistory)
 	if err != nil {
+		match.Status = domain.MatchStatusError
+		if _, updateErr := uc.matchRepo.Update(ctx, match); updateErr != nil {
+			return nil, fmt.Errorf("llm failed to generate response and also failed to update match status: %v (original err: %w)", updateErr, err)
+		}
 		return nil, fmt.Errorf("llm failed to generate response: %w", err)
 	}
 
@@ -94,7 +99,11 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 		// Log error but continue
 	}
 
-	// TODO: 게임의 TargetWord를 DB에서 조회하여, AI의 응답(aiContent)에 해당 단어가 포함되어 있다면 매치를 승리(MatchStatusWon) 상태로 변경하는 로직 추가
+	// 게임의 TargetWord가 AI의 응답(aiContent)에 포함되어 있다면 매치를 승리(MatchStatusWon) 상태로 변경
+	// TODO: LLM 통해서 JUDGE
+	if game.TargetWord != "" && strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.TargetWord)) {
+		match.Status = domain.MatchStatusWon
+	}
 
 	// 6. 무사히 도착한 AI의 답변을 DB에 저장
 	aiMsg := &domain.Message{
@@ -112,8 +121,10 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 
 	// 7. 매치의 총 토큰 소비량 갱신 (유저의 프롬프트 토큰만) 및 최대 턴수 도달 여부 체크
 	match.TotalTokens += promptTokens
-	if match.TurnCount >= match.MaxTurns {
-		match.Status = domain.MatchStatusExpired
+
+	// 승리(won) 상태가 아직 아니며, 턴을 다 쓴 상태라면 패배(lost) 처리
+	if match.Status == domain.MatchStatusActive && match.TurnCount >= match.MaxTurns {
+		match.Status = domain.MatchStatusLost
 	}
 
 	if _, err := uc.matchRepo.Update(ctx, match); err != nil {
