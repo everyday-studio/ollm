@@ -139,6 +139,18 @@ func setupSchema() {
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
+
+		-- Messages table
+		CREATE TABLE IF NOT EXISTS messages (
+			id VARCHAR(26) PRIMARY KEY,
+			match_id VARCHAR(26) NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+			role VARCHAR(50) NOT NULL,
+			content TEXT NOT NULL,
+			is_visible BOOLEAN DEFAULT true,
+			turn_count INTEGER NOT NULL DEFAULT 0,
+			token_count INTEGER NOT NULL DEFAULT 0,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
 	`
 	if _, err := testDB.Exec(schema); err != nil {
 		log.Fatalf("Failed to create schema: %v", err)
