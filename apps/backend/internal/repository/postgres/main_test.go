@@ -120,6 +120,9 @@ func setupSchema() {
 			author_id VARCHAR(26) REFERENCES users(id) ON DELETE SET NULL,
 			status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
 			is_public BOOLEAN DEFAULT true,
+			system_prompt TEXT DEFAULT '',
+			target_word VARCHAR(255) DEFAULT '',
+			max_turns INTEGER DEFAULT 5,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
@@ -130,6 +133,7 @@ func setupSchema() {
 			user_id VARCHAR(26) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			game_id VARCHAR(26) NOT NULL REFERENCES games(id) ON DELETE CASCADE,
 			status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'won', 'lost', 'resigned', 'expired', 'error')),
+			max_turns INTEGER NOT NULL DEFAULT 5,
 			total_tokens INTEGER NOT NULL DEFAULT 0,
 			turn_count INTEGER NOT NULL DEFAULT 0,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

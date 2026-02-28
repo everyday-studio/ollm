@@ -23,7 +23,7 @@ func (_m *LLMService) EXPECT() *LLMService_Expecter {
 }
 
 // GenerateResponse provides a mock function with given fields: ctx, history
-func (_m *LLMService) GenerateResponse(ctx context.Context, history []domain.Message) (string, error) {
+func (_m *LLMService) GenerateResponse(ctx context.Context, history []domain.Message) (string, int, int, error) {
 	ret := _m.Called(ctx, history)
 
 	if len(ret) == 0 {
@@ -31,8 +31,10 @@ func (_m *LLMService) GenerateResponse(ctx context.Context, history []domain.Mes
 	}
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []domain.Message) (string, error)); ok {
+	var r1 int
+	var r2 int
+	var r3 error
+	if rf, ok := ret.Get(0).(func(context.Context, []domain.Message) (string, int, int, error)); ok {
 		return rf(ctx, history)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, []domain.Message) string); ok {
@@ -41,13 +43,25 @@ func (_m *LLMService) GenerateResponse(ctx context.Context, history []domain.Mes
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []domain.Message) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []domain.Message) int); ok {
 		r1 = rf(ctx, history)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, []domain.Message) int); ok {
+		r2 = rf(ctx, history)
+	} else {
+		r2 = ret.Get(2).(int)
+	}
+
+	if rf, ok := ret.Get(3).(func(context.Context, []domain.Message) error); ok {
+		r3 = rf(ctx, history)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }
 
 // LLMService_GenerateResponse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GenerateResponse'
@@ -69,12 +83,12 @@ func (_c *LLMService_GenerateResponse_Call) Run(run func(ctx context.Context, hi
 	return _c
 }
 
-func (_c *LLMService_GenerateResponse_Call) Return(_a0 string, _a1 error) *LLMService_GenerateResponse_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *LLMService_GenerateResponse_Call) Return(_a0 string, _a1 int, _a2 int, _a3 error) *LLMService_GenerateResponse_Call {
+	_c.Call.Return(_a0, _a1, _a2, _a3)
 	return _c
 }
 
-func (_c *LLMService_GenerateResponse_Call) RunAndReturn(run func(context.Context, []domain.Message) (string, error)) *LLMService_GenerateResponse_Call {
+func (_c *LLMService_GenerateResponse_Call) RunAndReturn(run func(context.Context, []domain.Message) (string, int, int, error)) *LLMService_GenerateResponse_Call {
 	_c.Call.Return(run)
 	return _c
 }

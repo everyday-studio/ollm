@@ -307,6 +307,54 @@ func (_c *MatchUseCase_GetByUserIDAndGameID_Call) RunAndReturn(run func(context.
 	return _c
 }
 
+// Resign provides a mock function with given fields: ctx, id, userID
+func (_m *MatchUseCase) Resign(ctx context.Context, id string, userID string) error {
+	ret := _m.Called(ctx, id, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Resign")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, id, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MatchUseCase_Resign_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Resign'
+type MatchUseCase_Resign_Call struct {
+	*mock.Call
+}
+
+// Resign is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - userID string
+func (_e *MatchUseCase_Expecter) Resign(ctx interface{}, id interface{}, userID interface{}) *MatchUseCase_Resign_Call {
+	return &MatchUseCase_Resign_Call{Call: _e.mock.On("Resign", ctx, id, userID)}
+}
+
+func (_c *MatchUseCase_Resign_Call) Run(run func(ctx context.Context, id string, userID string)) *MatchUseCase_Resign_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *MatchUseCase_Resign_Call) Return(_a0 error) *MatchUseCase_Resign_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MatchUseCase_Resign_Call) RunAndReturn(run func(context.Context, string, string) error) *MatchUseCase_Resign_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMatchUseCase creates a new instance of MatchUseCase. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMatchUseCase(t interface {

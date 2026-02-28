@@ -246,6 +246,65 @@ func (_c *MessageRepository_GetByMatchID_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// Update provides a mock function with given fields: ctx, message
+func (_m *MessageRepository) Update(ctx context.Context, message *domain.Message) (*domain.Message, error) {
+	ret := _m.Called(ctx, message)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 *domain.Message
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Message) (*domain.Message, error)); ok {
+		return rf(ctx, message)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Message) *domain.Message); ok {
+		r0 = rf(ctx, message)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Message)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.Message) error); ok {
+		r1 = rf(ctx, message)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MessageRepository_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type MessageRepository_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - message *domain.Message
+func (_e *MessageRepository_Expecter) Update(ctx interface{}, message interface{}) *MessageRepository_Update_Call {
+	return &MessageRepository_Update_Call{Call: _e.mock.On("Update", ctx, message)}
+}
+
+func (_c *MessageRepository_Update_Call) Run(run func(ctx context.Context, message *domain.Message)) *MessageRepository_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Message))
+	})
+	return _c
+}
+
+func (_c *MessageRepository_Update_Call) Return(_a0 *domain.Message, _a1 error) *MessageRepository_Update_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MessageRepository_Update_Call) RunAndReturn(run func(context.Context, *domain.Message) (*domain.Message, error)) *MessageRepository_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMessageRepository creates a new instance of MessageRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMessageRepository(t interface {
