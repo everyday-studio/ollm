@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade, fly, scale } from 'svelte/transition';
   import { onMount, getContext } from 'svelte';
+  import { goto } from '$app/navigation';
 
   // Imports for API and Types
   import { gameApi } from '$lib/features/game/api';
@@ -35,6 +36,49 @@
   );
 
   let isDarkMode = $derived(theme.isDark);
+
+  // Group matches by game for the "내 매치" section
+  interface GameMatchGroup {
+    gameId: string;
+    gameTitle: string;
+    matches: MatchUI[];
+    total: number;
+    active: number;
+    won: number;
+    lost: number;
+    resigned: number;
+    other: number;
+    latestMatch: MatchUI;
+  }
+
+  let matchGroups = $derived.by<GameMatchGroup[]>(() => {
+    const groupMap = new Map<string, MatchUI[]>();
+    for (const m of matches) {
+      const key = m.game_id;
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(m);
+    }
+    const groups: GameMatchGroup[] = [];
+    for (const [gameId, groupMatches] of groupMap) {
+      // Sort newest first within group
+      groupMatches.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      groups.push({
+        gameId,
+        gameTitle: groupMatches[0].gameTitle,
+        matches: groupMatches,
+        total: groupMatches.length,
+        active: groupMatches.filter(m => m.status === 'active' || m.status === 'generating').length,
+        won: groupMatches.filter(m => m.status === 'won').length,
+        lost: groupMatches.filter(m => m.status === 'lost').length,
+        resigned: groupMatches.filter(m => m.status === 'resigned').length,
+        other: groupMatches.filter(m => m.status === 'expired' || m.status === 'error').length,
+        latestMatch: groupMatches[0]
+      });
+    }
+    // Sort groups by latest activity
+    groups.sort((a, b) => new Date(b.latestMatch.updated_at).getTime() - new Date(a.latestMatch.updated_at).getTime());
+    return groups;
+  });
 
   // ----------------------------------------------------------------
   // Lifecycle & Logic
@@ -104,10 +148,9 @@
   async function startNewMatch(game: GameUI) {
     try {
       const res = await gameApi.createMatch(game.id);
-      const newMatchUI = toMatchUI(res.data, games); 
-      matches = [newMatchUI, ...matches];
       showGameModal = false;
-      activeSection = 'matches';
+      // Navigate directly to the match chat page
+      await goto(`/lobby/match/${res.data.id}`);
     } catch (error) {
       console.error("Failed to create match:", error);
     }
@@ -280,7 +323,7 @@
         </div>
 
       {:else}
-        <!-- Matches Section -->
+        <!-- Matches Section: Grouped by Game -->
         <div in:fly={{ y: 20, duration: 300 }}>
           {#if matches.length === 0}
             <div class={`text-center py-16 md:py-20 rounded-2xl shadow-lg border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
@@ -293,22 +336,83 @@
               </button>
             </div>
           {:else}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {#each matches as match}
-                <div class={`rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-100 border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
-                  <div class="flex justify-between items-start mb-3">
-                    <h3 class={`font-bold text-lg md:text-xl line-clamp-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                      {match.gameTitle}
-                    </h3>
-                    <span class={`text-xs font-medium px-2 py-1 rounded uppercase shrink-0 ml-2 ${isDarkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-700'}`}>
-                      {match.status}
-                    </span>
+            <div class="space-y-4">
+              {#each matchGroups as group (group.gameId)}
+                <div class={`rounded-2xl border shadow-lg overflow-hidden ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+                  <!-- Game group header -->
+                  <div class={`px-5 py-4 md:px-6 md:py-5 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+                    <div class="flex items-center justify-between mb-3">
+                      <h3 class={`font-bold text-lg md:text-xl ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                        {group.gameTitle}
+                      </h3>
+                      <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+                        {group.total}개 매치
+                      </span>
+                    </div>
+                    <!-- Stats row -->
+                    <div class="flex flex-wrap gap-2">
+                      {#if group.active > 0}
+                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700'}`}>
+                          진행 중 {group.active}
+                        </span>
+                      {/if}
+                      {#if group.won > 0}
+                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
+                          승리 {group.won}
+                        </span>
+                      {/if}
+                      {#if group.lost > 0}
+                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-red-900/60 text-red-300' : 'bg-red-100 text-red-700'}`}>
+                          패배 {group.lost}
+                        </span>
+                      {/if}
+                      {#if group.resigned > 0}
+                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
+                          기권 {group.resigned}
+                        </span>
+                      {/if}
+                      {#if group.other > 0}
+                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-yellow-900/60 text-yellow-300' : 'bg-yellow-100 text-yellow-700'}`}>
+                          기타 {group.other}
+                        </span>
+                      {/if}
+                    </div>
                   </div>
-                  <p class={`text-sm line-clamp-2 mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {match.lastMessage}
-                  </p>
-                  <div class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                    {match.displayTime}
+
+                  <!-- Match list inside the group -->
+                  <div class="divide-y ${isDarkMode ? 'divide-gray-800/50' : 'divide-gray-100'}">
+                    {#each group.matches as match (match.id)}
+                      <button
+                        onclick={() => goto(`/lobby/match/${match.id}`)}
+                        class={`w-full text-left px-5 py-3 md:px-6 md:py-3.5 flex items-center justify-between gap-3 transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-gray-900' : 'hover:bg-gray-50'}`}
+                      >
+                        <div class="flex items-center gap-3 min-w-0">
+                          <span class={`text-xs font-mono shrink-0 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            #{match.id.slice(-6)}
+                          </span>
+                          <span class={`text-sm truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            턴 {match.turn_count}/{match.max_turns ?? '?'}
+                          </span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <span class={`text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                            {match.displayTime}
+                          </span>
+                          <span class={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                            match.status === 'active' || match.status === 'generating' ? (isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700')
+                            : match.status === 'won' ? (isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-700')
+                            : match.status === 'lost' ? (isDarkMode ? 'bg-red-900/60 text-red-300' : 'bg-red-100 text-red-700')
+                            : match.status === 'resigned' ? (isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600')
+                            : (isDarkMode ? 'bg-yellow-900/60 text-yellow-300' : 'bg-yellow-100 text-yellow-700')
+                          }`}>
+                            {match.status === 'active' || match.status === 'generating' ? '진행 중' : match.status === 'won' ? '승리' : match.status === 'lost' ? '패배' : match.status === 'resigned' ? '기권' : match.status}
+                          </span>
+                          <svg class={`w-4 h-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                          </svg>
+                        </div>
+                      </button>
+                    {/each}
                   </div>
                 </div>
               {/each}

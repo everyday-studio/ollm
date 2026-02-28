@@ -1,6 +1,6 @@
 // src/lib/features/game/types.ts
 
-// [Backend DTO] Data structure exactly as defined in API_SPECIFICATION.md
+// [Backend DTO] Data structure exactly as returned from the backend API
 export interface GameDTO {
   id: string; // ULID
   title: string;
@@ -8,19 +8,42 @@ export interface GameDTO {
   author_id: string;
   status: 'active' | 'inactive';
   is_public: boolean;
+  system_prompt: string;
+  target_word: string;
+  max_turns: number;
   created_at: string;
   updated_at: string;
 }
+
+export type MatchStatus = 'active' | 'generating' | 'won' | 'lost' | 'resigned' | 'expired' | 'error';
 
 export interface MatchDTO {
   id: string; // ULID
   user_id: string;
   game_id: string;
-  status: 'active' | 'won' | 'lost' | 'resigned' | 'expired' | 'error';
+  status: MatchStatus;
+  max_turns: number;
   total_tokens: number;
   turn_count: number;
   created_at: string;
   updated_at: string;
+}
+
+export type MessageRole = 'system' | 'user' | 'assistant';
+
+export interface MessageDTO {
+  id: string; // ULID
+  match_id: string;
+  role: MessageRole;
+  content: string;
+  is_visible: boolean;
+  turn_count: number;
+  token_count: number;
+  created_at: string;
+}
+
+export interface CreateMessageRequest {
+  content: string;
 }
 
 // [Frontend UI Model] Extended structure for UI rendering

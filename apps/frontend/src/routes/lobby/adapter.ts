@@ -41,6 +41,6 @@ export function toMatchUI(match: MatchDTO, games: GameDTO[]): MatchUI {
     gameTitle: relatedGame ? relatedGame.title : "Unknown Game",
     // Simple time formatting logic (can be improved with 'date-fns')
     displayTime: new Date(match.updated_at).toLocaleDateString(), 
-    lastMessage: "Click to view chat history..." // API doesn't provide this yet
+    lastMessage: `턴 ${match.turn_count} / ${match.max_turns ?? '?'}`
   };
 }
