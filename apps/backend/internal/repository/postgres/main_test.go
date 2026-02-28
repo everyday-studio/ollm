@@ -132,7 +132,7 @@ func setupSchema() {
 			id VARCHAR(26) PRIMARY KEY,
 			user_id VARCHAR(26) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			game_id VARCHAR(26) NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-			status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'won', 'lost', 'resigned', 'expired', 'error')),
+			status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'won', 'lost', 'generating', 'resigned', 'expired', 'error')),
 			max_turns INTEGER NOT NULL DEFAULT 5,
 			total_tokens INTEGER NOT NULL DEFAULT 0,
 			turn_count INTEGER NOT NULL DEFAULT 0,
