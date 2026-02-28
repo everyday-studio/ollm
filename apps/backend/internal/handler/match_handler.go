@@ -56,7 +56,9 @@ func (h *MatchHandler) Create(c echo.Context) error {
 
 	switch {
 	case errors.Is(err, domain.ErrInvalidInput):
-		return c.JSON(http.StatusBadRequest, ErrResponse(err))
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	case errors.Is(err, domain.ErrNotFound):
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
@@ -83,11 +85,11 @@ func (h *MatchHandler) GetByID(c echo.Context) error {
 
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	case errors.Is(err, domain.ErrForbidden):
-		return c.JSON(http.StatusForbidden, ErrResponse(err))
+		return c.JSON(http.StatusForbidden, ErrResponse(domain.ErrForbidden))
 	case errors.Is(err, domain.ErrInvalidInput):
-		return c.JSON(http.StatusBadRequest, ErrResponse(err))
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
@@ -139,7 +141,7 @@ func (h *MatchHandler) Delete(c echo.Context) error {
 
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
@@ -167,11 +169,11 @@ func (h *MatchHandler) Resign(c echo.Context) error {
 
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	case errors.Is(err, domain.ErrForbidden):
-		return c.JSON(http.StatusForbidden, ErrResponse(err))
+		return c.JSON(http.StatusForbidden, ErrResponse(domain.ErrForbidden))
 	case errors.Is(err, domain.ErrConflict):
-		return c.JSON(http.StatusConflict, ErrResponse(err))
+		return c.JSON(http.StatusConflict, ErrResponse(domain.ErrConflict))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}

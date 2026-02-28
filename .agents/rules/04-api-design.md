@@ -19,6 +19,7 @@ trigger: always_on
    - `401 Unauthorized`: 토큰 없음, 유효하지 않은 토큰
    - `403 Forbidden`: 토큰은 있으나 해당 액션에 대한 권한(Role) 부족
    - `404 Not Found`: 요청한 리소스가 존재하지 않음
+5. **Error Handling**: 에러 처리에 대해서는 반드시 클라이언트에게 domain에서 정의된 error를 리턴하도록 하세요.
 
 # Handler & Auth Context Guidelines
 1. **User ID 추출 (JWT)**:
