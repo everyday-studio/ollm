@@ -9,21 +9,30 @@ import (
 
 type matchUseCase struct {
 	matchRepo domain.MatchRepository
+	gameRepo  domain.GameRepository
 }
 
 // NewMatchUseCase creates a new match use case
-func NewMatchUseCase(matchRepo domain.MatchRepository) domain.MatchUseCase {
+func NewMatchUseCase(matchRepo domain.MatchRepository, gameRepo domain.GameRepository) domain.MatchUseCase {
 	return &matchUseCase{
 		matchRepo: matchRepo,
+		gameRepo:  gameRepo,
 	}
 }
 
 // Create creates a new match with the provided request data
 func (uc *matchUseCase) Create(ctx context.Context, req *domain.CreateMatchRequest) (*domain.Match, error) {
+	// Get game to copy max_turns
+	game, err := uc.gameRepo.GetByID(ctx, req.GameID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get game for match creation: %w", err)
+	}
+
 	match := &domain.Match{
 		UserID:      req.UserID,
 		GameID:      req.GameID,
 		Status:      domain.MatchStatusActive,
+		MaxTurns:    game.MaxTurns,
 		TotalTokens: 0,
 		TurnCount:   0,
 	}
@@ -36,9 +45,18 @@ func (uc *matchUseCase) Create(ctx context.Context, req *domain.CreateMatchReque
 	return createdMatch, nil
 }
 
-// GetByID retrieves a match by its ID
-func (uc *matchUseCase) GetByID(ctx context.Context, id string) (*domain.Match, error) {
-	return uc.matchRepo.GetByID(ctx, id)
+// GetByID retrieves a match by its ID and validates ownership
+func (uc *matchUseCase) GetByID(ctx context.Context, id string, userID string) (*domain.Match, error) {
+	match, err := uc.matchRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get match: %w", err)
+	}
+
+	if match.UserID != userID {
+		return nil, domain.ErrForbidden
+	}
+
+	return match, nil
 }
 
 // GetByUserID retrieves all matches for a specific user
@@ -49,6 +67,30 @@ func (uc *matchUseCase) GetByUserID(ctx context.Context, userID string) ([]domai
 // GetByUserIDAndGameID retrieves all matches for a specific user and game
 func (uc *matchUseCase) GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]domain.Match, error) {
 	return uc.matchRepo.GetByUserIDAndGameID(ctx, userID, gameID)
+}
+
+// Resign allows a user to voluntarily forfeit a match
+func (uc *matchUseCase) Resign(ctx context.Context, id string, userID string) error {
+	match, err := uc.matchRepo.GetByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get match for resignation: %w", err)
+	}
+
+	if match.UserID != userID {
+		return domain.ErrForbidden
+	}
+
+	if match.Status != domain.MatchStatusActive {
+		return fmt.Errorf("%w: match is not active", domain.ErrConflict)
+	}
+
+	match.Status = domain.MatchStatusResigned
+	_, err = uc.matchRepo.Update(ctx, match)
+	if err != nil {
+		return fmt.Errorf("failed to update match status to resigned: %w", err)
+	}
+
+	return nil
 }
 
 // Delete removes a match by its ID

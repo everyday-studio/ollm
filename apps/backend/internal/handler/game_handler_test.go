@@ -39,7 +39,7 @@ func TestGameHandler_Create(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusCreated,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to create game due to invalid input",
@@ -66,6 +66,7 @@ func TestGameHandler_Create(t *testing.T) {
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
+			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 
 			mockUseCase := new(mocks.GameUseCase)
 			if tt.name != "Fail to create game due to invalid input" {
@@ -107,7 +108,7 @@ func TestGameHandler_GetByID(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to find game",
@@ -133,6 +134,7 @@ func TestGameHandler_GetByID(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/games/"+tt.pathParam, nil)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
+			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 			c.SetParamNames("id")
 			c.SetParamValues(tt.pathParam)
 
@@ -176,10 +178,9 @@ func TestGameHandler_GetAll(t *testing.T) {
 					IsPublic: false,
 				},
 			},
-
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`,
+			wantBody:   `[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`,
 		},
 		{
 			name:       "Fail to get games due to internal error",
@@ -196,6 +197,7 @@ func TestGameHandler_GetAll(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/games", nil)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
+			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 
 			mockUseCase := new(mocks.GameUseCase)
 			mockUseCase.On("GetAll", mock.Anything).Return(tt.mockReturn, tt.mockError)
@@ -237,7 +239,7 @@ func TestGameHandler_Update(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Updated Title","description":"Original description","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Updated Title","description":"Original description","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to update non-existent game",
@@ -275,6 +277,7 @@ func TestGameHandler_Update(t *testing.T) {
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
+			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 			c.SetParamNames("id")
 			c.SetParamValues(tt.pathParam)
 
@@ -331,6 +334,7 @@ func TestGameHandler_Delete(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, "/games/"+tt.pathParam, nil)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
+			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 			c.SetParamNames("id")
 			c.SetParamValues(tt.pathParam)
 

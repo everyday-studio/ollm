@@ -205,7 +205,7 @@ func TestLogin(t *testing.T) {
 			mockReturn: nil,
 			mockError:  domain.ErrNotFound,
 			want:       nil,
-			wantErr:    domain.ErrNotFound,
+			wantErr:    domain.ErrUnauthorized,
 		},
 		{
 			name:       "Invalid Password",
@@ -214,7 +214,7 @@ func TestLogin(t *testing.T) {
 			mockReturn: user,
 			mockError:  nil,
 			want:       nil,
-			wantErr:    domain.ErrInvalidCredentials,
+			wantErr:    domain.ErrUnauthorized,
 		},
 	}
 

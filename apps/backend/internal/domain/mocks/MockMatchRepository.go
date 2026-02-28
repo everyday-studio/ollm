@@ -306,6 +306,65 @@ func (_c *MatchRepository_GetByUserIDAndGameID_Call) RunAndReturn(run func(conte
 	return _c
 }
 
+// Update provides a mock function with given fields: ctx, match
+func (_m *MatchRepository) Update(ctx context.Context, match *domain.Match) (*domain.Match, error) {
+	ret := _m.Called(ctx, match)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 *domain.Match
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Match) (*domain.Match, error)); ok {
+		return rf(ctx, match)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Match) *domain.Match); ok {
+		r0 = rf(ctx, match)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Match)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.Match) error); ok {
+		r1 = rf(ctx, match)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MatchRepository_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type MatchRepository_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - match *domain.Match
+func (_e *MatchRepository_Expecter) Update(ctx interface{}, match interface{}) *MatchRepository_Update_Call {
+	return &MatchRepository_Update_Call{Call: _e.mock.On("Update", ctx, match)}
+}
+
+func (_c *MatchRepository_Update_Call) Run(run func(ctx context.Context, match *domain.Match)) *MatchRepository_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Match))
+	})
+	return _c
+}
+
+func (_c *MatchRepository_Update_Call) Return(_a0 *domain.Match, _a1 error) *MatchRepository_Update_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MatchRepository_Update_Call) RunAndReturn(run func(context.Context, *domain.Match) (*domain.Match, error)) *MatchRepository_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMatchRepository creates a new instance of MatchRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMatchRepository(t interface {

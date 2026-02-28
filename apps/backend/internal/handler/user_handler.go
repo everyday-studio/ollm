@@ -36,7 +36,7 @@ func (h *UserHandler) GetByID(c echo.Context) error {
 	}
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
@@ -50,7 +50,7 @@ func (h *UserHandler) GetAll(c echo.Context) error {
 	}
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}

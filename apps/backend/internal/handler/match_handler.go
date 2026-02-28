@@ -25,7 +25,8 @@ func NewMatchHandler(e *echo.Echo, matchUseCase domain.MatchUseCase) *MatchHandl
 	userGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("", handler.Create)
 	userGroup.GET("/me", handler.GetMyMatches)
-	userGroup.GET("/:id", handler.GetByID) // TODO: add specific chat & response history
+	userGroup.GET("/:id", handler.GetByID)
+	userGroup.POST("/:id/resign", handler.Resign)
 
 	// Admin routes
 	adminGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleAdmin))
@@ -55,7 +56,9 @@ func (h *MatchHandler) Create(c echo.Context) error {
 
 	switch {
 	case errors.Is(err, domain.ErrInvalidInput):
-		return c.JSON(http.StatusBadRequest, ErrResponse(err))
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	case errors.Is(err, domain.ErrNotFound):
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
@@ -75,20 +78,18 @@ func (h *MatchHandler) GetByID(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	match, err := h.matchUseCase.GetByID(ctx, id)
+	match, err := h.matchUseCase.GetByID(ctx, id, userID)
 	if err == nil {
-		// Check if the match belongs to the authenticated user
-		if match.UserID != userID {
-			return c.JSON(http.StatusForbidden, ErrResponse(domain.ErrForbidden))
-		}
 		return c.JSON(http.StatusOK, match)
 	}
 
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
+	case errors.Is(err, domain.ErrForbidden):
+		return c.JSON(http.StatusForbidden, ErrResponse(domain.ErrForbidden))
 	case errors.Is(err, domain.ErrInvalidInput):
-		return c.JSON(http.StatusBadRequest, ErrResponse(err))
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
@@ -140,7 +141,39 @@ func (h *MatchHandler) Delete(c echo.Context) error {
 
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
+	default:
+		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+	}
+}
+
+// Resign handles POST /matches/:id/resign - allows user to forfeit a match
+func (h *MatchHandler) Resign(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+	}
+
+	ctx := c.Request().Context()
+	err := h.matchUseCase.Resign(ctx, id, userID)
+	if err == nil {
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "successfully resigned from match",
+		})
+	}
+
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
+	case errors.Is(err, domain.ErrForbidden):
+		return c.JSON(http.StatusForbidden, ErrResponse(domain.ErrForbidden))
+	case errors.Is(err, domain.ErrConflict):
+		return c.JSON(http.StatusConflict, ErrResponse(domain.ErrConflict))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}

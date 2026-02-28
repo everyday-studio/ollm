@@ -14,30 +14,39 @@ const (
 
 // Game represents a text-based game in the platform
 type Game struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	AuthorID    string     `json:"author_id"`
-	Status      GameStatus `json:"status"`
-	IsPublic    bool       `json:"is_public"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID           string     `json:"id"`
+	Title        string     `json:"title"`
+	Description  string     `json:"description"`
+	AuthorID     string     `json:"author_id"`
+	Status       GameStatus `json:"status"`
+	IsPublic     bool       `json:"is_public"`
+	SystemPrompt string     `json:"system_prompt"`
+	TargetWord   string     `json:"target_word"`
+	MaxTurns     int        `json:"max_turns"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 // CreateGameRequest is the DTO for creating a new game
 type CreateGameRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	AuthorID    string `json:"author_id"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	AuthorID     string `json:"author_id"`
+	SystemPrompt string `json:"system_prompt"`
+	TargetWord   string `json:"target_word"`
+	MaxTurns     int    `json:"max_turns"`
 }
 
 // UpdateGameRequest is the DTO for updating an existing game
 // All fields are optional (pointers indicate optional fields)
 type UpdateGameRequest struct {
-	Title       *string     `json:"title"`
-	Description *string     `json:"description"`
-	Status      *GameStatus `json:"status"`
-	IsPublic    *bool       `json:"is_public"`
+	Title        *string     `json:"title"`
+	Description  *string     `json:"description"`
+	Status       *GameStatus `json:"status"`
+	IsPublic     *bool       `json:"is_public"`
+	SystemPrompt *string     `json:"system_prompt"`
+	TargetWord   *string     `json:"target_word"`
+	MaxTurns     *int        `json:"max_turns"`
 }
 
 // GameRepository defines the interface for game data access

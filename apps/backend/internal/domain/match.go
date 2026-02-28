@@ -8,12 +8,13 @@ import (
 type MatchStatus string
 
 const (
-	MatchStatusActive   MatchStatus = "active"
-	MatchStatusWon      MatchStatus = "won"
-	MatchStatusLost     MatchStatus = "lost"
-	MatchStatusResigned MatchStatus = "resigned"
-	MatchStatusExpired  MatchStatus = "expired"
-	MatchStatusError    MatchStatus = "error"
+	MatchStatusActive     MatchStatus = "active"
+	MatchStatusWon        MatchStatus = "won"
+	MatchStatusLost       MatchStatus = "lost"
+	MatchStatusGenerating MatchStatus = "generating"
+	MatchStatusResigned   MatchStatus = "resigned"
+	MatchStatusExpired    MatchStatus = "expired"
+	MatchStatusError      MatchStatus = "error"
 )
 
 // Match represents an individual play record of a game
@@ -22,6 +23,7 @@ type Match struct {
 	UserID      string      `json:"user_id"`
 	GameID      string      `json:"game_id"`
 	Status      MatchStatus `json:"status"`
+	MaxTurns    int         `json:"max_turns"`
 	TotalTokens int         `json:"total_tokens"`
 	TurnCount   int         `json:"turn_count"`
 	CreatedAt   time.Time   `json:"created_at"`
@@ -40,14 +42,16 @@ type MatchRepository interface {
 	GetByID(ctx context.Context, id string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
 	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
+	Update(ctx context.Context, match *Match) (*Match, error)
 	Delete(ctx context.Context, id string) error
 }
 
 // MatchUseCase defines the interface for match business logic
 type MatchUseCase interface {
 	Create(ctx context.Context, req *CreateMatchRequest) (*Match, error)
-	GetByID(ctx context.Context, id string) (*Match, error)
+	GetByID(ctx context.Context, id string, userID string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
 	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
+	Resign(ctx context.Context, id string, userID string) error
 	Delete(ctx context.Context, id string) error
 }
