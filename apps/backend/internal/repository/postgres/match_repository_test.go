@@ -249,3 +249,73 @@ func TestMatchRepository_Delete(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrNotFound)
 	})
 }
+
+func TestMatchRepository_GetLeaderboard(t *testing.T) {
+	cleanDB(t, "matches", "games", "users")
+	ctx := context.Background()
+	repo := NewMatchRepository(testDB)
+
+	user1 := createTestUser(t)
+
+	userRepo := NewUserRepository(testDB)
+	user2 := &domain.User{Name: "TestUser2", Email: "user2@example.com", Password: "testpassword"}
+	user2, _ = userRepo.Save(ctx, user2)
+
+	game := createTestGame(t, user1)
+
+	t.Run("Get leaderboard successfully", func(t *testing.T) {
+		// User1 play 1: worse turns
+		repo.Create(ctx, &domain.Match{
+			UserID:      user1.ID,
+			GameID:      game.ID,
+			Status:      domain.MatchStatusWon,
+			TurnCount:   10,
+			TotalTokens: 100,
+		})
+
+		time.Sleep(1 * time.Millisecond) // ensure ordering of update_at
+
+		// User1 play 2: better turns
+		repo.Create(ctx, &domain.Match{
+			UserID:      user1.ID,
+			GameID:      game.ID,
+			Status:      domain.MatchStatusWon,
+			TurnCount:   5,
+			TotalTokens: 50,
+		})
+
+		// User2 play 1: slightly better than user1
+		repo.Create(ctx, &domain.Match{
+			UserID:      user2.ID,
+			GameID:      game.ID,
+			Status:      domain.MatchStatusWon,
+			TurnCount:   3,
+			TotalTokens: 30,
+		})
+
+		// Some active matches that shouldn't be included
+		repo.Create(ctx, &domain.Match{
+			UserID:      user1.ID,
+			GameID:      game.ID,
+			Status:      domain.MatchStatusActive,
+			TurnCount:   1,
+			TotalTokens: 10,
+		})
+
+		leaderboardRepo := repo.(domain.LeaderboardRepository)
+		leaderboard, err := leaderboardRepo.GetLeaderboard(ctx, game.ID, 10)
+
+		assert.NoError(t, err)
+		assert.Len(t, leaderboard, 2)
+
+		// User2 should be 1st
+		assert.Equal(t, 0, leaderboard[0].Rank) // It should be 0 because it's assigned in the UseCase
+		assert.Equal(t, user2.ID, leaderboard[0].UserID)
+		assert.Equal(t, 3, leaderboard[0].TurnCount)
+
+		// User1 should be 2nd
+		assert.Equal(t, 0, leaderboard[1].Rank)
+		assert.Equal(t, user1.ID, leaderboard[1].UserID)
+		assert.Equal(t, 5, leaderboard[1].TurnCount) // Assert that only the best match of user1 is shown
+	})
+}
