@@ -41,12 +41,16 @@ func main() {
 			usecase.NewGameUseCase,
 			usecase.NewMatchUseCase,
 			usecase.NewMessageUseCase,
+			usecase.NewLeaderboardUseCase,
 		),
 		fx.Provide(
 			repository.NewUserRepository,
 			repository.NewAuthRepository,
 			repository.NewGameRepository,
 			repository.NewMatchRepository,
+			func(repo domain.MatchRepository) domain.LeaderboardRepository {
+				return repo.(domain.LeaderboardRepository)
+			},
 			repository.NewMessageRepository,
 		),
 		fx.Invoke(
@@ -56,6 +60,7 @@ func main() {
 			handler.NewGameHandler,
 			handler.NewMatchHandler,
 			handler.NewMessageHandler,
+			handler.NewLeaderboardHandler,
 		),
 		fx.Invoke(StartServer),
 	)

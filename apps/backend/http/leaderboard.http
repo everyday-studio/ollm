@@ -1,0 +1,3 @@
+### GET Leaderboard
+GET http://localhost:8080/games/01KJJ0WF0E8F1D6VEJGMWMTABK/leaderboard
+Content-Type: application/json
