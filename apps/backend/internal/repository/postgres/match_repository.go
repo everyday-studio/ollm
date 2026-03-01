@@ -211,3 +211,60 @@ func (r *matchRepository) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
+
+// GetLeaderboard retrieves the top scores for a specific game
+func (r *matchRepository) GetLeaderboard(ctx context.Context, gameID string, limit int) ([]domain.LeaderboardEntry, error) {
+	const query = `
+		WITH RankedMatches AS (
+			SELECT 
+				m.user_id,
+				m.turn_count,
+				m.total_tokens,
+				m.updated_at,
+				ROW_NUMBER() OVER(
+					PARTITION BY m.user_id 
+					ORDER BY m.turn_count ASC, m.total_tokens ASC, m.updated_at ASC
+				) as rn
+			FROM matches m
+			WHERE m.game_id = $1 AND m.status = 'won'
+		)
+		SELECT 
+			r.user_id,
+			u.name as username,
+			r.turn_count,
+			r.total_tokens,
+			r.updated_at
+		FROM RankedMatches r
+		JOIN users u ON r.user_id = u.id
+		WHERE r.rn = 1
+		ORDER BY r.turn_count ASC, r.total_tokens ASC, r.updated_at ASC
+		LIMIT $2
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, gameID, limit)
+	if err != nil {
+		return nil, mapDBError(err)
+	}
+	defer rows.Close()
+
+	leaderboard := make([]domain.LeaderboardEntry, 0, limit)
+	for rows.Next() {
+		var entry domain.LeaderboardEntry
+		if err := rows.Scan(
+			&entry.UserID,
+			&entry.Username,
+			&entry.TurnCount,
+			&entry.TotalTokens,
+			&entry.AchievedAt,
+		); err != nil {
+			return nil, mapDBError(err)
+		}
+		leaderboard = append(leaderboard, entry)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, mapDBError(err)
+	}
+
+	return leaderboard, nil
+}
