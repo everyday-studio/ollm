@@ -323,7 +323,7 @@
         </div>
 
       {:else}
-        <!-- Matches Section: Grouped by Game -->
+        <!-- Matches Section: Game cards with match stats -->
         <div in:fly={{ y: 20, duration: 300 }}>
           {#if matches.length === 0}
             <div class={`text-center py-16 md:py-20 rounded-2xl shadow-lg border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
@@ -336,85 +336,75 @@
               </button>
             </div>
           {:else}
-            <div class="space-y-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
               {#each matchGroups as group (group.gameId)}
-                <div class={`rounded-2xl border shadow-lg overflow-hidden ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
-                  <!-- Game group header -->
-                  <div class={`px-5 py-4 md:px-6 md:py-5 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
-                    <div class="flex items-center justify-between mb-3">
-                      <h3 class={`font-bold text-lg md:text-xl ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                        {group.gameTitle}
-                      </h3>
-                      <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                        {group.total}개 매치
+                {@const gameUI = games.find(g => g.id === group.gameId)}
+                <button
+                  onclick={() => goto(`/lobby/match/${group.latestMatch.id}`)}
+                  class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border text-left ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
+                >
+                  <div class="relative aspect-[16/10] bg-gray-200 overflow-hidden">
+                    {#if gameUI?.image}
+                      <img
+                        src={gameUI.image}
+                        alt={group.gameTitle}
+                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    {:else}
+                      <div class={`w-full h-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
+                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                      </div>
+                    {/if}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    <!-- Match count badge -->
+                    <div class="absolute top-2 left-2">
+                      <span class="bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-bold text-white">
+                        {group.total}회
                       </span>
                     </div>
-                    <!-- Stats row -->
-                    <div class="flex flex-wrap gap-2">
+
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#FF4D00] flex items-center justify-center shadow-xl">
+                        <svg class="w-5 h-5 md:w-6 md:h-6 fill-white ml-1" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-3 md:p-4 flex-1 flex flex-col">
+                    <h3 class={`font-bold text-base md:text-lg group-hover:text-[#FF4D00] transition-colors mb-2 line-clamp-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                      {group.gameTitle}
+                    </h3>
+                    <!-- Stats pills -->
+                    <div class="flex flex-wrap gap-1">
                       {#if group.active > 0}
-                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700'}`}>
-                          진행 중 {group.active}
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700'}`}>
+                          진행 {group.active}
                         </span>
                       {/if}
                       {#if group.won > 0}
-                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
                           승리 {group.won}
                         </span>
                       {/if}
                       {#if group.lost > 0}
-                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-red-900/60 text-red-300' : 'bg-red-100 text-red-700'}`}>
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-red-900/60 text-red-300' : 'bg-red-100 text-red-700'}`}>
                           패배 {group.lost}
                         </span>
                       {/if}
                       {#if group.resigned > 0}
-                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
                           기권 {group.resigned}
-                        </span>
-                      {/if}
-                      {#if group.other > 0}
-                        <span class={`text-xs font-semibold px-2.5 py-1 rounded-full ${isDarkMode ? 'bg-yellow-900/60 text-yellow-300' : 'bg-yellow-100 text-yellow-700'}`}>
-                          기타 {group.other}
                         </span>
                       {/if}
                     </div>
                   </div>
-
-                  <!-- Match list inside the group -->
-                  <div class="divide-y ${isDarkMode ? 'divide-gray-800/50' : 'divide-gray-100'}">
-                    {#each group.matches as match (match.id)}
-                      <button
-                        onclick={() => goto(`/lobby/match/${match.id}`)}
-                        class={`w-full text-left px-5 py-3 md:px-6 md:py-3.5 flex items-center justify-between gap-3 transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-gray-900' : 'hover:bg-gray-50'}`}
-                      >
-                        <div class="flex items-center gap-3 min-w-0">
-                          <span class={`text-xs font-mono shrink-0 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                            #{match.id.slice(-6)}
-                          </span>
-                          <span class={`text-sm truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            턴 {match.turn_count}/{match.max_turns ?? '?'}
-                          </span>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                          <span class={`text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                            {match.displayTime}
-                          </span>
-                          <span class={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            match.status === 'active' || match.status === 'generating' ? (isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700')
-                            : match.status === 'won' ? (isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-700')
-                            : match.status === 'lost' ? (isDarkMode ? 'bg-red-900/60 text-red-300' : 'bg-red-100 text-red-700')
-                            : match.status === 'resigned' ? (isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-600')
-                            : (isDarkMode ? 'bg-yellow-900/60 text-yellow-300' : 'bg-yellow-100 text-yellow-700')
-                          }`}>
-                            {match.status === 'active' || match.status === 'generating' ? '진행 중' : match.status === 'won' ? '승리' : match.status === 'lost' ? '패배' : match.status === 'resigned' ? '기권' : match.status}
-                          </span>
-                          <svg class={`w-4 h-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                          </svg>
-                        </div>
-                      </button>
-                    {/each}
-                  </div>
-                </div>
+                </button>
               {/each}
             </div>
           {/if}
