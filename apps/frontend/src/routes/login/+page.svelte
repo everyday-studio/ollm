@@ -55,8 +55,8 @@
         password: loginPassword 
       });
 
-      const { access_token, user } = res.data as AuthResponse;
-      authStore.loginSuccess(access_token, user);
+      const { access_token, id, name, email } = res.data as AuthResponse;
+      authStore.loginSuccess(access_token, { id, name, email } as any);
 
       toast.success(`로그인 성공!`, {
         duration: 3000,
