@@ -26,15 +26,11 @@
   // ----------------------------------------------------------------
   onMount(async () => {
     try {
-      // Restore session
+      // Restore access token (layout handles getMe for user info)
       try {
         const refreshRes = await authApi.refresh();
-        if (refreshRes?.data) {
-          const { access_token, id, name, email } = refreshRes.data as any;
-          if (access_token && email) {
-            const user: User = { id: id || '', name: name || 'Player', email, role: 'USER', created_at: new Date().toISOString() };
-            authStore.loginSuccess(access_token, user);
-          }
+        if (refreshRes?.data?.access_token) {
+          authStore.updateToken(refreshRes.data.access_token);
         }
       } catch { /* ignore */ }
 
