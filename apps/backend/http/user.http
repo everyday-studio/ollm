@@ -1,0 +1,17 @@
+# @name login
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+    "email": "test.admin@example.com",
+    "password": "password123"
+}
+
+### Update User
+PUT http://localhost:8080/users/me
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
+
+{
+  "name": "관리자올름"
+}
