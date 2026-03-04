@@ -109,8 +109,30 @@
   <main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
 
     {#if isLoading}
-      <div class="flex items-center justify-center h-[400px]">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-[#FF4D00] border-t-transparent"></div>
+      <!-- Skeleton: Header -->
+      <div class="mb-10">
+        <div class={`h-10 w-40 rounded-lg skeleton mb-2 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+        <div class={`h-4 w-64 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+      </div>
+      <!-- Skeleton: Profile card -->
+      <div class="max-w-2xl space-y-6">
+        <div class={`rounded-2xl border overflow-hidden shadow-lg ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div class={`px-6 py-8 md:px-8 flex flex-col sm:flex-row items-center sm:items-start gap-5 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+            <div class={`w-20 h-20 rounded-full shrink-0 skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            <div class="flex-1 min-w-0 space-y-3">
+              <div class={`h-7 w-40 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+              <div class={`h-4 w-56 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            </div>
+          </div>
+          <div class="px-6 md:px-8 py-6 space-y-4">
+            {#each Array(3) as _}
+              <div class="flex items-center justify-between">
+                <div class={`h-4 w-20 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+                <div class={`h-4 w-32 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+              </div>
+            {/each}
+          </div>
+        </div>
       </div>
     {:else if user}
       <!-- Header -->

@@ -345,11 +345,30 @@
   <div class="max-w-[1800px] mx-auto w-full flex-1 flex flex-col min-h-0 px-4 md:px-8 lg:px-10 py-4">
 
   {#if isLoading}
-    <!-- ======================== Loading ======================== -->
-    <div class="flex-1 flex items-center justify-center">
-      <div class="flex flex-col items-center gap-3">
-        <div class="w-10 h-10 border-[3px] border-[#FF4D00]/30 border-t-[#FF4D00] rounded-full animate-spin"></div>
-        <span class={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>불러오는 중…</span>
+    <!-- ======================== Skeleton Loading ======================== -->
+    <div class="flex-1 flex gap-0 min-h-0">
+      <!-- Skeleton: Sidebar -->
+      <div class={`hidden lg:flex flex-col w-72 xl:w-80 shrink-0 border-r py-4 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+        <div class="px-4 mb-4 space-y-2">
+          <div class={`h-5 w-2/3 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+          <div class={`h-3 w-1/2 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+        </div>
+        <div class={`mx-4 h-10 rounded-xl skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+        <div class="px-4 mt-4 space-y-2">
+          {#each Array(4) as _}
+            <div class={`h-16 rounded-xl skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+          {/each}
+        </div>
+      </div>
+      <!-- Skeleton: Chat area -->
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div class="max-w-2xl mx-auto w-full px-4 py-6 md:px-8 space-y-5">
+          {#each Array(3) as _, i}
+            <div class={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+              <div class={`rounded-2xl skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} ${i % 2 === 0 ? 'w-2/3' : 'w-3/4'}`} style="height: {60 + i * 20}px"></div>
+            </div>
+          {/each}
+        </div>
       </div>
     </div>
 
