@@ -1,6 +1,6 @@
 // src/lib/features/game/api.ts
 import client from '$lib/api/client';
-import type { GameDTO, MatchDTO } from './types';
+import type { GameDTO, MatchDTO, LeaderboardEntry } from './types';
 
 export const gameApi = {
   // GET /games - Fetch all public games
@@ -22,5 +22,8 @@ export const gameApi = {
   getMatchById: (id: string) => client.get<MatchDTO>(`/matches/${id}`),
 
   // POST /matches/:id/resign - Resign from a match
-  resignMatch: (id: string) => client.post<{ message: string }>(`/matches/${id}/resign`)
+  resignMatch: (id: string) => client.post<{ message: string }>(`/matches/${id}/resign`),
+
+  // GET /games/:id/leaderboard - Fetch leaderboard for a game
+  getLeaderboard: (gameId: string) => client.get<{ data: LeaderboardEntry[] }>(`/games/${gameId}/leaderboard`)
 };

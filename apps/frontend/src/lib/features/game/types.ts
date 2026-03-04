@@ -46,6 +46,16 @@ export interface CreateMessageRequest {
   content: string;
 }
 
+// [Backend DTO] Leaderboard entry (read-only, aggregated from matches)
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  username: string;
+  turn_count: number;
+  total_tokens: number;
+  achieved_at: string;
+}
+
 // [Frontend UI Model] Extended structure for UI rendering
 export interface GameUI extends GameDTO {
   subtitle: string; // e.g., "Lv.1 Basic Injection"

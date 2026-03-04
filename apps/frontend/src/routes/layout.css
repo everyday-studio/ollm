@@ -14,8 +14,104 @@
   text-rendering: optimizeLegibility;
 }
 
+html {
+  height: 100%;
+}
+
 body {
+  height: 100%;
+  overflow: hidden;
   font-feature-settings: "kern" 1;
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
+}
+
+button,
+a,
+[role="button"] {
+  cursor: pointer;
+}
+
+/* ======================================================
+   Custom scrollbar — hidden by default, shown on hover
+   ====================================================== */
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Show scrollbar thumb on container hover */
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 128, 0.25);
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 128, 0.5);
+}
+
+html.dark *:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+html.dark *:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Firefox — thin, hidden by default */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(120, 120, 128, 0.3) transparent;
+}
+
+html.dark *:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* ======================================================
+   Scrollbar completely hidden (keeps scroll functional)
+   ====================================================== */
+.scrollbar-hide {
+  -ms-overflow-style: none;       /* IE / Edge */
+  scrollbar-width: none;          /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;                  /* Chrome / Safari */
+}
+
+/* ======================================================
+   View Transitions — cross-fade between pages
+   ====================================================== */
+@keyframes vt-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes vt-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+
+::view-transition-old(root) {
+  animation: vt-fade-out 180ms ease-out both;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 180ms ease-in both;
 }

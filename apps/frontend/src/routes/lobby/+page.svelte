@@ -26,14 +26,7 @@
   let showGameModal = $state(false);
   
   let isLoading = $state(true);
-  let activeCategory = $state<'all' | 'action' | 'adventure' | 'puzzle' | 'strategy'>('all');
   let activeSection = $state<'games' | 'matches'>('games');
-
-  let filteredGames = $derived(
-    activeCategory === 'all' 
-      ? games 
-      : games.filter(g => g.tags?.includes(activeCategory))
-  );
 
   let isDarkMode = $derived(theme.isDark);
 
@@ -158,7 +151,7 @@
 
 </script>
 
-<div class={`min-h-screen transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
+<div class={`h-[calc(100vh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
   <main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
     
     {#if isLoading}
@@ -227,53 +220,9 @@
       <!-- Games Section -->
       {#if activeSection === 'games'}
         <div in:fly={{ y: 20, duration: 300 }}>
-          <!-- Category Filters -->
-          <nav class="flex gap-2 md:gap-3 mb-6 md:mb-8 flex-wrap">
-            <button 
-              onclick={() => activeCategory = 'all'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'all' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              모든 게임
-            </button>
-            <button 
-              onclick={() => activeCategory = 'action'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'action' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              액션
-            </button>
-            <button 
-              onclick={() => activeCategory = 'adventure'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'adventure' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              어드벤처
-            </button>
-            <button 
-              onclick={() => activeCategory = 'puzzle'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'puzzle' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              퍼즐
-            </button>
-            <button 
-              onclick={() => activeCategory = 'strategy'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'strategy' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              전략
-            </button>
-          </nav>
-
           <!-- Games Grid -->
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-            {#each filteredGames as game}
+            {#each games as game}
               <button 
                 onclick={() => openGameModal(game)}
                 class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
@@ -315,14 +264,9 @@
             {/each}
           </div>
 
-          {#if filteredGames.length === 0}
-            <div class={`text-center py-20 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
-              <p class="text-lg font-semibold">이 카테고리에 게임이 없습니다.</p>
-            </div>
-          {/if}
         </div>
 
-      {:else}
+      {:else if activeSection === 'matches'}
         <!-- Matches Section: Game cards with match stats -->
         <div in:fly={{ y: 20, duration: 300 }}>
           {#if matches.length === 0}
@@ -409,12 +353,11 @@
             </div>
           {/if}
         </div>
+
       {/if}
     {/if}
   </main>
 </div>
-
-<!-- Game Detail Modal -->
 {#if showGameModal && selectedGame}
   <div 
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" 
