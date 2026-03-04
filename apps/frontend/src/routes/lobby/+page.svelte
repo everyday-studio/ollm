@@ -145,8 +145,27 @@
   <main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
     
     {#if isLoading}
-      <div class="flex items-center justify-center h-[700px]">
-        <div class="animate-spin rounded-full h-16 w-16 border-4 border-[#FF4D00] border-t-transparent"></div>
+      <!-- Skeleton: Hero banner -->
+      <section class="mb-8">
+        <div class={`h-[320px] md:h-[400px] rounded-3xl skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+      </section>
+      <!-- Skeleton: Section toggle -->
+      <div class="flex gap-4 mb-6">
+        <div class={`h-11 w-36 rounded-full skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+        <div class={`h-11 w-28 rounded-full skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+      </div>
+      <!-- Skeleton: Game grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+        {#each Array(5) as _}
+          <div class={`rounded-2xl overflow-hidden border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+            <div class={`aspect-[16/10] skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            <div class="p-3 md:p-4 space-y-2">
+              <div class={`h-5 w-3/4 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+              <div class={`h-3 w-full rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+              <div class={`h-3 w-2/3 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            </div>
+          </div>
+        {/each}
       </div>
     {:else}
       <!-- Hero Banner -->

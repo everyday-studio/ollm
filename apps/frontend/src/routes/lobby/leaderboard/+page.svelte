@@ -74,8 +74,30 @@
   <main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
 
     {#if isLoading}
-      <div class="flex items-center justify-center h-[400px]">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-[#FF4D00] border-t-transparent"></div>
+      <!-- Skeleton: Header -->
+      <div class="mb-8">
+        <div class={`h-10 w-48 rounded-lg skeleton mb-2 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+        <div class={`h-4 w-36 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+      </div>
+      <!-- Skeleton: Game selector -->
+      <div class="flex gap-2 mb-6">
+        {#each Array(3) as _}
+          <div class={`h-10 w-24 rounded-full skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+        {/each}
+      </div>
+      <!-- Skeleton: Table -->
+      <div class={`rounded-2xl border overflow-hidden shadow-lg ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+        <div class={`px-5 py-3.5 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+          <div class={`h-3 w-full rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+        </div>
+        {#each Array(5) as _, i}
+          <div class={`px-5 py-3.5 flex items-center gap-4 ${i > 0 ? (isDarkMode ? 'border-t border-gray-800/50' : 'border-t border-gray-100') : ''}`}>
+            <div class={`w-7 h-7 rounded-full shrink-0 skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            <div class={`h-4 flex-1 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            <div class={`h-4 w-12 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            <div class={`h-4 w-16 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+          </div>
+        {/each}
       </div>
     {:else}
       <!-- Header -->
@@ -103,9 +125,17 @@
       <!-- Table -->
       <div class={`rounded-2xl border overflow-hidden shadow-lg ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`} in:fly={{ y: 20, duration: 300 }}>
         {#if isTableLoading}
-          <div class="flex items-center justify-center py-20">
-            <div class="animate-spin rounded-full h-10 w-10 border-4 border-[#FF4D00] border-t-transparent"></div>
+          <div class={`px-5 py-3.5 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+            <div class={`h-3 w-full rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
           </div>
+          {#each Array(5) as _, i}
+            <div class={`px-5 py-3.5 flex items-center gap-4 ${i > 0 ? (isDarkMode ? 'border-t border-gray-800/50' : 'border-t border-gray-100') : ''}`}>
+              <div class={`w-7 h-7 rounded-full shrink-0 skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+              <div class={`h-4 flex-1 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+              <div class={`h-4 w-12 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+              <div class={`h-4 w-16 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            </div>
+          {/each}
         {:else if entries.length === 0}
           <div class="text-center py-16">
             <p class={`text-lg font-semibold mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>아직 기록이 없습니다</p>
