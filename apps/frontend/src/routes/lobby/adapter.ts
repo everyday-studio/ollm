@@ -13,7 +13,7 @@ const GAME_ASSETS: Record<string, { subtitle: string; image: string; tags: strin
   // Default fallback asset
   "default": {
     subtitle: "Custom Scenario",
-    image: "/images/default-game.jpg", // Ensure this file exists in /static
+    image: "https://storage.googleapis.com/ollm-assets-prod/thumbnail_test_2.png",
     tags: ["Custom"]
   }
 };

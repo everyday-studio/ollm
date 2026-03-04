@@ -394,18 +394,19 @@
       }`}>
         <!-- Left group -->
         <div class="flex items-center gap-2 min-w-0">
-          <!-- Mobile only: back + hamburger -->
+          <!-- Back to lobby -->
           <button
             onclick={() => goto('/lobby')}
-            class={`lg:hidden shrink-0 p-1.5 rounded-lg transition-colors ${
-              isDarkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
+            class={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
-            aria-label="뒤로가기"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
             </svg>
+            로비
           </button>
+          <!-- Mobile: hamburger -->
           <button
             onclick={() => showSidebar = !showSidebar}
             class={`lg:hidden shrink-0 p-1.5 rounded-lg transition-colors ${
@@ -417,14 +418,12 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
             </svg>
           </button>
-
           <!-- Mobile: game title -->
           <span class={`lg:hidden font-semibold text-sm truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             {game?.title ?? '게임'}
           </span>
-
-          <!-- Status badge -->
-          <div class="flex items-center gap-2.5">
+          <!-- Mobile: status (desktop shows in sidebar) -->
+          <div class="flex items-center gap-2 lg:hidden">
             <span class={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${statusColor}`}>
               {#if match?.status === 'generating'}
                 <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
@@ -441,16 +440,16 @@
 
         <!-- Right group -->
         <div class="flex items-center gap-2 shrink-0">
-          <span class={`sm:hidden text-[11px] tabular-nums ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <span class={`sm:hidden lg:hidden text-[11px] tabular-nums ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
             {turnDisplay}
           </span>
           {#if isMatchActive}
             <button
               onclick={() => showResignModal = true}
-              class={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              class={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
                 isDarkMode
-                  ? 'text-gray-500 hover:text-red-400 hover:bg-red-500/10'
-                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                  ? 'text-red-400 border-red-500/30 bg-red-500/10 hover:bg-red-500/20'
+                  : 'text-red-500 border-red-200 bg-red-50 hover:bg-red-100'
               }`}
             >
               기권
@@ -464,22 +463,43 @@
 
         <!-- ===== Left sidebar (in-flow) ===== -->
         <aside class={`hidden lg:flex flex-col w-[272px] shrink-0 transition-colors ${
-          isDarkMode ? 'bg-gray-900' : 'bg-white'
+          isDarkMode ? 'bg-gray-950' : 'bg-gray-50'
         }`}>
-          <!-- Back link -->
-          <div class={`shrink-0 px-4 pt-4 pb-2`}>
-            <button
-              onclick={() => goto('/lobby')}
-              class={`inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
-                isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-              </svg>
-              로비
-            </button>
+          <!-- Status badge -->
+          <div class="shrink-0 px-4 pt-4 pb-2">
+            <div class="flex items-center gap-2.5">
+              <span class={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${statusColor}`}>
+                {#if match?.status === 'generating'}
+                  <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                {:else if match?.status === 'active'}
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                {/if}
+                {statusLabel}
+              </span>
+              <span class={`text-xs tabular-nums font-medium ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                턴 {turnDisplay}
+              </span>
+            </div>
           </div>
+
+          <!-- New match button (top) -->
+          {#if game}
+            <div class="shrink-0 px-3 pt-1 pb-2">
+              <button
+                onclick={handleRetry}
+                class={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  isDarkMode
+                    ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                }`}
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                새 매치
+              </button>
+            </div>
+          {/if}
 
           <!-- Match list -->
           <nav class="flex-1 overflow-y-auto py-1 pr-0 scrollbar-hide">
@@ -490,9 +510,9 @@
                 href="/lobby/match/{sibling.id}"
                 class={`match-tab group relative flex items-center gap-3 ml-2 my-1.5 px-3 py-3 text-sm transition-all ${
                   isActive
-                    ? 'match-tab-active rounded-l-xl border border-r-0 border-[#FF4D00]/40 ' + (isDarkMode
-                        ? 'bg-gray-950'
-                        : 'bg-gray-50')
+                    ? 'match-tab-active rounded-xl mr-2 ' + (isDarkMode
+                        ? 'bg-gradient-to-r from-[#FF4D00]/15 to-gray-950'
+                        : 'bg-gradient-to-r from-[#FF4D00]/10 to-gray-50')
                     : 'rounded-xl mr-2 border ' + (isDarkMode
                         ? 'border-gray-800 hover:bg-gray-800/50 hover:border-gray-700'
                         : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300')
@@ -536,29 +556,11 @@
             {/each}
           </nav>
 
-          <!-- New match button -->
-          {#if game}
-            <div class={`shrink-0 px-3 py-3 border-t ${isDarkMode ? 'border-gray-800/70' : 'border-gray-100'}`}>
-              <button
-                onclick={handleRetry}
-                class={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  isDarkMode
-                    ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-                }`}
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                새 매치
-              </button>
-            </div>
-          {/if}
         </aside>
         <!-- ===== End sidebar ===== -->
 
-        <!-- Chat column: orange border, right-rounded only on desktop -->
-        <div class="flex-1 flex flex-col min-h-0 border border-[#FF4D00]/50 rounded-xl lg:rounded-l-none overflow-hidden">
+        <!-- Chat column -->
+        <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div
             bind:this={chatContainer}
             class="flex-1 overflow-y-auto min-h-0"
@@ -688,12 +690,29 @@
                   {:else}오류
                   {/if}
                 </h3>
-                <p class={`text-sm mb-5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  {#if match?.status === 'won'}{match?.turn_count}턴 만에 클리어
-                  {:else if match?.status === 'lost'}{match?.max_turns}턴을 모두 소진했습니다
-                  {:else}턴 {match?.turn_count} / {match?.max_turns}
-                  {/if}
-                </p>
+                {#if match?.status === 'won'}
+                  <div class={`flex items-center justify-center gap-4 text-sm mb-5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <span class="flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                      </svg>
+                      {match.turn_count}턴
+                    </span>
+                    <span class={`w-px h-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></span>
+                    <span class="flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                      </svg>
+                      {match.total_tokens.toLocaleString()}토큰
+                    </span>
+                  </div>
+                {:else}
+                  <p class={`text-sm mb-5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {#if match?.status === 'lost'}{match?.max_turns}턴을 모두 소진했습니다
+                    {:else}턴 {match?.turn_count} / {match?.max_turns}
+                    {/if}
+                  </p>
+                {/if}
                 <div class="flex items-center justify-center gap-2.5">
                   <button
                     onclick={() => goto('/lobby')}
@@ -922,12 +941,9 @@
 {/if}
 
 <style>
-  /* ===== Active match tab: right edge connects to chat column border ===== */
+  /* ===== Active match tab: orange indicator positioning ===== */
   .match-tab-active {
     position: relative;
     z-index: 1;
-    margin-right: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
   }
 </style>
