@@ -140,3 +140,27 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 
 	return user, nil
 }
+
+func (r *userRepository) UpdateNickname(ctx context.Context, id string, name string) error {
+	const query = `
+		UPDATE users
+		SET name = $1, updated_at = NOW()
+		WHERE id = $2
+	`
+
+	res, err := r.db.ExecContext(ctx, query, name, id)
+	if err != nil {
+		return fmt.Errorf("failed to update nickname: %w", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrNotFound
+	}
+
+	return nil
+}

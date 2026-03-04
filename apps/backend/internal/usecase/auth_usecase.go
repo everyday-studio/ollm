@@ -9,6 +9,7 @@ import (
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
+	"github.com/everyday-studio/ollm/internal/kit/nickname"
 	"github.com/everyday-studio/ollm/internal/kit/security"
 )
 
@@ -41,6 +42,15 @@ func NewAuthUseCase(authRepo domain.AuthRepository, userRepo domain.UserReposito
 }
 
 func (uc *authUseCase) SignUpUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+	if user.Name == "" || user.Name == "TESTUSER" {
+		generatedName, err := nickname.Generate()
+		if err != nil {
+			user.Name = nickname.GenerateFallback()
+		} else {
+			user.Name = generatedName
+		}
+	}
+
 	hashedPassword, err := security.GeneratePasswordHash(user.Password, nil)
 	if err != nil {
 		return nil, err

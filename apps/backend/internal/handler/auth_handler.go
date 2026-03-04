@@ -48,7 +48,6 @@ func (h *AuthHandler) SignUpUser(c echo.Context) error {
 	}
 
 	user := &domain.User{
-		Name:     "TESTUSER", //TODOs
 		Email:    req.Email,
 		Password: req.Password,
 		Role:     domain.RoleUser,
