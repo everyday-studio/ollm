@@ -24,14 +24,20 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type UpdateNicknameRequest struct {
+	Name string `json:"name"`
+}
+
 type UserRepository interface {
 	Save(ctx context.Context, user *User) (*User, error)
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetAll(ctx context.Context) ([]User, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	UpdateNickname(ctx context.Context, id string, name string) error
 }
 
 type UserUseCase interface {
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetAll(ctx context.Context) ([]User, error)
+	UpdateNickname(ctx context.Context, id string, name string) (*User, error)
 }
