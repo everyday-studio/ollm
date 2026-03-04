@@ -39,6 +39,10 @@ function createAuthStore() {
     updateToken: (token: string) => {
       update(state => ({ ...state, accessToken: token }));
     },
+    // 유저 정보 업데이트
+    updateUser: (user: User) => {
+      update(state => ({ ...state, user }));
+    },
     // 로딩 종료
     finishLoading: () => {
         update(state => ({ ...state, isLoading: false }));

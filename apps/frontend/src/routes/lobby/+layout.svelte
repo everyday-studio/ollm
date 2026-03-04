@@ -20,9 +20,26 @@
   let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
   let currentPath = $derived($page.url.pathname);
 
-  onMount(() => {
+  onMount(async () => {
     const savedTheme = localStorage.getItem('theme');
     isDarkMode = savedTheme !== 'light';
+
+    // Restore session and fetch full user (including name) from the server
+    try {
+      const refreshRes = await authApi.refresh();
+      if (refreshRes?.data?.access_token) {
+        authStore.updateToken(refreshRes.data.access_token);
+        // Fetch full user info so that name is populated
+        try {
+          const meRes = await authApi.getMe();
+          authStore.updateUser(meRes.data);
+        } catch {
+          console.warn('Failed to fetch user info');
+        }
+      }
+    } catch {
+      // Not logged in or refresh failed — leave store as-is
+    }
   });
 
   // Sync dark mode state → html element class so CSS can target it
@@ -113,8 +130,8 @@
         </a>
         <span class={`mx-2 self-center ${isDarkMode ? 'text-gray-700' : 'text-gray-300'}`}>|</span>
         <a
-          href="/mypage"
-          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/mypage') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+          href="/lobby/mypage"
+          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/lobby/mypage') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
         >
           마이페이지
         </a>
@@ -151,10 +168,12 @@
       </button>
 
       <div class="relative group">
-        <div class={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors cursor-pointer ${isDarkMode ? 'group-hover:bg-gray-900' : 'group-hover:bg-gray-100'}`}>
-          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-            {currentUserInitial}
-          </div>
+        <a href="/lobby/mypage" class={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors cursor-pointer ${isDarkMode ? 'group-hover:bg-gray-900' : 'group-hover:bg-gray-100'}`}>
+          <img
+            src="https://storage.googleapis.com/ollm-assets-prod/user_profile_default.png"
+            alt="프로필"
+            class="w-8 h-8 rounded-full object-cover shadow-sm"
+          />
 
           <div class="flex flex-col">
             <span class={`text-xs font-semibold leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
@@ -164,7 +183,7 @@
               {currentUserEmail}
             </span>
           </div>
-        </div>
+        </a>
 
         <div class={`absolute right-0 top-full mt-0 w-56 rounded-2xl border shadow-xl opacity-0 translate-y-1 pointer-events-none transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto ${isDarkMode ? 'border-gray-800 bg-gray-950' : 'border-gray-200 bg-white'}`}>
           <div class={`px-4 py-3 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
@@ -172,7 +191,7 @@
             <div class={`text-xs font-mono ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{currentUserEmail}</div>
           </div>
           <div class="py-2">
-            <a href="/mypage" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>마이페이지</a>
+            <a href="/lobby/mypage" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>마이페이지</a>
             <a href="/lobby/leaderboard" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>리더보드</a>
           </div>
         </div>

@@ -4,16 +4,23 @@
 export interface User {
   id: string;
   email: string;
-  name: string; // 백엔드 명세에 'name'이면 name으로 수정
-  role: 'ADMIN' | 'USER';
+  name: string;
+  role: string;
   created_at: string;
+  updated_at: string;
 }
 
-// 로그인 응답 (백엔드 명세 기준)
+// 로그인/리프레시 응답 (백엔드는 플랫 구조로 내려줌)
 export interface AuthResponse {
+  id: string;
+  name: string;
+  email: string;
   access_token: string;
-  user: User; // 만약 백엔드가 user 객체를 같이 준다면
-  // 만약 토큰만 준다면 user는 빼야 합니다.
+}
+
+// 닉네임 변경 요청
+export interface UpdateNicknameRequest {
+  name: string;
 }
 
 // API 요청 타입
