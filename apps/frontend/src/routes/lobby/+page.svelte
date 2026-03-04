@@ -317,12 +317,12 @@
                     <!-- Stats pills -->
                     <div class="flex flex-wrap gap-1">
                       {#if group.active > 0}
-                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700'}`}>
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
                           진행 {group.active}
                         </span>
                       {/if}
                       {#if group.won > 0}
-                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700'}`}>
                           승리 {group.won}
                         </span>
                       {/if}

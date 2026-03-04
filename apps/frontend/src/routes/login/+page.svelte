@@ -21,7 +21,6 @@
 
   // 회원가입용 입력값
   let regEmail = '';
-  let regNickname = '';
   let regPassword = '';
 
   let errorMessage = '';
@@ -31,7 +30,6 @@
     showRegisterModal = true;
     errorMessage = '';
     regEmail = '';
-    regNickname = '';
     regPassword = '';
     showRegPassword = false; // 모달 열 때 비밀번호 숨김 초기화
   };
@@ -293,17 +291,6 @@
                             id="reg-email"
                             bind:value={regEmail}
                             placeholder="이메일 주소"
-                            class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label for="reg-nickname" class="block text-sm font-medium text-gray-700">닉네임</label>
-                        <input 
-                            type="text" 
-                            id="reg-nickname"
-                            bind:value={regNickname}
-                            placeholder="게임에서 사용할 이름"
                             class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
