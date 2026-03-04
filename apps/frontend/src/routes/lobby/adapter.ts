@@ -14,7 +14,7 @@ const GAME_ASSETS: Record<string, { subtitle: string; image: string; tags: strin
   "default": {
     subtitle: "Custom Scenario",
     image: "https://storage.googleapis.com/ollm-assets-prod/thumbnail_test_2.png",
-    tags: ["Custom"]
+    tags: []
   }
 };
 

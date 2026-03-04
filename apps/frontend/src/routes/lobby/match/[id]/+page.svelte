@@ -274,9 +274,9 @@
 
   function getStatusColor(status: MatchStatus | undefined): string {
     switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'active': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
       case 'generating': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'won': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+      case 'won': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'lost': return 'bg-red-500/20 text-red-400 border-red-500/30';
       case 'resigned': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
       case 'expired': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
@@ -287,9 +287,9 @@
 
   function getSidebarStatusBadge(status: MatchStatus): string {
     switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-400';
+      case 'active': return 'bg-gray-500/20 text-gray-400';
       case 'generating': return 'bg-yellow-500/20 text-yellow-400';
-      case 'won': return 'bg-emerald-500/20 text-emerald-300';
+      case 'won': return 'bg-green-500/20 text-green-400';
       case 'lost': return 'bg-red-500/20 text-red-400';
       case 'resigned': return 'bg-gray-500/20 text-gray-400';
       default: return 'bg-gray-500/20 text-gray-400';
@@ -492,7 +492,7 @@
           {/if}
 
           <!-- Match list -->
-          <nav class="flex-1 overflow-y-auto py-1 pr-0 scrollbar-hide">
+          <nav class="flex-1 overflow-y-auto py-1 pr-0 scrollbar-hide relative">
             {#each siblingMatches as sibling (sibling.id)}
               {@const isActive = sibling.id === matchId}
               {@const progress = sibling.max_turns > 0 ? (sibling.turn_count / sibling.max_turns) * 100 : 0}
@@ -503,9 +503,15 @@
                     ? 'match-tab-active rounded-xl mr-2 ' + (isDarkMode
                         ? 'bg-gradient-to-r from-[#FF4D00]/15 to-gray-950'
                         : 'bg-gradient-to-r from-[#FF4D00]/10 to-gray-50')
-                    : 'rounded-xl mr-2 border ' + (isDarkMode
-                        ? 'border-gray-800 hover:bg-gray-800/50 hover:border-gray-700'
-                        : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300')
+                    : 'rounded-xl mr-2 border ' + (
+                        sibling.status === 'active' || sibling.status === 'generating'
+                          ? isDarkMode
+                            ? 'border-gray-800 hover:bg-gray-800/50 hover:border-gray-700'
+                            : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                          : isDarkMode
+                            ? 'border-gray-800 bg-gray-800/60 hover:bg-gray-800/80 hover:border-gray-700'
+                            : 'border-gray-200 bg-gray-200/60 hover:bg-gray-200/80 hover:border-gray-300'
+                      )
                 }`}
                 data-dark={isDarkMode ? '' : undefined}
               >
@@ -513,11 +519,11 @@
                   <span class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#FF4D00]"></span>
                 {/if}
                 <span class={`shrink-0 w-2 h-2 rounded-full ${
-                  sibling.status === 'active' ? 'bg-green-400' :
+                  sibling.status === 'active' ? 'bg-gray-400' :
                   sibling.status === 'generating' ? 'bg-yellow-400 animate-pulse' :
-                  sibling.status === 'won' ? 'bg-emerald-400' :
+                  sibling.status === 'won' ? 'bg-green-400' :
                   sibling.status === 'lost' ? 'bg-red-400' :
-                  sibling.status === 'resigned' ? 'bg-gray-400' : 'bg-gray-500'
+                  sibling.status === 'resigned' ? 'bg-red-400' : 'bg-gray-500'
                 }`}></span>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between mb-1">
@@ -528,15 +534,16 @@
                       isActive ? 'text-[#FF4D00]/70' : isDarkMode ? 'text-gray-600' : 'text-gray-400'
                     }`}>{getShortStatusLabel(sibling.status)}</span>
                   </div>
-                  <div class={`h-1 rounded-full overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
-                    <div
-                      class={`h-full rounded-full transition-all duration-300 ${
-                        sibling.status === 'won' ? 'bg-emerald-400' :
-                        sibling.status === 'lost' || sibling.status === 'resigned' ? isDarkMode ? 'bg-gray-600' : 'bg-gray-400' :
-                        'bg-[#FF4D00]'
-                      }`}
-                      style="width: {progress}%"
-                    ></div>
+                  <div class="flex gap-0.5 h-1">
+                    {#each Array.from({ length: sibling.max_turns }, (_, i) => i) as i}
+                      <div class={`flex-1 rounded-sm transition-colors duration-300 ${
+                        i < sibling.turn_count
+                          ? sibling.status === 'won' ? 'bg-green-400' :
+                            sibling.status === 'lost' || sibling.status === 'resigned' ? 'bg-red-400' :
+                            'bg-[#FF4D00]'
+                          : isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
+                      }`}></div>
+                    {/each}
                   </div>
                   <div class={`text-[10px] mt-0.5 tabular-nums ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
                     {sibling.turn_count} / {sibling.max_turns} 턴
@@ -544,6 +551,8 @@
                 </div>
               </a>
             {/each}
+            <div class="h-6 shrink-0"></div>
+            <div class={`pointer-events-none sticky bottom-0 left-0 right-0 h-8 -mt-8 ${isDarkMode ? 'bg-gradient-to-t from-gray-950 to-transparent' : 'bg-gradient-to-t from-gray-50 to-transparent'}`}></div>
           </nav>
 
         </aside>
@@ -553,10 +562,10 @@
         <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div
             bind:this={chatContainer}
-            class="flex-1 overflow-y-auto min-h-0"
+            class={`flex-1 overflow-y-auto min-h-0 ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}
           >
           {#key matchId}
-          <div class="max-w-2xl mx-auto px-4 py-6 md:px-8 space-y-5" in:fade={{ duration: 150, delay: 50 }}>
+          <div class="max-w-2xl mx-auto px-4 py-6 md:px-8 space-y-5" in:fade={{ duration: 150, delay: 80 }} out:fade={{ duration: 80 }}>
 
             <!-- Error banner -->
             {#if errorMessage}

@@ -117,9 +117,9 @@
               <tr class={`text-xs uppercase tracking-wider ${isDarkMode ? 'text-gray-500 border-b border-gray-800' : 'text-gray-400 border-b border-gray-200'}`}>
                 <th class="px-5 py-3.5 text-left w-16">순위</th>
                 <th class="px-5 py-3.5 text-left">플레이어</th>
-                <th class="px-5 py-3.5 text-right">턴</th>
-                <th class="px-5 py-3.5 text-right">토큰</th>
-                <th class="px-5 py-3.5 text-right hidden sm:table-cell">달성일</th>
+                <th class="px-5 py-3.5 text-right w-24">턴</th>
+                <th class="px-5 py-3.5 text-right w-28">토큰</th>
+                <th class="px-5 py-3.5 text-right w-32 hidden sm:table-cell">달성일</th>
               </tr>
             </thead>
             <tbody>

@@ -21,6 +21,12 @@ html {
 body {
   height: 100%;
   overflow: hidden;
+  background-color: #fff;
+}
+
+html.dark body {
+  background-color: #030712; /* gray-950 */
+  color-scheme: dark;
   font-feature-settings: "kern" 1;
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
@@ -114,4 +120,9 @@ html.dark *:hover {
 }
 ::view-transition-new(root) {
   animation: vt-fade-in 180ms ease-in both;
+}
+
+/* Prevent white flash during view transitions in dark mode */
+::view-transition-group(root) {
+  background: inherit;
 }
