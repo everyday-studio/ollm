@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade, scale } from 'svelte/transition';
-  import { goto, invalidateAll } from '$app/navigation';
+  import { goto, invalidateAll, onNavigate } from '$app/navigation';
   import { page } from '$app/stores';
   import { onMount, setContext } from 'svelte';
 
@@ -25,10 +25,35 @@
     isDarkMode = savedTheme !== 'light';
   });
 
+  // Sync dark mode state → html element class so CSS can target it
+  $effect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  });
+
   function toggleTheme() {
     isDarkMode = !isDarkMode;
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }
+
+  // ----------------------------------------------------------------
+  // View Transitions API — smooth cross-fade between page navigations
+  // ----------------------------------------------------------------
+  onNavigate((navigation) => {
+    // @ts-ignore — document.startViewTransition is experimental
+    if (!document.startViewTransition) return;
+
+    return new Promise((resolve) => {
+      // @ts-ignore
+      document.startViewTransition(async () => {
+        resolve();
+        await navigation.complete;
+      });
+    });
+  });
 
   async function handleLogout() {
     try {
@@ -82,7 +107,7 @@
       <nav class="flex items-stretch gap-0 text-sm font-semibold h-16">
         <a
           href="/lobby"
-          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/lobby') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath === '/lobby' || currentPath.startsWith('/lobby/match') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
         >
           메인
         </a>
@@ -95,8 +120,8 @@
         </a>
         <span class={`mx-2 self-center ${isDarkMode ? 'text-gray-700' : 'text-gray-300'}`}>|</span>
         <a
-          href="/leaderboard"
-          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/leaderboard') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+          href="/lobby/leaderboard"
+          class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/lobby/leaderboard') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
         >
           리더보드
         </a>
@@ -148,7 +173,7 @@
           </div>
           <div class="py-2">
             <a href="/mypage" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>마이페이지</a>
-            <a href="/leaderboard" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>리더보드</a>
+            <a href="/lobby/leaderboard" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>리더보드</a>
           </div>
         </div>
       </div>
@@ -168,7 +193,7 @@
   </div>
 </header>
 
-<main class="pt-16 pb-12">
+<main class="pt-16">
   {@render children()}
 </main>
 

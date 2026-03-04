@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade, fly, scale } from 'svelte/transition';
   import { onMount, getContext } from 'svelte';
+  import { goto } from '$app/navigation';
 
   // Imports for API and Types
   import { gameApi } from '$lib/features/game/api';
@@ -25,16 +26,52 @@
   let showGameModal = $state(false);
   
   let isLoading = $state(true);
-  let activeCategory = $state<'all' | 'action' | 'adventure' | 'puzzle' | 'strategy'>('all');
   let activeSection = $state<'games' | 'matches'>('games');
 
-  let filteredGames = $derived(
-    activeCategory === 'all' 
-      ? games 
-      : games.filter(g => g.tags?.includes(activeCategory))
-  );
-
   let isDarkMode = $derived(theme.isDark);
+
+  // Group matches by game for the "내 매치" section
+  interface GameMatchGroup {
+    gameId: string;
+    gameTitle: string;
+    matches: MatchUI[];
+    total: number;
+    active: number;
+    won: number;
+    lost: number;
+    resigned: number;
+    other: number;
+    latestMatch: MatchUI;
+  }
+
+  let matchGroups = $derived.by<GameMatchGroup[]>(() => {
+    const groupMap = new Map<string, MatchUI[]>();
+    for (const m of matches) {
+      const key = m.game_id;
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(m);
+    }
+    const groups: GameMatchGroup[] = [];
+    for (const [gameId, groupMatches] of groupMap) {
+      // Sort newest first within group
+      groupMatches.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      groups.push({
+        gameId,
+        gameTitle: groupMatches[0].gameTitle,
+        matches: groupMatches,
+        total: groupMatches.length,
+        active: groupMatches.filter(m => m.status === 'active' || m.status === 'generating').length,
+        won: groupMatches.filter(m => m.status === 'won').length,
+        lost: groupMatches.filter(m => m.status === 'lost').length,
+        resigned: groupMatches.filter(m => m.status === 'resigned').length,
+        other: groupMatches.filter(m => m.status === 'expired' || m.status === 'error').length,
+        latestMatch: groupMatches[0]
+      });
+    }
+    // Sort groups by latest activity
+    groups.sort((a, b) => new Date(b.latestMatch.updated_at).getTime() - new Date(a.latestMatch.updated_at).getTime());
+    return groups;
+  });
 
   // ----------------------------------------------------------------
   // Lifecycle & Logic
@@ -104,10 +141,9 @@
   async function startNewMatch(game: GameUI) {
     try {
       const res = await gameApi.createMatch(game.id);
-      const newMatchUI = toMatchUI(res.data, games); 
-      matches = [newMatchUI, ...matches];
       showGameModal = false;
-      activeSection = 'matches';
+      // Navigate directly to the match chat page
+      await goto(`/lobby/match/${res.data.id}`);
     } catch (error) {
       console.error("Failed to create match:", error);
     }
@@ -115,7 +151,7 @@
 
 </script>
 
-<div class={`min-h-screen transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
+<div class={`h-[calc(100vh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
   <main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
     
     {#if isLoading}
@@ -184,53 +220,9 @@
       <!-- Games Section -->
       {#if activeSection === 'games'}
         <div in:fly={{ y: 20, duration: 300 }}>
-          <!-- Category Filters -->
-          <nav class="flex gap-2 md:gap-3 mb-6 md:mb-8 flex-wrap">
-            <button 
-              onclick={() => activeCategory = 'all'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'all' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              모든 게임
-            </button>
-            <button 
-              onclick={() => activeCategory = 'action'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'action' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              액션
-            </button>
-            <button 
-              onclick={() => activeCategory = 'adventure'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'adventure' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              어드벤처
-            </button>
-            <button 
-              onclick={() => activeCategory = 'puzzle'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'puzzle' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              퍼즐
-            </button>
-            <button 
-              onclick={() => activeCategory = 'strategy'}
-              class={`px-4 md:px-5 py-2 rounded-full font-semibold text-sm transition-all ${activeCategory === 'strategy' 
-                       ? isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-800 text-white' 
-                       : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-            >
-              전략
-            </button>
-          </nav>
-
           <!-- Games Grid -->
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-            {#each filteredGames as game}
+            {#each games as game}
               <button 
                 onclick={() => openGameModal(game)}
                 class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
@@ -272,15 +264,10 @@
             {/each}
           </div>
 
-          {#if filteredGames.length === 0}
-            <div class={`text-center py-20 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
-              <p class="text-lg font-semibold">이 카테고리에 게임이 없습니다.</p>
-            </div>
-          {/if}
         </div>
 
-      {:else}
-        <!-- Matches Section -->
+      {:else if activeSection === 'matches'}
+        <!-- Matches Section: Game cards with match stats -->
         <div in:fly={{ y: 20, duration: 300 }}>
           {#if matches.length === 0}
             <div class={`text-center py-16 md:py-20 rounded-2xl shadow-lg border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
@@ -293,34 +280,84 @@
               </button>
             </div>
           {:else}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {#each matches as match}
-                <div class={`rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-100 border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
-                  <div class="flex justify-between items-start mb-3">
-                    <h3 class={`font-bold text-lg md:text-xl line-clamp-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                      {match.gameTitle}
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+              {#each matchGroups as group (group.gameId)}
+                {@const gameUI = games.find(g => g.id === group.gameId)}
+                <button
+                  onclick={() => goto(`/lobby/match/${group.latestMatch.id}`)}
+                  class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border text-left ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
+                >
+                  <div class="relative aspect-[16/10] bg-gray-200 overflow-hidden">
+                    {#if gameUI?.image}
+                      <img
+                        src={gameUI.image}
+                        alt={group.gameTitle}
+                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    {:else}
+                      <div class={`w-full h-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
+                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                      </div>
+                    {/if}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                    <!-- Match count badge -->
+                    <div class="absolute top-2 left-2">
+                      <span class="bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-bold text-white">
+                        {group.total}회
+                      </span>
+                    </div>
+
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#FF4D00] flex items-center justify-center shadow-xl">
+                        <svg class="w-5 h-5 md:w-6 md:h-6 fill-white ml-1" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-3 md:p-4 flex-1 flex flex-col">
+                    <h3 class={`font-bold text-base md:text-lg group-hover:text-[#FF4D00] transition-colors mb-2 line-clamp-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                      {group.gameTitle}
                     </h3>
-                    <span class={`text-xs font-medium px-2 py-1 rounded uppercase shrink-0 ml-2 ${isDarkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-700'}`}>
-                      {match.status}
-                    </span>
+                    <!-- Stats pills -->
+                    <div class="flex flex-wrap gap-1">
+                      {#if group.active > 0}
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-green-900/60 text-green-300' : 'bg-green-100 text-green-700'}`}>
+                          진행 {group.active}
+                        </span>
+                      {/if}
+                      {#if group.won > 0}
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}>
+                          승리 {group.won}
+                        </span>
+                      {/if}
+                      {#if group.lost > 0}
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-red-900/60 text-red-300' : 'bg-red-100 text-red-700'}`}>
+                          패배 {group.lost}
+                        </span>
+                      {/if}
+                      {#if group.resigned > 0}
+                        <span class={`text-xs font-semibold px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
+                          기권 {group.resigned}
+                        </span>
+                      {/if}
+                    </div>
                   </div>
-                  <p class={`text-sm line-clamp-2 mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {match.lastMessage}
-                  </p>
-                  <div class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                    {match.displayTime}
-                  </div>
-                </div>
+                </button>
               {/each}
             </div>
           {/if}
         </div>
+
       {/if}
     {/if}
   </main>
 </div>
-
-<!-- Game Detail Modal -->
 {#if showGameModal && selectedGame}
   <div 
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" 
