@@ -13,6 +13,7 @@ type SignUpRequest struct {
 type SignUpResponse struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
+	Tag   string `json:"tag"`
 	Email string `json:"email"`
 }
 
@@ -24,6 +25,7 @@ type LoginRequest struct {
 type LoginResponse struct {
 	ID                     string    `json:"id"`
 	Name                   string    `json:"name"`
+	Tag                    string    `json:"tag"`
 	Email                  string    `json:"email"`
 	AccessToken            string    `json:"access_token"`
 	RefreshToken           string    `json:"-"` // Not included in JSON response

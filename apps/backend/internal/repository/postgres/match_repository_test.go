@@ -258,7 +258,7 @@ func TestMatchRepository_GetLeaderboard(t *testing.T) {
 	user1 := createTestUser(t)
 
 	userRepo := NewUserRepository(testDB)
-	user2 := &domain.User{Name: "TestUser2", Email: "user2@example.com", Password: "testpassword"}
+	user2 := &domain.User{Name: "TestUser2", Tag: "TAG99", Email: "user2@example.com", Password: "testpassword"}
 	user2, _ = userRepo.Save(ctx, user2)
 
 	game := createTestGame(t, user1)

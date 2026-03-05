@@ -35,15 +35,18 @@ func (r *userRepository) Save(ctx context.Context, user *domain.User) (*domain.U
 	user.ID = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
 
 	const query = `
-		INSERT INTO users (id, name, email, password, role)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO users (id, name, tag, email, password, role)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING created_at, updated_at
 	`
 
-	err := r.db.QueryRowContext(ctx, query, user.ID, user.Name, user.Email, user.Password, user.Role).
+	err := r.db.QueryRowContext(ctx, query, user.ID, user.Name, user.Tag, user.Email, user.Password, user.Role).
 		Scan(&user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			if pqErr.Constraint == "users_tag_key" {
+				return nil, fmt.Errorf("duplicate tag: %w", domain.ErrConflict)
+			}
 			return nil, fmt.Errorf("email %s: %w", user.Email, domain.ErrAlreadyExists)
 		}
 		return nil, fmt.Errorf("failed to save user: %w", err)
@@ -54,7 +57,7 @@ func (r *userRepository) Save(ctx context.Context, user *domain.User) (*domain.U
 
 func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	query := `
-		SELECT id, name, email, role, created_at, updated_at
+		SELECT id, name, tag, email, role, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
@@ -63,6 +66,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Name,
+		&user.Tag,
 		&user.Email,
 		&user.Role,
 		&user.CreatedAt,
@@ -78,16 +82,27 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 	return &user, nil
 }
 
-func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
+func (r *userRepository) CountAll(ctx context.Context) (int, error) {
+	query := `SELECT COUNT(*) FROM users`
+	var count int
+	if err := r.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+		return 0, fmt.Errorf("failed to count all users: %w", err)
+	}
+	return count, nil
+}
+
+func (r *userRepository) GetPaginated(ctx context.Context, page, limit int) ([]domain.User, error) {
+	offset := (page - 1) * limit
 	query := `
-		SELECT id, name, email, role, created_at, updated_at
+		SELECT id, name, tag, email, role, created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all users: %w", err)
+		return nil, fmt.Errorf("failed to get paginated users: %w", err)
 	}
 	defer rows.Close()
 
@@ -97,6 +112,7 @@ func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 		if err := rows.Scan(
 			&user.ID,
 			&user.Name,
+			&user.Tag,
 			&user.Email,
 			&user.Role,
 			&user.CreatedAt,
@@ -116,7 +132,7 @@ func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	const query = `
-		SELECT id, name, email, password, role, created_at, updated_at
+		SELECT id, name, tag, email, password, role, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -125,6 +141,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
+		&user.Tag,
 		&user.Email,
 		&user.Password,
 		&user.Role,

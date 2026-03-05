@@ -84,15 +84,27 @@ func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 	return &game, nil
 }
 
-// GetAll retrieves all games, ordered by creation date (newest first)
-func (r *gameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
+// CountAll returns the total number of games
+func (r *gameRepository) CountAll(ctx context.Context) (int, error) {
+	const query = `SELECT COUNT(*) FROM games`
+	var count int
+	if err := r.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+		return 0, mapDBError(err)
+	}
+	return count, nil
+}
+
+// GetPaginated retrieves a paginated list of games, ordered by creation date (newest first)
+func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int) ([]domain.Game, error) {
+	offset := (page - 1) * limit
 	const query = `
 		SELECT id, title, description, author_id, status, is_public, system_prompt, target_word, max_turns, created_at, updated_at
 		FROM games
 		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, mapDBError(err)
 	}

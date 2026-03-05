@@ -54,30 +54,39 @@ func TestUserUsecase_GetByID(t *testing.T) {
 	}
 }
 
-func TestUserUsecase_GetAll(t *testing.T) {
+func TestUserUsecase_GetPaginated(t *testing.T) {
 	tests := []struct {
 		name       string
 		mockReturn []domain.User
 		mockError  error
-		want       []domain.User
+		mockCount  int
+		want       *domain.PaginatedData[domain.User]
 		wantErr    error
 	}{
 		{
-			name: "Find user successfully",
+			name: "Find paginated users successfully",
 			mockReturn: []domain.User{
 				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com"},
 				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6", Name: "Jane", Email: "jane@example.com"},
 			},
+			mockCount: 2,
 			mockError: nil,
-			want: []domain.User{
-				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com"},
-				{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6", Name: "Jane", Email: "jane@example.com"},
+			want: &domain.PaginatedData[domain.User]{
+				Data: []domain.User{
+					{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com"},
+					{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6", Name: "Jane", Email: "jane@example.com"},
+				},
+				Total:      2,
+				Page:       1,
+				Limit:      10,
+				TotalPages: 1,
 			},
 			wantErr: nil,
 		},
 		{
 			name:      "Fail to find any users",
 			mockError: domain.ErrNotFound,
+			mockCount: 0,
 			want:      nil,
 			wantErr:   domain.ErrNotFound,
 		},
@@ -86,11 +95,14 @@ func TestUserUsecase_GetAll(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(mocks.UserRepository)
-			mockRepo.On("GetAll", mock.Anything).Return(tt.mockReturn, tt.mockError)
+			mockRepo.On("CountAll", mock.Anything).Return(tt.mockCount, tt.mockError)
+			if tt.mockError == nil {
+				mockRepo.On("GetPaginated", mock.Anything, 1, 10).Return(tt.mockReturn, nil)
+			}
 
 			uc := NewUserUseCase(mockRepo)
 			ctx := context.Background()
-			result, err := uc.GetAll(ctx)
+			result, err := uc.GetPaginated(ctx, 1, 10)
 
 			assert.Equal(t, tt.want, result)
 			assert.Equal(t, tt.wantErr, err)

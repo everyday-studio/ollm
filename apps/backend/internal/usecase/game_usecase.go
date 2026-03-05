@@ -49,9 +49,39 @@ func (uc *gameUseCase) GetByID(ctx context.Context, id string) (*domain.Game, er
 	return uc.gameRepo.GetByID(ctx, id)
 }
 
-// GetAll retrieves all games
-func (uc *gameUseCase) GetAll(ctx context.Context) ([]domain.Game, error) {
-	return uc.gameRepo.GetAll(ctx)
+// CountAll returns the total number of games
+func (uc *gameUseCase) CountAll(ctx context.Context) (int, error) {
+	return uc.gameRepo.CountAll(ctx)
+}
+
+// GetPaginated retrieves a paginated list of games
+func (uc *gameUseCase) GetPaginated(ctx context.Context, page, limit int) (*domain.PaginatedData[domain.Game], error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	total, err := uc.gameRepo.CountAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	games, err := uc.gameRepo.GetPaginated(ctx, page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := (total + limit - 1) / limit
+
+	return &domain.PaginatedData[domain.Game]{
+		Data:       games,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+	}, nil
 }
 
 // Update updates an existing game

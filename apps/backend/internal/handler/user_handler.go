@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -95,10 +96,20 @@ func (h *UserHandler) GetByID(c echo.Context) error {
 }
 
 func (h *UserHandler) GetAll(c echo.Context) error {
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	if page < 1 {
+		page = 1
+	}
+
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	if limit < 1 {
+		limit = 10
+	}
+
 	ctx := c.Request().Context()
-	users, err := h.userUseCase.GetAll(ctx)
+	paginatedData, err := h.userUseCase.GetPaginated(ctx, page, limit)
 	if err == nil {
-		return c.JSON(http.StatusOK, users)
+		return c.JSON(http.StatusOK, paginatedData)
 	}
 	switch {
 	case errors.Is(err, domain.ErrNotFound):

@@ -133,30 +133,39 @@ func TestGameUseCase_GetByID(t *testing.T) {
 	}
 }
 
-func TestGameUseCase_GetAll(t *testing.T) {
+func TestGameUseCase_GetPaginated(t *testing.T) {
 	tests := []struct {
 		name       string
 		mockReturn []domain.Game
+		mockCount  int
 		mockError  error
-		want       []domain.Game
+		want       *domain.PaginatedData[domain.Game]
 		wantErr    error
 	}{
 		{
-			name: "Get all games successfully",
+			name: "Get paginated games successfully",
 			mockReturn: []domain.Game{
 				{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME01", Title: "Game 1"},
 				{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME02", Title: "Game 2"},
 			},
+			mockCount: 2,
 			mockError: nil,
-			want: []domain.Game{
-				{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME01", Title: "Game 1"},
-				{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME02", Title: "Game 2"},
+			want: &domain.PaginatedData[domain.Game]{
+				Data: []domain.Game{
+					{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME01", Title: "Game 1"},
+					{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME02", Title: "Game 2"},
+				},
+				Total:      2,
+				Page:       1,
+				Limit:      10,
+				TotalPages: 1,
 			},
 			wantErr: nil,
 		},
 		{
 			name:       "Fail to get games",
 			mockReturn: nil,
+			mockCount:  0,
 			mockError:  domain.ErrNotFound,
 			want:       nil,
 			wantErr:    domain.ErrNotFound,
@@ -166,11 +175,14 @@ func TestGameUseCase_GetAll(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(mocks.GameRepository)
-			mockRepo.On("GetAll", mock.Anything).Return(tt.mockReturn, tt.mockError)
+			mockRepo.On("CountAll", mock.Anything).Return(tt.mockCount, tt.mockError)
+			if tt.mockError == nil {
+				mockRepo.On("GetPaginated", mock.Anything, 1, 10).Return(tt.mockReturn, nil)
+			}
 
 			uc := NewGameUseCase(mockRepo)
 			ctx := context.Background()
-			result, err := uc.GetAll(ctx)
+			result, err := uc.GetPaginated(ctx, 1, 10)
 
 			assert.Equal(t, tt.want, result)
 			assert.Equal(t, tt.wantErr, err)

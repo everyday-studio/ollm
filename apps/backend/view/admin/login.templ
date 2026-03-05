@@ -1,0 +1,105 @@
+package admin
+
+templ Login(adminPath string) {
+	<!DOCTYPE html>
+	<html lang="ko">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>Admin Login - Ollm</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script>
+			tailwind.config = {
+				theme: {
+					extend: {
+						colors: {
+							brand: '#3b82f6',
+						}
+					}
+				}
+			}
+		</script>
+	</head>
+	<body class="bg-gray-900 text-white font-sans min-h-screen flex items-center justify-center" data-admin-path={ adminPath }>
+		<div class="w-full max-w-md bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-8">
+			<div class="text-center mb-8">
+				<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-900 border-2 border-brand shadow-[0_0_15px_rgba(59,130,246,0.5)] mb-4">
+					<svg class="w-8 h-8 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+					</svg>
+				</div>
+				<h2 class="text-3xl font-bold text-white tracking-wider">OLLM ADMIN</h2>
+				<p class="text-gray-400 mt-2">Authorized Personnel Only</p>
+			</div>
+			
+			<form id="loginForm" class="space-y-6">
+				<div>
+					<label for="email" class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+					<input type="email" id="email" name="email" required 
+						class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent text-white placeholder-gray-500 transition-colors"
+						placeholder="admin@ollm.com" />
+				</div>
+				
+				<div>
+					<label for="password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+					<input type="password" id="password" name="password" required 
+						class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent text-white placeholder-gray-500 transition-colors"
+						placeholder="••••••••" />
+				</div>
+				
+				<div id="errorMessage" class="hidden text-red-400 text-sm font-medium text-center p-3 bg-red-900/20 border border-red-500/50 rounded-lg">
+					Invalid email or password.
+				</div>
+
+				<button type="submit" 
+					class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-gray-900 transition-all">
+					Sign In
+				</button>
+			</form>
+		</div>
+
+		<script>
+			document.getElementById('loginForm').addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const email = document.getElementById('email').value;
+				const password = document.getElementById('password').value;
+				const errorPanel = document.getElementById('errorMessage');
+				const submitButton = e.target.querySelector('button[type="submit"]');
+				
+				errorPanel.classList.add('hidden');
+				submitButton.disabled = true;
+				submitButton.innerText = 'Signing In...';
+
+				const adminPath = document.body.getAttribute('data-admin-path');
+
+				try {
+					const response = await fetch(adminPath + '/login', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ email, password })
+					});
+
+					const data = await response.json();
+
+					if (response.ok) {
+						// Access token is securely stored in cookie by the new POST endpoint
+						window.location.href = adminPath + '/dashboard';
+					} else {
+						errorPanel.innerText = data.error?.message || data.error || 'Login failed.';
+						errorPanel.classList.remove('hidden');
+						submitButton.disabled = false;
+						submitButton.innerText = 'Sign In';
+					}
+				} catch (err) {
+					errorPanel.innerText = 'Network error occurred.';
+					errorPanel.classList.remove('hidden');
+					submitButton.disabled = false;
+					submitButton.innerText = 'Sign In';
+				}
+			});
+		</script>
+	</body>
+	</html>
+}

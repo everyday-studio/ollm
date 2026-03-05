@@ -18,10 +18,11 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Env      string `mapstructure:"env"`
-	Port     int    `mapstructure:"port"`
-	Debug    bool   `mapstructure:"debug"`
-	LogLevel string `mapstructure:"log_level"`
+	Env       string `mapstructure:"env"`
+	Port      int    `mapstructure:"port"`
+	Debug     bool   `mapstructure:"debug"`
+	LogLevel  string `mapstructure:"log_level"`
+	AdminPath string `mapstructure:"admin_path"`
 }
 
 type DBConfig struct {

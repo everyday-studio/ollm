@@ -3,6 +3,7 @@ module github.com/everyday-studio/ollm
 go 1.25.4
 
 require (
+	github.com/a-h/templ v0.3.1001
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/joho/godotenv v1.5.1

@@ -17,6 +17,7 @@ const (
 type User struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
+	Tag       string    `json:"tag"`
 	Email     string    `json:"email"`
 	Password  string    `json:"-"`
 	Role      Role      `json:"role"`
@@ -31,13 +32,15 @@ type UpdateNicknameRequest struct {
 type UserRepository interface {
 	Save(ctx context.Context, user *User) (*User, error)
 	GetByID(ctx context.Context, id string) (*User, error)
-	GetAll(ctx context.Context) ([]User, error)
+	GetPaginated(ctx context.Context, page, limit int) ([]User, error)
+	CountAll(ctx context.Context) (int, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	UpdateNickname(ctx context.Context, id string, name string) error
 }
 
 type UserUseCase interface {
 	GetByID(ctx context.Context, id string) (*User, error)
-	GetAll(ctx context.Context) ([]User, error)
+	GetPaginated(ctx context.Context, page, limit int) (*PaginatedData[User], error)
+	CountAll(ctx context.Context) (int, error)
 	UpdateNickname(ctx context.Context, id string, name string) (*User, error)
 }

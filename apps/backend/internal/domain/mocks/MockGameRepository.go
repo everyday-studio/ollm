@@ -22,6 +22,62 @@ func (_m *GameRepository) EXPECT() *GameRepository_Expecter {
 	return &GameRepository_Expecter{mock: &_m.Mock}
 }
 
+// CountAll provides a mock function with given fields: ctx
+func (_m *GameRepository) CountAll(ctx context.Context) (int, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CountAll")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (int, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) int); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GameRepository_CountAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CountAll'
+type GameRepository_CountAll_Call struct {
+	*mock.Call
+}
+
+// CountAll is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *GameRepository_Expecter) CountAll(ctx interface{}) *GameRepository_CountAll_Call {
+	return &GameRepository_CountAll_Call{Call: _e.mock.On("CountAll", ctx)}
+}
+
+func (_c *GameRepository_CountAll_Call) Run(run func(ctx context.Context)) *GameRepository_CountAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *GameRepository_CountAll_Call) Return(_a0 int, _a1 error) *GameRepository_CountAll_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *GameRepository_CountAll_Call) RunAndReturn(run func(context.Context) (int, error)) *GameRepository_CountAll_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Create provides a mock function with given fields: ctx, game
 func (_m *GameRepository) Create(ctx context.Context, game *domain.Game) (*domain.Game, error) {
 	ret := _m.Called(ctx, game)
@@ -128,64 +184,6 @@ func (_c *GameRepository_Delete_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
-// GetAll provides a mock function with given fields: ctx
-func (_m *GameRepository) GetAll(ctx context.Context) ([]domain.Game, error) {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetAll")
-	}
-
-	var r0 []domain.Game
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]domain.Game, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) []domain.Game); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.Game)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GameRepository_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
-type GameRepository_GetAll_Call struct {
-	*mock.Call
-}
-
-// GetAll is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *GameRepository_Expecter) GetAll(ctx interface{}) *GameRepository_GetAll_Call {
-	return &GameRepository_GetAll_Call{Call: _e.mock.On("GetAll", ctx)}
-}
-
-func (_c *GameRepository_GetAll_Call) Run(run func(ctx context.Context)) *GameRepository_GetAll_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *GameRepository_GetAll_Call) Return(_a0 []domain.Game, _a1 error) *GameRepository_GetAll_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *GameRepository_GetAll_Call) RunAndReturn(run func(context.Context) ([]domain.Game, error)) *GameRepository_GetAll_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetByID provides a mock function with given fields: ctx, id
 func (_m *GameRepository) GetByID(ctx context.Context, id string) (*domain.Game, error) {
 	ret := _m.Called(ctx, id)
@@ -241,6 +239,66 @@ func (_c *GameRepository_GetByID_Call) Return(_a0 *domain.Game, _a1 error) *Game
 }
 
 func (_c *GameRepository_GetByID_Call) RunAndReturn(run func(context.Context, string) (*domain.Game, error)) *GameRepository_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetPaginated provides a mock function with given fields: ctx, page, limit
+func (_m *GameRepository) GetPaginated(ctx context.Context, page int, limit int) ([]domain.Game, error) {
+	ret := _m.Called(ctx, page, limit)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPaginated")
+	}
+
+	var r0 []domain.Game
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) ([]domain.Game, error)); ok {
+		return rf(ctx, page, limit)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) []domain.Game); ok {
+		r0 = rf(ctx, page, limit)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Game)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int, int) error); ok {
+		r1 = rf(ctx, page, limit)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GameRepository_GetPaginated_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPaginated'
+type GameRepository_GetPaginated_Call struct {
+	*mock.Call
+}
+
+// GetPaginated is a helper method to define mock.On call
+//   - ctx context.Context
+//   - page int
+//   - limit int
+func (_e *GameRepository_Expecter) GetPaginated(ctx interface{}, page interface{}, limit interface{}) *GameRepository_GetPaginated_Call {
+	return &GameRepository_GetPaginated_Call{Call: _e.mock.On("GetPaginated", ctx, page, limit)}
+}
+
+func (_c *GameRepository_GetPaginated_Call) Run(run func(ctx context.Context, page int, limit int)) *GameRepository_GetPaginated_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int), args[2].(int))
+	})
+	return _c
+}
+
+func (_c *GameRepository_GetPaginated_Call) Return(_a0 []domain.Game, _a1 error) *GameRepository_GetPaginated_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *GameRepository_GetPaginated_Call) RunAndReturn(run func(context.Context, int, int) ([]domain.Game, error)) *GameRepository_GetPaginated_Call {
 	_c.Call.Return(run)
 	return _c
 }

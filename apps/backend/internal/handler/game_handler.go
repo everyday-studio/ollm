@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -89,10 +90,20 @@ func (h *GameHandler) GetByID(c echo.Context) error {
 
 // GetAll handles GET /games - retrieves all games
 func (h *GameHandler) GetAll(c echo.Context) error {
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	if page < 1 {
+		page = 1
+	}
+
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	if limit < 1 {
+		limit = 10
+	}
+
 	ctx := c.Request().Context()
-	games, err := h.gameUseCase.GetAll(ctx)
+	paginatedData, err := h.gameUseCase.GetPaginated(ctx, page, limit)
 	if err == nil {
-		return c.JSON(http.StatusOK, games)
+		return c.JSON(http.StatusOK, paginatedData)
 	}
 
 	return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))

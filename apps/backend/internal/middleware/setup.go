@@ -117,6 +117,7 @@ func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) error {
 	e.Use(echojwt.WithConfig(echojwt.Config{
 		SigningKey:    publicKey,
 		SigningMethod: "RS256",
+		TokenLookup:   "header:" + echo.HeaderAuthorization + ":Bearer ,cookie:access_token",
 
 		// Reject refresh tokens used as access tokens.
 		// Setting "user" to nil makes AllowRoles treat the request as unauthenticated.
