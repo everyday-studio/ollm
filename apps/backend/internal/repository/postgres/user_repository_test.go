@@ -58,18 +58,22 @@ func TestUserRepository_GetByID(t *testing.T) {
 	})
 }
 
-func TestUserRepository_GetAllUsers(t *testing.T) {
+func TestUserRepository_CountAllAndGetPaginated(t *testing.T) {
 	repo := NewUserRepository(testDB)
 	cleanDB(t, "users")
 	ctx := context.Background()
 
-	t.Run("Get all users successfully", func(t *testing.T) {
+	t.Run("Get paginated users and count successfully", func(t *testing.T) {
 		user1 := &domain.User{Name: "User1", Tag: "TAG05", Email: "user1@example.com", Password: "testpassword"}
 		user2 := &domain.User{Name: "User2", Tag: "TAG06", Email: "user2@example.com", Password: "testpassword"}
 		repo.Save(ctx, user1)
 		repo.Save(ctx, user2)
 
-		users, err := repo.GetAll(ctx)
+		total, err := repo.CountAll(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, total)
+
+		users, err := repo.GetPaginated(ctx, 1, 10)
 		assert.NoError(t, err)
 		assert.Len(t, users, 2)
 		assert.Contains(t, []string{user1.Name, user2.Name}, users[0].Name)
@@ -78,9 +82,14 @@ func TestUserRepository_GetAllUsers(t *testing.T) {
 		assert.Contains(t, []string{user1.Email, user2.Email}, users[1].Email)
 	})
 
-	t.Run("Return empty array successfully", func(t *testing.T) {
+	t.Run("Return empty array and zero count successfully", func(t *testing.T) {
 		cleanDB(t, "users") // 데이터 초기화
-		users, err := repo.GetAll(ctx)
+
+		total, err := repo.CountAll(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, total)
+
+		users, err := repo.GetPaginated(ctx, 1, 10)
 		assert.NoError(t, err)
 		assert.Len(t, users, 0)
 	})

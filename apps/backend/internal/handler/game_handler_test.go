@@ -157,30 +157,36 @@ func TestGameHandler_GetByID(t *testing.T) {
 func TestGameHandler_GetAll(t *testing.T) {
 	tests := []struct {
 		name       string
-		mockReturn []domain.Game
+		mockReturn *domain.PaginatedData[domain.Game]
 		mockError  error
 		wantStatus int
 		wantBody   string
 	}{
 		{
 			name: "Get all games successfully",
-			mockReturn: []domain.Game{
-				{
-					ID:       "01HQZYX3VQJQZ3Z0Z1Z2GAME01",
-					Title:    "Game 1",
-					Status:   domain.GameStatusActive,
-					IsPublic: true,
+			mockReturn: &domain.PaginatedData[domain.Game]{
+				Data: []domain.Game{
+					{
+						ID:       "01HQZYX3VQJQZ3Z0Z1Z2GAME01",
+						Title:    "Game 1",
+						Status:   domain.GameStatusActive,
+						IsPublic: true,
+					},
+					{
+						ID:       "01HQZYX3VQJQZ3Z0Z1Z2GAME02",
+						Title:    "Game 2",
+						Status:   domain.GameStatusActive,
+						IsPublic: false,
+					},
 				},
-				{
-					ID:       "01HQZYX3VQJQZ3Z0Z1Z2GAME02",
-					Title:    "Game 2",
-					Status:   domain.GameStatusActive,
-					IsPublic: false,
-				},
+				Total:      2,
+				Page:       1,
+				Limit:      10,
+				TotalPages: 1,
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`,
+			wantBody:   `{"data":[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"system_prompt":"","target_word":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}],"total":2,"page":1,"limit":10,"total_pages":1}`,
 		},
 		{
 			name:       "Fail to get games due to internal error",
@@ -200,7 +206,7 @@ func TestGameHandler_GetAll(t *testing.T) {
 			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 
 			mockUseCase := new(mocks.GameUseCase)
-			mockUseCase.On("GetAll", mock.Anything).Return(tt.mockReturn, tt.mockError)
+			mockUseCase.On("GetPaginated", mock.Anything, 1, 10).Return(tt.mockReturn, tt.mockError)
 			handler := NewGameHandler(e, mockUseCase)
 
 			err := handler.GetAll(c)

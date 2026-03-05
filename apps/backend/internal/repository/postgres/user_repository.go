@@ -82,16 +82,27 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 	return &user, nil
 }
 
-func (r *userRepository) GetAll(ctx context.Context) ([]domain.User, error) {
+func (r *userRepository) CountAll(ctx context.Context) (int, error) {
+	query := `SELECT COUNT(*) FROM users`
+	var count int
+	if err := r.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+		return 0, fmt.Errorf("failed to count all users: %w", err)
+	}
+	return count, nil
+}
+
+func (r *userRepository) GetPaginated(ctx context.Context, page, limit int) ([]domain.User, error) {
+	offset := (page - 1) * limit
 	query := `
 		SELECT id, name, tag, email, role, created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all users: %w", err)
+		return nil, fmt.Errorf("failed to get paginated users: %w", err)
 	}
 	defer rows.Close()
 

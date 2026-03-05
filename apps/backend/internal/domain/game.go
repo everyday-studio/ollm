@@ -53,7 +53,8 @@ type UpdateGameRequest struct {
 type GameRepository interface {
 	Create(ctx context.Context, game *Game) (*Game, error)
 	GetByID(ctx context.Context, id string) (*Game, error)
-	GetAll(ctx context.Context) ([]Game, error)
+	GetPaginated(ctx context.Context, page, limit int) ([]Game, error)
+	CountAll(ctx context.Context) (int, error)
 	Update(ctx context.Context, game *Game) (*Game, error)
 	Delete(ctx context.Context, id string) error
 }
@@ -62,7 +63,8 @@ type GameRepository interface {
 type GameUseCase interface {
 	Create(ctx context.Context, req *CreateGameRequest) (*Game, error)
 	GetByID(ctx context.Context, id string) (*Game, error)
-	GetAll(ctx context.Context) ([]Game, error)
+	GetPaginated(ctx context.Context, page, limit int) (*PaginatedData[Game], error)
+	CountAll(ctx context.Context) (int, error)
 	Update(ctx context.Context, id string, req *UpdateGameRequest) (*Game, error)
 	Delete(ctx context.Context, id string) error
 }

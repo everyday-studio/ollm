@@ -22,25 +22,23 @@ func (_m *UserUseCase) EXPECT() *UserUseCase_Expecter {
 	return &UserUseCase_Expecter{mock: &_m.Mock}
 }
 
-// GetAll provides a mock function with given fields: ctx
-func (_m *UserUseCase) GetAll(ctx context.Context) ([]domain.User, error) {
+// CountAll provides a mock function with given fields: ctx
+func (_m *UserUseCase) CountAll(ctx context.Context) (int, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAll")
+		panic("no return value specified for CountAll")
 	}
 
-	var r0 []domain.User
+	var r0 int
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]domain.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (int, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []domain.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) int); ok {
 		r0 = rf(ctx)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.User)
-		}
+		r0 = ret.Get(0).(int)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -52,30 +50,30 @@ func (_m *UserUseCase) GetAll(ctx context.Context) ([]domain.User, error) {
 	return r0, r1
 }
 
-// UserUseCase_GetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAll'
-type UserUseCase_GetAll_Call struct {
+// UserUseCase_CountAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CountAll'
+type UserUseCase_CountAll_Call struct {
 	*mock.Call
 }
 
-// GetAll is a helper method to define mock.On call
+// CountAll is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *UserUseCase_Expecter) GetAll(ctx interface{}) *UserUseCase_GetAll_Call {
-	return &UserUseCase_GetAll_Call{Call: _e.mock.On("GetAll", ctx)}
+func (_e *UserUseCase_Expecter) CountAll(ctx interface{}) *UserUseCase_CountAll_Call {
+	return &UserUseCase_CountAll_Call{Call: _e.mock.On("CountAll", ctx)}
 }
 
-func (_c *UserUseCase_GetAll_Call) Run(run func(ctx context.Context)) *UserUseCase_GetAll_Call {
+func (_c *UserUseCase_CountAll_Call) Run(run func(ctx context.Context)) *UserUseCase_CountAll_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
 	return _c
 }
 
-func (_c *UserUseCase_GetAll_Call) Return(_a0 []domain.User, _a1 error) *UserUseCase_GetAll_Call {
+func (_c *UserUseCase_CountAll_Call) Return(_a0 int, _a1 error) *UserUseCase_CountAll_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserUseCase_GetAll_Call) RunAndReturn(run func(context.Context) ([]domain.User, error)) *UserUseCase_GetAll_Call {
+func (_c *UserUseCase_CountAll_Call) RunAndReturn(run func(context.Context) (int, error)) *UserUseCase_CountAll_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -135,6 +133,66 @@ func (_c *UserUseCase_GetByID_Call) Return(_a0 *domain.User, _a1 error) *UserUse
 }
 
 func (_c *UserUseCase_GetByID_Call) RunAndReturn(run func(context.Context, string) (*domain.User, error)) *UserUseCase_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetPaginated provides a mock function with given fields: ctx, page, limit
+func (_m *UserUseCase) GetPaginated(ctx context.Context, page int, limit int) (*domain.PaginatedData[domain.User], error) {
+	ret := _m.Called(ctx, page, limit)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPaginated")
+	}
+
+	var r0 *domain.PaginatedData[domain.User]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) (*domain.PaginatedData[domain.User], error)); ok {
+		return rf(ctx, page, limit)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) *domain.PaginatedData[domain.User]); ok {
+		r0 = rf(ctx, page, limit)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.PaginatedData[domain.User])
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int, int) error); ok {
+		r1 = rf(ctx, page, limit)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserUseCase_GetPaginated_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPaginated'
+type UserUseCase_GetPaginated_Call struct {
+	*mock.Call
+}
+
+// GetPaginated is a helper method to define mock.On call
+//   - ctx context.Context
+//   - page int
+//   - limit int
+func (_e *UserUseCase_Expecter) GetPaginated(ctx interface{}, page interface{}, limit interface{}) *UserUseCase_GetPaginated_Call {
+	return &UserUseCase_GetPaginated_Call{Call: _e.mock.On("GetPaginated", ctx, page, limit)}
+}
+
+func (_c *UserUseCase_GetPaginated_Call) Run(run func(ctx context.Context, page int, limit int)) *UserUseCase_GetPaginated_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int), args[2].(int))
+	})
+	return _c
+}
+
+func (_c *UserUseCase_GetPaginated_Call) Return(_a0 *domain.PaginatedData[domain.User], _a1 error) *UserUseCase_GetPaginated_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserUseCase_GetPaginated_Call) RunAndReturn(run func(context.Context, int, int) (*domain.PaginatedData[domain.User], error)) *UserUseCase_GetPaginated_Call {
 	_c.Call.Return(run)
 	return _c
 }

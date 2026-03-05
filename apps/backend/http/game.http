@@ -18,3 +18,7 @@ Authorization: Bearer {{login.response.body.access_token}}
     "description": "test description",
     "author_id": "01KHK281ZRYYH35KQH56XZH215"
 }
+
+### get games paginated
+GET http://localhost:8080/games?page=1&limit=3
+Content-Type: application/json
