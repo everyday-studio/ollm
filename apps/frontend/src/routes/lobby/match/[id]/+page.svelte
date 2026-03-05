@@ -1,14 +1,13 @@
 <script lang="ts">
   import { fade, fly, scale } from 'svelte/transition';
-  import { onMount, getContext } from 'svelte';
+  import { onMount, getContext, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
 
   import { gameApi } from '$lib/features/game/api';
   import { messageApi } from '$lib/features/game/messageApi';
-  import { authApi } from '$lib/features/auth/api';
-  import { authStore } from '$lib/features/auth/model';
-  import type { User } from '$lib/features/auth/types';
+  import { ensureSession } from '$lib/features/auth/session';
+  import { invalidateMatchesCache } from '$lib/cache/gameCache';
   import type { MatchDTO, GameDTO, MessageDTO, MatchStatus } from '$lib/features/game/types';
 
   const theme = getContext<{ isDark: boolean }>('theme');
@@ -28,6 +27,7 @@
   let siblingMatches = $state<MatchDTO[]>([]);
   let inputText = $state('');
   let isLoading = $state(true);
+  let isChatLoading = $state(false);
   let isSending = $state(false);
   let errorMessage = $state('');
   let showResignModal = $state(false);
@@ -69,15 +69,7 @@
   // Lifecycle
   // ----------------------------------------------------------------
   onMount(async () => {
-    // Restore access token (layout handles getMe for user info)
-    try {
-      const refreshRes = await authApi.refresh();
-      if (refreshRes?.data?.access_token) {
-        authStore.updateToken(refreshRes.data.access_token);
-      }
-    } catch {
-      console.warn('Failed to restore session');
-    }
+    await ensureSession();
     sessionRestored = true;
   });
 
@@ -89,7 +81,14 @@
   });
 
   async function loadMatchData(id: string) {
-    isLoading = true;
+    // If we already have sidebar data (same game), only reload chat
+    // Use untrack to prevent game/siblingMatches from becoming $effect dependencies
+    const isIntraGameNav = untrack(() => game !== null && siblingMatches.length > 0);
+    if (isIntraGameNav) {
+      isChatLoading = true;
+    } else {
+      isLoading = true;
+    }
     errorMessage = '';
 
     try {
@@ -119,8 +118,9 @@
       }
 
       scrollToBottom();
-    } catch (e: any) {
-      const status = e?.response?.status;
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number } };
+      const status = err?.response?.status;
       if (status === 403) {
         errorMessage = '이 매치에 접근할 권한이 없습니다.';
       } else if (status === 404) {
@@ -130,6 +130,7 @@
       }
     } finally {
       isLoading = false;
+      isChatLoading = false;
     }
   }
 
@@ -187,8 +188,9 @@
       }
 
       scrollToBottom();
-    } catch (e: any) {
-      const status = e?.response?.status;
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number } };
+      const status = err?.response?.status;
       if (status === 409) {
         errorMessage = '매치가 이미 종료되었거나 AI가 응답 중입니다.';
         try {
@@ -219,11 +221,13 @@
     if (!currentMatchId) return;
     try {
       await gameApi.resignMatch(currentMatchId);
+      invalidateMatchesCache();
       const matchRes = await gameApi.getMatchById(currentMatchId);
       match = matchRes.data;
       siblingMatches = siblingMatches.map(m => m.id === currentMatchId ? matchRes.data : m);
-    } catch (e: any) {
-      const status = e?.response?.status;
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number } };
+      const status = err?.response?.status;
       if (status === 409) {
         errorMessage = '이미 종료된 매치입니다.';
       } else {
@@ -240,10 +244,16 @@
     try {
       const res = await gameApi.createMatch(game.id);
       // Navigate to the new match (triggers $effect reload)
+      // eslint-disable-next-line svelte/no-navigation-without-resolve
       await goto(`/lobby/match/${res.data.id}`);
     } catch {
       errorMessage = '새 매치 생성에 실패했습니다.';
     }
+  }
+
+  function goToLobby() {
+    // eslint-disable-next-line svelte/no-navigation-without-resolve
+    goto('/lobby');
   }
 
   // ----------------------------------------------------------------
@@ -282,17 +292,6 @@
       case 'expired': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       case 'error': return 'bg-red-500/20 text-red-400 border-red-500/30';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  }
-
-  function getSidebarStatusBadge(status: MatchStatus): string {
-    switch (status) {
-      case 'active': return 'bg-gray-500/20 text-gray-400';
-      case 'generating': return 'bg-yellow-500/20 text-yellow-400';
-      case 'won': return 'bg-green-500/20 text-green-400';
-      case 'lost': return 'bg-red-500/20 text-red-400';
-      case 'resigned': return 'bg-gray-500/20 text-gray-400';
-      default: return 'bg-gray-500/20 text-gray-400';
     }
   }
 
@@ -355,7 +354,7 @@
         </div>
         <div class={`mx-4 h-10 rounded-xl skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
         <div class="px-4 mt-4 space-y-2">
-          {#each Array(4) as _}
+          {#each Array.from({length: 4}, (__, i) => i) as i (i)}
             <div class={`h-16 rounded-xl skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
           {/each}
         </div>
@@ -363,7 +362,7 @@
       <!-- Skeleton: Chat area -->
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div class="max-w-2xl mx-auto w-full px-4 py-6 md:px-8 space-y-5">
-          {#each Array(3) as _, i}
+          {#each Array.from({length: 3}, (__, i) => i) as i (i)}
             <div class={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
               <div class={`rounded-2xl skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} ${i % 2 === 0 ? 'w-2/3' : 'w-3/4'}`} style="height: {60 + i * 20}px"></div>
             </div>
@@ -383,7 +382,7 @@
         </div>
         <p class={`font-semibold mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{errorMessage}</p>
         <button
-          onclick={() => goto('/lobby')}
+          onclick={goToLobby}
           class="mt-2 px-5 py-2.5 bg-[#FF4D00] text-white rounded-lg font-semibold text-sm hover:bg-[#ff3300] transition-colors"
         >
           로비로 돌아가기
@@ -405,7 +404,7 @@
         <div class="flex items-center gap-2 min-w-0">
           <!-- Back to lobby -->
           <button
-            onclick={() => goto('/lobby')}
+            onclick={goToLobby}
             class={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
@@ -511,13 +510,15 @@
           {/if}
 
           <!-- Match list -->
-          <nav class="flex-1 overflow-y-auto py-1 pr-0 scrollbar-hide relative">
+          <nav class="flex-1 overflow-y-auto py-1 pr-0 pb-0 mb-24 scrollbar-hide relative">
+            <!-- Top fade: covers items scrolling upward -->
+            <div class={`pointer-events-none sticky top-0 left-0 right-0 h-6 -mb-6 z-10 ${isDarkMode ? 'bg-gradient-to-b from-gray-950 to-transparent' : 'bg-gradient-to-b from-gray-50 to-transparent'}`}></div>
             {#each siblingMatches as sibling (sibling.id)}
               {@const isActive = sibling.id === matchId}
-              {@const progress = sibling.max_turns > 0 ? (sibling.turn_count / sibling.max_turns) * 100 : 0}
+              <!-- eslint-disable svelte/no-navigation-without-resolve -->
               <a
                 href="/lobby/match/{sibling.id}"
-                class={`match-tab group relative flex items-center gap-3 ml-2 my-1.5 px-3 py-3 text-sm transition-all ${
+                class={`match-tab group relative flex items-center gap-3 ml-2 my-2.5 px-3 py-3 text-sm transition-all ${
                   isActive
                     ? 'match-tab-active rounded-xl mr-2 ' + (isDarkMode
                         ? 'bg-gradient-to-r from-[#FF4D00]/15 to-gray-950'
@@ -554,7 +555,7 @@
                     }`}>{getShortStatusLabel(sibling.status)}</span>
                   </div>
                   <div class="flex gap-0.5 h-1">
-                    {#each Array.from({ length: sibling.max_turns }, (_, i) => i) as i}
+                    {#each Array.from({ length: sibling.max_turns }, (__, i) => i) as i (i)}
                       <div class={`flex-1 rounded-sm transition-colors duration-300 ${
                         i < sibling.turn_count
                           ? sibling.status === 'won' ? 'bg-green-400' :
@@ -570,8 +571,8 @@
                 </div>
               </a>
             {/each}
-            <div class="h-6 shrink-0"></div>
-            <div class={`pointer-events-none sticky bottom-0 left-0 right-0 h-8 -mt-8 ${isDarkMode ? 'bg-gradient-to-t from-gray-950 to-transparent' : 'bg-gradient-to-t from-gray-50 to-transparent'}`}></div>
+            <div class="h-4 shrink-0"></div>
+            <div class={`pointer-events-none sticky bottom-0 left-0 right-0 h-6 -mt-6 ${isDarkMode ? 'bg-gradient-to-t from-gray-950 to-transparent' : 'bg-gradient-to-t from-gray-50 to-transparent'}`}></div>
           </nav>
 
         </aside>
@@ -584,7 +585,14 @@
             class={`flex-1 overflow-y-auto min-h-0 ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}
           >
           {#key matchId}
-          <div class="max-w-2xl mx-auto px-4 py-6 md:px-8 space-y-5" in:fade={{ duration: 150, delay: 80 }} out:fade={{ duration: 80 }}>
+          <div class="max-w-2xl mx-auto px-4 py-6 md:px-8 space-y-5">
+
+            <!-- Chat loading spinner (intra-game navigation) -->
+            {#if isChatLoading}
+              <div class="flex items-center justify-center py-24">
+                <div class="w-8 h-8 border-3 border-[#FF4D00]/30 border-t-[#FF4D00] rounded-full animate-spin"></div>
+              </div>
+            {:else}
 
             <!-- Error banner -->
             {#if errorMessage}
@@ -733,7 +741,7 @@
                 {/if}
                 <div class="flex items-center justify-center gap-2.5">
                   <button
-                    onclick={() => goto('/lobby')}
+                    onclick={goToLobby}
                     class={`px-5 py-2 rounded-xl text-sm font-semibold transition-colors ${
                       isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                     }`}
@@ -750,6 +758,7 @@
                   {/if}
                 </div>
               </div>
+            {/if}
             {/if}
           </div>
           {/key}
@@ -844,10 +853,11 @@
       {#each siblingMatches as sibling (sibling.id)}
         {@const isActive = sibling.id === matchId}
         {@const progress = sibling.max_turns > 0 ? (sibling.turn_count / sibling.max_turns) * 100 : 0}
+        <!-- eslint-disable svelte/no-navigation-without-resolve -->
         <a
           href="/lobby/match/{sibling.id}"
           onclick={() => showSidebar = false}
-          class={`group relative flex items-center gap-3 mx-2 my-0.5 px-3 py-3 rounded-xl text-sm transition-all ${
+          class={`group relative flex items-center gap-3 mx-2 my-1.5 px-3 py-3 rounded-xl text-sm transition-all ${
             isActive
               ? 'border border-[#FF4D00]/40 ' + (isDarkMode ? 'bg-[#FF4D00]/10' : 'bg-[#FF4D00]/5')
               : isDarkMode ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'
