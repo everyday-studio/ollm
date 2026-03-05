@@ -5,12 +5,14 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/kit/nickname"
 	"github.com/everyday-studio/ollm/internal/kit/security"
+	"github.com/everyday-studio/ollm/internal/kit/tag"
 )
 
 type authUseCase struct {
@@ -57,7 +59,25 @@ func (uc *authUseCase) SignUpUser(ctx context.Context, user *domain.User) (*doma
 	}
 	user.Password = hashedPassword
 
-	return uc.userRepo.Save(ctx, user)
+	for i := 0; i < 5; i++ {
+		generatedTag, err := tag.Generate()
+		if err != nil {
+			return nil, err
+		}
+		user.Tag = generatedTag
+
+		savedUser, err := uc.userRepo.Save(ctx, user)
+		if err == nil {
+			return savedUser, nil
+		}
+
+		if errors.Is(err, domain.ErrConflict) && strings.Contains(err.Error(), "duplicate tag") {
+			continue // Retry on tag collision
+		}
+		return nil, err
+	}
+
+	return nil, domain.ErrConflict // Max retries exceeded
 }
 
 func (uc *authUseCase) Login(ctx context.Context, email string, password string) (*domain.LoginResponse, error) {
@@ -130,6 +150,8 @@ func (uc *authUseCase) generateTokens(user *domain.User) (*domain.LoginResponse,
 
 	response := &domain.LoginResponse{
 		ID:                     user.ID,
+		Name:                   user.Name,
+		Tag:                    user.Tag,
 		Email:                  user.Email,
 		AccessToken:            accessToken,
 		RefreshToken:           refreshToken,

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"unicode/utf8"
 
 	"github.com/everyday-studio/ollm/internal/domain"
 )
@@ -23,7 +24,8 @@ func (uc *userUseCase) GetAll(ctx context.Context) ([]domain.User, error) {
 }
 
 func (uc *userUseCase) UpdateNickname(ctx context.Context, id string, name string) (*domain.User, error) {
-	if len(name) < 2 || len(name) > 20 {
+	nameLen := utf8.RuneCountInString(name)
+	if nameLen < 2 || nameLen > 20 {
 		return nil, domain.ErrInvalidInput
 	}
 

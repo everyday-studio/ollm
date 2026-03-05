@@ -14,7 +14,7 @@ func TestUserRepository_SaveUser(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Save user successfully", func(t *testing.T) {
-		user := &domain.User{Name: "Jane Doe", Email: "jane@exmaple.com", Password: "testpassword"}
+		user := &domain.User{Name: "Jane Doe", Tag: "TAG01", Email: "jane@exmaple.com", Password: "testpassword"}
 		savedUser, err := repo.Save(ctx, user)
 
 		assert.NoError(t, err)
@@ -24,11 +24,11 @@ func TestUserRepository_SaveUser(t *testing.T) {
 	})
 
 	t.Run("Fails to save user due to existing email", func(t *testing.T) {
-		user1 := &domain.User{Name: "Jane Doe", Email: "jane@example.com", Password: "testpassword"}
+		user1 := &domain.User{Name: "Jane Doe", Tag: "TAG02", Email: "jane@example.com", Password: "testpassword"}
 		_, err := repo.Save(ctx, user1)
 		assert.NoError(t, err)
 
-		user2 := &domain.User{Name: "Jane Smith", Email: "jane@example.com", Password: "testpassword"}
+		user2 := &domain.User{Name: "Jane Smith", Tag: "TAG03", Email: "jane@example.com", Password: "testpassword"}
 		_, err = repo.Save(ctx, user2)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, domain.ErrAlreadyExists)
@@ -41,7 +41,7 @@ func TestUserRepository_GetByID(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Get users by id successfully", func(t *testing.T) {
-		user := &domain.User{Name: "Alice", Email: "alice@example.com", Password: "testpassword"}
+		user := &domain.User{Name: "Alice", Tag: "TAG04", Email: "alice@example.com", Password: "testpassword"}
 		savedUser, _ := repo.Save(ctx, user)
 
 		fetchedUser, err := repo.GetByID(ctx, savedUser.ID)
@@ -64,8 +64,8 @@ func TestUserRepository_GetAllUsers(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Get all users successfully", func(t *testing.T) {
-		user1 := &domain.User{Name: "User1", Email: "user1@example.com", Password: "testpassword"}
-		user2 := &domain.User{Name: "User2", Email: "user2@example.com", Password: "testpassword"}
+		user1 := &domain.User{Name: "User1", Tag: "TAG05", Email: "user1@example.com", Password: "testpassword"}
+		user2 := &domain.User{Name: "User2", Tag: "TAG06", Email: "user2@example.com", Password: "testpassword"}
 		repo.Save(ctx, user1)
 		repo.Save(ctx, user2)
 

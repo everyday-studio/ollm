@@ -17,6 +17,7 @@ const (
 type User struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
+	Tag       string    `json:"tag"`
 	Email     string    `json:"email"`
 	Password  string    `json:"-"`
 	Role      Role      `json:"role"`

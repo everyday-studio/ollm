@@ -89,11 +89,13 @@ func setupSchema() {
 		CREATE TABLE IF NOT EXISTS users (
 			id VARCHAR(26) PRIMARY KEY,
 			name TEXT NOT NULL,
+			tag VARCHAR(5) NOT NULL DEFAULT '',
 			email TEXT NOT NULL UNIQUE,
 			password VARCHAR(255) NOT NULL DEFAULT '',
 			role VARCHAR(255) DEFAULT 'User',
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			CONSTRAINT users_tag_key UNIQUE (tag)
 		);
 
 		-- Function to automatically update updated_at timestamp

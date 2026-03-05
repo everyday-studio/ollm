@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +14,8 @@ import (
 func createTestUser(t *testing.T) *domain.User {
 	t.Helper()
 	userRepo := NewUserRepository(testDB)
-	user := &domain.User{Name: "TestAuthor", Email: "author@example.com", Password: "testpassword"}
+	uniqueSuffix := fmt.Sprintf("%d", time.Now().UnixNano()%10000)
+	user := &domain.User{Name: "TestAuthor", Tag: uniqueSuffix, Email: fmt.Sprintf("author%s@example.com", uniqueSuffix), Password: "testpassword"}
 	savedUser, err := userRepo.Save(context.Background(), user)
 	assert.NoError(t, err)
 	return savedUser

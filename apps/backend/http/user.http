@@ -15,3 +15,12 @@ Authorization: Bearer {{login.response.body.access_token}}
 {
   "name": "관리자올름"
 }
+
+### Sign Up New User (Tag test)
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+    "email": "newuser.test@example.com",
+    "password": "password123"
+}

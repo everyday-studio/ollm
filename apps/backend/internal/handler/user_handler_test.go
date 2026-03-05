@@ -29,7 +29,7 @@ func TestUserHandler_GetByID(t *testing.T) {
 			mockReturn: &domain.User{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com", Role: domain.RoleUser},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","tag":"","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to find user",
@@ -91,7 +91,7 @@ func TestUserHandler_GetAll(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `[{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6","name":"Jane","email":"jane@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`,
+			wantBody:   `[{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","tag":"","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6","name":"Jane","tag":"","email":"jane@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}]`,
 		},
 		{
 			name:       "Fail to find any users",

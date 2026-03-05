@@ -59,6 +59,7 @@ func (h *AuthHandler) SignUpUser(c echo.Context) error {
 		return c.JSON(http.StatusCreated, domain.SignUpResponse{
 			ID:    createdUser.ID,
 			Name:  createdUser.Name,
+			Tag:   createdUser.Tag,
 			Email: createdUser.Email,
 		})
 	}
