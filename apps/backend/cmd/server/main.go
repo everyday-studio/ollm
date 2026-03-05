@@ -61,6 +61,7 @@ func main() {
 			handler.NewMatchHandler,
 			handler.NewMessageHandler,
 			handler.NewLeaderboardHandler,
+			handler.NewAdminHandler,
 		),
 		fx.Invoke(StartServer),
 	)
