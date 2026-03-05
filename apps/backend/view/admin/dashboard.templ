@@ -4,7 +4,7 @@ import "github.com/everyday-studio/ollm/view/layout"
 import "fmt"
 
 templ Dashboard(adminName string, totalUsers int, totalGames int, activeMatches int, adminPath string) {
-	@layout.Base("Admin Dashboard", adminPath) {
+	@layout.Base("Admin Dashboard", adminPath, "dashboard") {
 		<div class="w-full max-w-7xl mx-auto">
 			
 			<!-- Header Section -->

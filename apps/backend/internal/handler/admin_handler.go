@@ -8,6 +8,8 @@ import (
 	"github.com/a-h/templ"
 	"github.com/labstack/echo/v4"
 
+	"strconv"
+
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/middleware"
@@ -50,7 +52,70 @@ func NewAdminHandler(e *echo.Echo, userUseCase domain.UserUseCase, gameUseCase d
 	adminGroup := e.Group(adminPath, middleware.AllowRoles(domain.RoleAdmin))
 	adminGroup.GET("/dashboard", handler.Dashboard)
 
+	adminGroup.GET("/users", handler.Users)
+
+	adminGroup.GET("/games", handler.Games)
+	adminGroup.GET("/games/create", handler.GameCreateForm)
+	adminGroup.POST("/games", handler.CreateGame)
+
 	return handler
+}
+
+func (h *AdminHandler) GameCreateForm(c echo.Context) error {
+	adminPath := h.config.App.AdminPath
+	if adminPath == "" {
+		adminPath = "/admin"
+	}
+
+	// Get current admin ID to set as default author
+	authorID, _ := c.Get("user_id").(string)
+
+	return Render(c, http.StatusOK, admin.GameCreatePage(adminPath, authorID))
+}
+
+func (h *AdminHandler) CreateGame(c echo.Context) error {
+	type createGameRequest struct {
+		Title        string `json:"title"`
+		Description  string `json:"description"`
+		AuthorID     string `json:"author_id"`
+		SystemPrompt string `json:"system_prompt"`
+		TargetWord   string `json:"target_word"`
+		MaxTurns     string `json:"max_turns"`
+	}
+
+	req := new(createGameRequest)
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	maxTurns, err := strconv.Atoi(req.MaxTurns)
+	if err != nil {
+		maxTurns = 10
+	}
+
+	domainReq := &domain.CreateGameRequest{
+		Title:        req.Title,
+		Description:  req.Description,
+		AuthorID:     req.AuthorID,
+		SystemPrompt: req.SystemPrompt,
+		TargetWord:   req.TargetWord,
+		MaxTurns:     maxTurns,
+	}
+
+	ctx := c.Request().Context()
+	_, err = h.gameUseCase.Create(ctx, domainReq)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+	}
+
+	adminPath := h.config.App.AdminPath
+	if adminPath == "" {
+		adminPath = "/admin"
+	}
+
+	// HX-Redirect to games list on success
+	c.Response().Header().Set("HX-Redirect", adminPath+"/games")
+	return c.NoContent(http.StatusCreated)
 }
 
 func (h *AdminHandler) LoginForm(c echo.Context) error {
@@ -144,13 +209,13 @@ func (h *AdminHandler) Dashboard(c echo.Context) error {
 	activeMatches := 0
 
 	// Get total users
-	if users, err := h.userUseCase.GetAll(ctx); err == nil {
-		totalUsers = len(users)
+	if total, err := h.userUseCase.CountAll(ctx); err == nil {
+		totalUsers = total
 	}
 
 	// Get total games
-	if games, err := h.gameUseCase.GetAll(ctx); err == nil {
-		totalGames = len(games)
+	if total, err := h.gameUseCase.CountAll(ctx); err == nil {
+		totalGames = total
 	}
 
 	// Mock active matches (since MatchUseCase might not have a simple GetAll Active)
@@ -165,4 +230,58 @@ func (h *AdminHandler) Dashboard(c echo.Context) error {
 	// Render the admin dashboard template
 	component := admin.Dashboard(adminName, totalUsers, totalGames, activeMatches, adminPath)
 	return Render(c, http.StatusOK, component)
+}
+
+func (h *AdminHandler) Users(c echo.Context) error {
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	if limit < 1 {
+		limit = 10
+	}
+
+	ctx := c.Request().Context()
+	data, err := h.userUseCase.GetPaginated(ctx, page, limit)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to load users")
+	}
+
+	adminPath := h.config.App.AdminPath
+	if adminPath == "" {
+		adminPath = "/admin"
+	}
+
+	if c.Request().Header.Get("HX-Request") == "true" {
+		return Render(c, http.StatusOK, admin.UserTableRows(data, adminPath))
+	}
+	return Render(c, http.StatusOK, admin.UsersPage(data, adminPath))
+}
+
+func (h *AdminHandler) Games(c echo.Context) error {
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	if limit < 1 {
+		limit = 10
+	}
+
+	ctx := c.Request().Context()
+	data, err := h.gameUseCase.GetPaginated(ctx, page, limit)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to load games")
+	}
+
+	adminPath := h.config.App.AdminPath
+	if adminPath == "" {
+		adminPath = "/admin"
+	}
+
+	if c.Request().Header.Get("HX-Request") == "true" {
+		return Render(c, http.StatusOK, admin.GameTableRows(data, adminPath))
+	}
+	return Render(c, http.StatusOK, admin.GamesPage(data, adminPath))
 }
