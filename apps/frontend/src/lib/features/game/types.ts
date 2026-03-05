@@ -46,6 +46,15 @@ export interface CreateMessageRequest {
   content: string;
 }
 
+// [Backend DTO] Paginated response wrapper
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
 // [Backend DTO] Leaderboard entry (read-only, aggregated from matches)
 export interface LeaderboardEntry {
   rank: number;

@@ -19,7 +19,7 @@
   });
 
   let currentUserEmail = $derived($authStore?.user?.email ?? 'Guest');
-  let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
+  //let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
   let currentPath = $derived($page.url.pathname);
 
   onMount(async () => {
@@ -28,14 +28,6 @@
 
     // Restore session (deduplicated — safe if child pages also call ensureSession)
     await ensureSession();
-
-    // Fetch full user info so that name is populated
-    try {
-      const meRes = await authApi.getMe();
-      authStore.updateUser(meRes.data);
-    } catch {
-      console.warn('Failed to fetch user info');
-    }
   });
 
   // Sync dark mode state → html element class so CSS can target it
@@ -56,11 +48,9 @@
   // View Transitions API — smooth cross-fade between page navigations
   // ----------------------------------------------------------------
   onNavigate((navigation) => {
-    // @ts-ignore — document.startViewTransition is experimental
     if (!document.startViewTransition) return;
 
     return new Promise((resolve) => {
-      // @ts-ignore
       document.startViewTransition(async () => {
         resolve();
         await navigation.complete;
@@ -71,8 +61,8 @@
   async function handleLogout() {
     try {
       await authApi.logout();
-    } catch (e: any) {
-      const status = e?.response?.status;
+    } catch (e: unknown) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
       if (status === 401 || status === 403) {
         try {
           const refreshRes = await authApi.refresh();
@@ -97,11 +87,13 @@
         console.warn('invalidateAll failed', e);
       }
 
+      // eslint-disable-next-line svelte/no-navigation-without-resolve
       await goto('/login');
     }
   }
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
 <svelte:head>
   <link rel="preload" as="image" href="/logo.png" />
 </svelte:head>
@@ -175,7 +167,7 @@
 
           <div class="flex flex-col">
             <span class={`text-xs font-semibold leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-              {$authStore.user?.name || '플레이어'}
+              {$authStore.user?.name || '플레이어'}<span class={`ml-1 font-normal ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>#{$authStore.user?.tag ?? ''}</span>
             </span>
             <span class={`text-[10px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {currentUserEmail}
@@ -185,12 +177,15 @@
 
         <div class={`absolute right-0 top-full mt-0 w-56 rounded-2xl border shadow-xl opacity-0 translate-y-1 pointer-events-none transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto ${isDarkMode ? 'border-gray-800 bg-gray-950' : 'border-gray-200 bg-white'}`}>
           <div class={`px-4 py-3 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-            <div class={`text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$authStore.user?.name || '플레이어'}</div>
+            <div class={`text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$authStore.user?.name || '플레이어'}<span class={`ml-1 font-normal text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>#{$authStore.user?.tag ?? ''}</span></div>
             <div class={`text-xs font-mono ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{currentUserEmail}</div>
           </div>
           <div class="py-2">
             <a href="/lobby/mypage" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>마이페이지</a>
             <a href="/lobby/leaderboard" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>리더보드</a>
+            {#if $authStore.user?.role === 'Admin'}
+              <a href="http://localhost:8080/admin" target="_blank" rel="noopener noreferrer" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-purple-400 hover:bg-gray-900 hover:text-purple-300' : 'text-purple-600 hover:bg-gray-50 hover:text-purple-700'}`}>관리자 페이지</a>
+            {/if}
           </div>
         </div>
       </div>

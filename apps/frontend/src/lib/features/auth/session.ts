@@ -22,6 +22,16 @@ export function ensureSession(): Promise<void> {
       const res = await authApi.refresh();
       if (res?.data?.access_token) {
         authStore.updateToken(res.data.access_token);
+        // Populate user from refresh response (id, name, tag, email)
+        const { id, name, tag, email } = res.data;
+        authStore.updateUser({ id, name, tag, email, role: '', created_at: '', updated_at: '' });
+      }
+      // Fetch full user info to fill in role etc.
+      try {
+        const meRes = await authApi.getMe();
+        authStore.updateUser(meRes.data);
+      } catch (meErr) {
+        console.warn('[ensureSession] getMe failed:', meErr);
       }
     } catch {
       // Ignore — the Axios interceptor will handle 401 on subsequent calls

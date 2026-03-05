@@ -5,6 +5,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  tag: string;
   role: string;
   created_at: string;
   updated_at: string;
@@ -14,6 +15,7 @@ export interface User {
 export interface AuthResponse {
   id: string;
   name: string;
+  tag: string;
   email: string;
   access_token: string;
 }
