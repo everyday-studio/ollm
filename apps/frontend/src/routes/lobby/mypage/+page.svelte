@@ -6,6 +6,7 @@
 
   import { authApi } from '$lib/features/auth/api';
   import { authStore } from '$lib/features/auth/model';
+  import { ensureSession } from '$lib/features/auth/session';
   import type { User } from '$lib/features/auth/types';
 
   const theme = getContext<{ isDark: boolean }>('theme');
@@ -32,15 +33,7 @@
   // Lifecycle
   // ----------------------------------------------------------------
   onMount(async () => {
-    // Restore access token (layout handles getMe for user info)
-    try {
-      const refreshRes = await authApi.refresh();
-      if (refreshRes?.data?.access_token) {
-        authStore.updateToken(refreshRes.data.access_token);
-      }
-    } catch {
-      console.warn('Failed to restore session');
-    }
+    await ensureSession();
 
     // Fetch full profile
     try {

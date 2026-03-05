@@ -6,6 +6,8 @@
 
   import { authApi } from '$lib/features/auth/api';
   import { authStore } from '$lib/features/auth/model';
+  import { ensureSession, resetSession } from '$lib/features/auth/session';
+  import { invalidateCache } from '$lib/cache/apiCache';
 
   let { children } = $props();
 
@@ -24,21 +26,15 @@
     const savedTheme = localStorage.getItem('theme');
     isDarkMode = savedTheme !== 'light';
 
-    // Restore session and fetch full user (including name) from the server
+    // Restore session (deduplicated — safe if child pages also call ensureSession)
+    await ensureSession();
+
+    // Fetch full user info so that name is populated
     try {
-      const refreshRes = await authApi.refresh();
-      if (refreshRes?.data?.access_token) {
-        authStore.updateToken(refreshRes.data.access_token);
-        // Fetch full user info so that name is populated
-        try {
-          const meRes = await authApi.getMe();
-          authStore.updateUser(meRes.data);
-        } catch {
-          console.warn('Failed to fetch user info');
-        }
-      }
+      const meRes = await authApi.getMe();
+      authStore.updateUser(meRes.data);
     } catch {
-      // Not logged in or refresh failed — leave store as-is
+      console.warn('Failed to fetch user info');
     }
   });
 
@@ -92,6 +88,8 @@
       }
     } finally {
       authStore.logout();
+      resetSession();
+      invalidateCache();
 
       try {
         await invalidateAll();
