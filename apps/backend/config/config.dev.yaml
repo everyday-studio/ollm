@@ -1,6 +1,7 @@
 app:
   env: "dev"
   port: 8080
+  admin_path: "/admin"
   debug: true
   log_level: "debug"
 
