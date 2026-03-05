@@ -16,7 +16,8 @@ export function getCachedGames(): Promise<GameDTO[]> {
     async () => {
       try {
         const res = await gameApi.getGames();
-        if (Array.isArray(res.data) && res.data.length > 0) return res.data;
+        const games = res.data?.data;
+        if (Array.isArray(games) && games.length > 0) return games;
         return await loadMockGames();
       } catch {
         return await loadMockGames();

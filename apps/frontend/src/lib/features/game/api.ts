@@ -1,10 +1,10 @@
 // src/lib/features/game/api.ts
 import client from '$lib/api/client';
-import type { GameDTO, MatchDTO, LeaderboardEntry } from './types';
+import type { GameDTO, MatchDTO, LeaderboardEntry, PaginatedResponse } from './types';
 
 export const gameApi = {
-  // GET /games - Fetch all public games
-  getGames: () => client.get<GameDTO[]>('/games'),
+  // GET /games - Fetch paginated games
+  getGames: () => client.get<PaginatedResponse<GameDTO>>('/games'),
 
   // GET /games/:id - Fetch a single game by ID
   getGameById: (id: string) => client.get<GameDTO>(`/games/${id}`),
