@@ -48,6 +48,7 @@
     
     isLoading = true;
     errorMessage = '';
+    let loggedIn = false;
 
     try {
       const res = await authApi.login({ 
@@ -56,7 +57,7 @@
       });
 
       const { access_token, id, name, email } = res.data as AuthResponse;
-      authStore.loginSuccess(access_token, { id, name, email } as any);
+      authStore.loginSuccess(access_token, { id, name, email, role: '', created_at: '', updated_at: '' });
 
       toast.success(`로그인 성공!`, {
         duration: 3000,
@@ -64,11 +65,12 @@
         icon: '✅',
       });
 
-      goto('/lobby');
+      loggedIn = true;
 
-    } catch (err: any) {
-      if (err.response) {
-        const status = err.response.status;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr.response) {
+        const status = axiosErr.response.status;
         if (status === 400 || status === 401 || status === 404) {
           errorMessage = "아이디 또는 비밀번호가 일치하지 않습니다.";
         } else {
@@ -81,6 +83,9 @@
     } finally {
       isLoading = false;
     }
+
+    // eslint-disable-next-line svelte/no-navigation-without-resolve
+    if (loggedIn) await goto('/lobby');
   };
 
   // 회원가입 처리
@@ -112,9 +117,10 @@
       
       closeModal(); 
 
-    } catch (err: any) {
-      if (err.response) {
-        switch (err.response.status) {
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { error?: string } } };
+      if (axiosErr.response) {
+        switch (axiosErr.response.status) {
           case 409:
             errorMessage = "이미 존재하는 이메일입니다.";
             break;
@@ -125,7 +131,7 @@
             errorMessage = "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
             break;
           default:
-            errorMessage = err.response.data?.error || "회원가입에 실패했습니다.";
+            errorMessage = axiosErr.response.data?.error ?? "회원가입에 실패했습니다.";
         }
       } else {
         errorMessage = "서버와 통신할 수 없습니다.";

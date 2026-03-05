@@ -3,8 +3,8 @@
 @plugin '@tailwindcss/typography';
 
 @theme {
-  /* Font Family - Noto Sans Korean */
-  --font-family-sans: 'Noto Sans KR', ui-sans-serif, system-ui, sans-serif;
+  /* Font Family - Pretendard */
+  --font-family-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
 }
 
 /* 폰트 렌더링 최적화 */
