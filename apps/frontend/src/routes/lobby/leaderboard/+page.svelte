@@ -4,13 +4,23 @@
 
   import { gameApi } from '$lib/features/game/api';
   import { loadMockGames } from '$lib/features/game/mockData';
-  import { authApi } from '$lib/features/auth/api';
-  import { authStore } from '$lib/features/auth/model';
-  import type { User } from '$lib/features/auth/types';
+  import { ensureSession } from '$lib/features/auth/session';
+  import { getCachedGames } from '$lib/cache/gameCache';
   import type { GameDTO, LeaderboardEntry } from '$lib/features/game/types';
+  import { disassemble } from 'es-hangul';
 
   const theme = getContext<{ isDark: boolean }>('theme');
   let isDarkMode = $derived(theme.isDark);
+
+  /** Korean-aware search: regular includes + jamo decomposition matching */
+  function matchesQuery(title: string, query: string): boolean {
+    const q = query.trim();
+    if (!q) return true;
+    if (title.toLowerCase().includes(q.toLowerCase())) return true;
+    // Decompose both to jamo (ㄷㅣㅂㅅㅣㅋㅡ) for partial syllable matching
+    if (disassemble(title).includes(disassemble(q))) return true;
+    return false;
+  }
 
   // ----------------------------------------------------------------
   // State
@@ -21,26 +31,62 @@
   let isLoading = $state(true);
   let isTableLoading = $state(false);
 
+  // Combobox state
+  let searchQuery = $state('');
+  let isComboOpen = $state(false);
+  let highlightedIndex = $state(-1);
+
+  let filteredGames = $derived(
+    searchQuery.trim() === ''
+      ? games
+      : games.filter(g => matchesQuery(g.title, searchQuery.trim()))
+  );
+
+  let selectedGameLabel = $derived(
+    games.find(g => g.id === selectedGameId)?.title ?? '게임 선택'
+  );
+
+  function selectGame(id: string) {
+    selectedGameId = id;
+    searchQuery = '';
+    isComboOpen = false;
+    highlightedIndex = -1;
+  }
+
+  function handleComboKeydown(e: KeyboardEvent) {
+    if (!isComboOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        isComboOpen = true;
+        e.preventDefault();
+      }
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      highlightedIndex = Math.min(highlightedIndex + 1, filteredGames.length - 1);
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      highlightedIndex = Math.max(highlightedIndex - 1, 0);
+      e.preventDefault();
+    } else if (e.key === 'Enter' && highlightedIndex >= 0 && highlightedIndex < filteredGames.length) {
+      selectGame(filteredGames[highlightedIndex].id);
+      e.preventDefault();
+    } else if (e.key === 'Escape') {
+      isComboOpen = false;
+      searchQuery = '';
+      highlightedIndex = -1;
+      e.preventDefault();
+    }
+  }
+
   // ----------------------------------------------------------------
   // Lifecycle
   // ----------------------------------------------------------------
   onMount(async () => {
     try {
-      // Restore access token (layout handles getMe for user info)
-      try {
-        const refreshRes = await authApi.refresh();
-        if (refreshRes?.data?.access_token) {
-          authStore.updateToken(refreshRes.data.access_token);
-        }
-      } catch { /* ignore */ }
+      await ensureSession();
 
-      // Fetch games
-      try {
-        const gamesRes = await gameApi.getGames();
-        games = Array.isArray(gamesRes.data) && gamesRes.data.length > 0 ? gamesRes.data : await loadMockGames();
-      } catch {
-        games = await loadMockGames();
-      }
+      // Fetch games (cached)
+      games = await getCachedGames();
 
       if (games.length > 0) {
         selectedGameId = games[0].id;
@@ -106,20 +152,87 @@
         <p class={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>게임별 최고 기록 Top 10</p>
       </div>
 
-      <!-- Game Selector -->
-      <div class="flex gap-2 mb-6 flex-wrap">
-        {#each games as g (g.id)}
-          <button
-            onclick={() => selectedGameId = g.id}
-            class={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-              selectedGameId === g.id
-                ? 'bg-[#FF4D00] text-white shadow-lg'
-                : isDarkMode ? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-            }`}
-          >
-            {g.title}
-          </button>
-        {/each}
+      <!-- Game Selector: Searchable Combobox -->
+      <div class="relative mb-6 max-w-xs">
+        <!-- svelte-ignore a11y_role_has_required_aria_props -->
+        <button
+          onclick={() => { isComboOpen = !isComboOpen; highlightedIndex = -1; searchQuery = ''; }}
+          class={`w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+            isDarkMode
+              ? 'bg-gray-900 text-gray-200 border-gray-700 hover:border-gray-600'
+              : 'bg-white text-gray-800 border-gray-300 hover:border-gray-400'
+          } shadow-sm`}
+          role="combobox"
+          aria-expanded={isComboOpen}
+        >
+          <span class="truncate">{selectedGameLabel}</span>
+          <svg class={`w-4 h-4 shrink-0 transition-transform ${isComboOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+
+        {#if isComboOpen}
+          <!-- Backdrop to close -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="fixed inset-0 z-40" onclick={() => { isComboOpen = false; searchQuery = ''; }} onkeydown={() => {}}></div>
+
+          <div class={`absolute z-50 mt-1.5 w-full rounded-xl border shadow-xl overflow-hidden ${
+            isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <!-- Search input -->
+            <div class={`px-3 py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+              <div class="relative">
+                <svg class={`absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input
+                  type="text"
+                  bind:value={searchQuery}
+                  onkeydown={handleComboKeydown}
+                  placeholder="게임 검색…"
+                  class={`w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border-none focus:ring-1 focus:ring-[#FF4D00]/50 outline-none ${
+                    isDarkMode ? 'bg-gray-800 text-gray-200 placeholder-gray-500' : 'bg-gray-50 text-gray-800 placeholder-gray-400'
+                  }`}
+                />
+              </div>
+            </div>
+            <!-- Options -->
+            <ul class="max-h-52 overflow-y-auto py-1" role="listbox">
+              {#each filteredGames as g, i (g.id)}
+                <li>
+                  <button
+                    onclick={() => selectGame(g.id)}
+                    onmouseenter={() => highlightedIndex = i}
+                    class={`w-full px-4 py-2 text-sm text-left transition-colors flex items-center gap-2 ${
+                      g.id === selectedGameId
+                        ? 'text-[#FF4D00] font-bold'
+                        : isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    } ${
+                      highlightedIndex === i
+                        ? isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
+                        : ''
+                    }`}
+                    role="option"
+                    aria-selected={g.id === selectedGameId}
+                  >
+                    {#if g.id === selectedGameId}
+                      <svg class="w-4 h-4 shrink-0 text-[#FF4D00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    {:else}
+                      <span class="w-4 shrink-0"></span>
+                    {/if}
+                    <span class="truncate">{g.title}</span>
+                  </button>
+                </li>
+              {:else}
+                <li class={`px-4 py-3 text-sm text-center ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  검색 결과가 없습니다
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
       </div>
 
       <!-- Table -->
