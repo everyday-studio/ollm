@@ -195,7 +195,7 @@
               {:else}
                 <div class="flex items-center gap-3 justify-center sm:justify-start">
                   <h2 class={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                    {user.name || '이름없는올름'}
+                    {user.name || '이름없는올름'}<span class={`ml-2 text-base font-normal ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>#{user.tag}</span>
                   </h2>
                   <button
                     onclick={startEditing}

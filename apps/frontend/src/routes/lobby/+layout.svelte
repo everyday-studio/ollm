@@ -175,7 +175,7 @@
 
           <div class="flex flex-col">
             <span class={`text-xs font-semibold leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-              {$authStore.user?.name || '플레이어'}
+              {$authStore.user?.name || '플레이어'}<span class={`ml-1 font-normal ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>#{$authStore.user?.tag ?? ''}</span>
             </span>
             <span class={`text-[10px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {currentUserEmail}
@@ -185,12 +185,15 @@
 
         <div class={`absolute right-0 top-full mt-0 w-56 rounded-2xl border shadow-xl opacity-0 translate-y-1 pointer-events-none transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto ${isDarkMode ? 'border-gray-800 bg-gray-950' : 'border-gray-200 bg-white'}`}>
           <div class={`px-4 py-3 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-            <div class={`text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$authStore.user?.name || '플레이어'}</div>
+            <div class={`text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$authStore.user?.name || '플레이어'}<span class={`ml-1 font-normal text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>#{$authStore.user?.tag ?? ''}</span></div>
             <div class={`text-xs font-mono ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{currentUserEmail}</div>
           </div>
           <div class="py-2">
             <a href="/lobby/mypage" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>마이페이지</a>
             <a href="/lobby/leaderboard" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>리더보드</a>
+            {#if $authStore.user?.role === 'Admin'}
+              <a href="http://localhost:8080/admin" target="_blank" rel="noopener noreferrer" class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-purple-400 hover:bg-gray-900 hover:text-purple-300' : 'text-purple-600 hover:bg-gray-50 hover:text-purple-700'}`}>관리자 페이지</a>
+            {/if}
           </div>
         </div>
       </div>
