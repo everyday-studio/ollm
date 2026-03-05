@@ -1,18 +1,15 @@
 <script lang="ts">
-  import { fade, fly, scale } from 'svelte/transition';
+  import { fade, fly } from 'svelte/transition';
   import { onMount, getContext } from 'svelte';
   import { goto } from '$app/navigation';
+  import { SvelteMap } from 'svelte/reactivity';
 
-  // Imports for API and Types
   import { gameApi } from '$lib/features/game/api';
-  import { loadMockGames } from '$lib/features/game/mockData';
-  import { authApi } from '$lib/features/auth/api';     
-  import { authStore } from '$lib/features/auth/model'; 
-  import type { User } from '$lib/features/auth/types';
+  import { ensureSession } from '$lib/features/auth/session';
+  import { getCachedGames, getCachedMyMatches, invalidateMatchesCache } from '$lib/cache/gameCache';
   import { toGameUI, toMatchUI } from './adapter';
-  import type { GameDTO, GameUI, MatchDTO, MatchUI } from '$lib/features/game/types';
+  import type { GameUI, MatchUI } from '$lib/features/game/types';
 
-  const themeColor = "#FF4D00";
   const theme = getContext<{ isDark: boolean }>('theme');
 
   // ----------------------------------------------------------------
@@ -27,6 +24,43 @@
   
   let isLoading = $state(true);
   let activeSection = $state<'games' | 'matches'>('games');
+
+  // Hero Carousel
+  let currentSlide = $state(0);
+  let slideInterval: ReturnType<typeof setInterval> | null = null;
+  let slideDirection = $state<1 | -1>(1);
+
+  function startAutoSlide() {
+    stopAutoSlide();
+    slideInterval = setInterval(() => {
+      if (games.length > 1) {
+        slideDirection = 1;
+        currentSlide = (currentSlide + 1) % games.length;
+      }
+    }, 6000);
+  }
+
+  function stopAutoSlide() {
+    if (slideInterval) { clearInterval(slideInterval); slideInterval = null; }
+  }
+
+  function goToSlide(index: number) {
+    slideDirection = index > currentSlide ? 1 : -1;
+    currentSlide = index;
+    startAutoSlide();
+  }
+
+  function prevSlide() {
+    slideDirection = -1;
+    currentSlide = (currentSlide - 1 + games.length) % games.length;
+    startAutoSlide();
+  }
+
+  function nextSlide() {
+    slideDirection = 1;
+    currentSlide = (currentSlide + 1) % games.length;
+    startAutoSlide();
+  }
 
   let isDarkMode = $derived(theme.isDark);
 
@@ -45,7 +79,7 @@
   }
 
   let matchGroups = $derived.by<GameMatchGroup[]>(() => {
-    const groupMap = new Map<string, MatchUI[]>();
+    const groupMap = new SvelteMap<string, MatchUI[]>();
     for (const m of matches) {
       const key = m.game_id;
       if (!groupMap.has(key)) groupMap.set(key, []);
@@ -77,50 +111,30 @@
   // Lifecycle & Logic
   // ----------------------------------------------------------------
 
-  onMount(async () => {
-    try {
-      // Restore access token (layout handles getMe for user info)
+  onMount(() => {
+    (async () => {
       try {
-        const refreshRes = await authApi.refresh();
-        if (refreshRes?.data?.access_token) {
-          authStore.updateToken(refreshRes.data.access_token);
-        }
-      } catch (refreshErr) {
-        console.warn('Failed to restore user session:', refreshErr);
+        await ensureSession();
+
+        const [rawGames, rawMatches] = await Promise.all([
+          getCachedGames(),
+          getCachedMyMatches(),
+        ]);
+
+        games = rawGames.map(toGameUI);
+        matches = rawMatches.map(m => toMatchUI(m, rawGames));
+
+      } catch (error) {
+        console.error("Failed to load lobby data:", error);
+      } finally {
+        isLoading = false;
       }
 
-      let rawGames: GameDTO[] = [];
-      let rawMatches: MatchDTO[] = [];
+      // Start carousel after data loads
+      startAutoSlide();
+    })();
 
-      try {
-        const gamesRes = await gameApi.getGames();
-        const apiGames = gamesRes.data;
-        if (Array.isArray(apiGames) && apiGames.length > 0) {
-          rawGames = apiGames;
-        } else {
-          rawGames = await loadMockGames();
-        }
-      } catch (gamesError) {
-        console.warn('Games API failed. Using mock data.', gamesError);
-        rawGames = await loadMockGames();
-      }
-
-      try {
-        const matchesRes = await gameApi.getMyMatches();
-        rawMatches = matchesRes.data;
-      } catch (matchesError) {
-        console.warn('Matches API failed. Using empty list.', matchesError);
-        rawMatches = [];
-      }
-
-      games = rawGames.map(toGameUI);
-      matches = rawMatches.map(m => toMatchUI(m, rawGames));
-
-    } catch (error) {
-      console.error("Failed to load lobby data:", error);
-    } finally {
-      isLoading = false;
-    }
+    return () => stopAutoSlide();
   });
 
   function openGameModal(game: GameUI) {
@@ -131,12 +145,19 @@
   async function startNewMatch(game: GameUI) {
     try {
       const res = await gameApi.createMatch(game.id);
+      invalidateMatchesCache(); // bust cache so lobby refreshes on return
       showGameModal = false;
       // Navigate directly to the match chat page
+      // eslint-disable-next-line svelte/no-navigation-without-resolve
       await goto(`/lobby/match/${res.data.id}`);
     } catch (error) {
       console.error("Failed to create match:", error);
     }
+  }
+
+  function goToMatch(matchId: string) {
+    // eslint-disable-next-line svelte/no-navigation-without-resolve
+    goto(`/lobby/match/${matchId}`);
   }
 
 </script>
@@ -156,7 +177,7 @@
       </div>
       <!-- Skeleton: Game grid -->
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-        {#each Array(5) as _}
+        {#each Array.from({length: 5}, (__, i) => i) as i (i)}
           <div class={`rounded-2xl overflow-hidden border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div class={`aspect-[16/10] skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
             <div class="p-3 md:p-4 space-y-2">
@@ -168,38 +189,88 @@
         {/each}
       </div>
     {:else}
-      <!-- Hero Banner -->
+      <!-- Hero Carousel -->
       <section class="mb-8">
-        <div class="relative h-[320px] md:h-[400px] rounded-3xl overflow-hidden shadow-2xl group">
+        <div
+          class="relative h-[320px] md:h-[400px] rounded-3xl overflow-hidden shadow-2xl group"
+          onmouseenter={stopAutoSlide}
+          onmouseleave={startAutoSlide}
+          role="region"
+          aria-label="추천 게임 슬라이더"
+        >
           {#if games.length > 0}
-            <img 
-              src={games[0].image} 
-              alt={games[0].title}
-              class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
-            
-            <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-16">
-              <div class="flex gap-2 mb-4 flex-wrap">
-                {#each games[0].tags as tag}
-                  <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-white border border-white/20">
-                    #{tag}
-                  </span>
+            {#key currentSlide}
+              <div
+                class="absolute inset-0"
+                in:fly={{ x: 300 * slideDirection, duration: 500 }}
+                out:fly={{ x: -300 * slideDirection, duration: 500 }}
+              >
+                <img
+                  src={games[currentSlide].image}
+                  alt={games[currentSlide].title}
+                  class="w-full h-full object-cover"
+                />
+                <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
+
+                <!-- Content (inside the sliding container to move together) -->
+                <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-16">
+                  <div class="flex gap-2 mb-4 flex-wrap">
+                    {#each games[currentSlide].tags as tag (tag)}
+                      <span class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-white border border-white/20">
+                        #{tag}
+                      </span>
+                    {/each}
+                  </div>
+                  <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-3 md:mb-4 drop-shadow-2xl">
+                    {games[currentSlide].title}
+                  </h1>
+                  <p class="text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mb-4 md:mb-6 line-clamp-2">
+                    {games[currentSlide].description}
+                  </p>
+                  <button
+                    onclick={() => openGameModal(games[currentSlide])}
+                    class="self-start px-6 py-3 md:px-8 md:py-4 bg-[#FF4D00] text-white rounded-full font-bold text-base md:text-lg hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-xl"
+                  >
+                    지금 플레이
+                  </button>
+                </div>
+              </div>
+            {/key}
+
+            <!-- Arrow buttons -->
+            {#if games.length > 1}
+              <button
+                onclick={prevSlide}
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="이전 슬라이드"
+              >
+                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <button
+                onclick={nextSlide}
+                class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="다음 슬라이드"
+              >
+                <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            {/if}
+
+            <!-- Dot indicators -->
+            {#if games.length > 1}
+              <div class="absolute bottom-4 md:bottom-6 right-4 md:right-8 flex gap-2 items-center">
+                {#each Array.from({length: games.length}, (__, i) => i) as i (i)}
+                  <button
+                    onclick={() => goToSlide(i)}
+                    class="relative h-2 rounded-full transition-all duration-300 {i === currentSlide ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'}"
+                    aria-label="슬라이드 {i + 1}"
+                  >
+                    {#if i === currentSlide}
+                      <span class="absolute inset-0 rounded-full bg-white/40 animate-pulse"></span>
+                    {/if}
+                  </button>
                 {/each}
               </div>
-              <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-3 md:mb-4 drop-shadow-2xl">
-                {games[0].title}
-              </h1>
-              <p class="text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mb-4 md:mb-6 line-clamp-2">
-                {games[0].description}
-              </p>
-              <button 
-                onclick={() => openGameModal(games[0])}
-                class="self-start px-6 py-3 md:px-8 md:py-4 bg-[#FF4D00] text-white rounded-full font-bold text-base md:text-lg hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-xl"
-              >
-                지금 플레이
-              </button>
-            </div>
+            {/if}
           {/if}
         </div>
       </section>
@@ -231,7 +302,7 @@
         <div in:fly={{ y: 20, duration: 300 }}>
           <!-- Games Grid -->
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-            {#each games as game}
+            {#each games as game (game.id)}
               <button 
                 onclick={() => openGameModal(game)}
                 class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
@@ -245,7 +316,7 @@
                   <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   
                   <div class="absolute top-2 left-2 flex gap-1 flex-wrap">
-                    {#each game.tags as tag}
+                    {#each game.tags as tag (tag)}
                       <span class="bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-bold text-white">
                         {tag}
                       </span>
@@ -293,7 +364,7 @@
               {#each matchGroups as group (group.gameId)}
                 {@const gameUI = games.find(g => g.id === group.gameId)}
                 <button
-                  onclick={() => goto(`/lobby/match/${group.latestMatch.id}`)}
+                  onclick={() => goToMatch(group.latestMatch.id)}
                   class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border text-left ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
                 >
                   <div class="relative aspect-[16/10] bg-gray-200 overflow-hidden">
@@ -404,7 +475,7 @@
         
         <div class="absolute bottom-4 md:bottom-6 left-4 md:left-6">
           <div class="flex gap-2 mb-2 md:mb-3 flex-wrap">
-            {#each selectedGame.tags as tag}
+            {#each selectedGame.tags as tag (tag)}
               <span class="bg-white/20 backdrop-blur-md px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-bold text-white border border-white/20">
                 #{tag}
               </span>
