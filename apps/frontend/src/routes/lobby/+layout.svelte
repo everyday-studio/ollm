@@ -19,7 +19,7 @@
   });
 
   let currentUserEmail = $derived($authStore?.user?.email ?? 'Guest');
-  let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
+  //let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
   let currentPath = $derived($page.url.pathname);
 
   onMount(async () => {
@@ -28,14 +28,6 @@
 
     // Restore session (deduplicated — safe if child pages also call ensureSession)
     await ensureSession();
-
-    // Fetch full user info so that name is populated
-    try {
-      const meRes = await authApi.getMe();
-      authStore.updateUser(meRes.data);
-    } catch {
-      console.warn('Failed to fetch user info');
-    }
   });
 
   // Sync dark mode state → html element class so CSS can target it
@@ -56,11 +48,9 @@
   // View Transitions API — smooth cross-fade between page navigations
   // ----------------------------------------------------------------
   onNavigate((navigation) => {
-    // @ts-ignore — document.startViewTransition is experimental
     if (!document.startViewTransition) return;
 
     return new Promise((resolve) => {
-      // @ts-ignore
       document.startViewTransition(async () => {
         resolve();
         await navigation.complete;
@@ -71,8 +61,8 @@
   async function handleLogout() {
     try {
       await authApi.logout();
-    } catch (e: any) {
-      const status = e?.response?.status;
+    } catch (e: unknown) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
       if (status === 401 || status === 403) {
         try {
           const refreshRes = await authApi.refresh();
@@ -97,11 +87,13 @@
         console.warn('invalidateAll failed', e);
       }
 
+      // eslint-disable-next-line svelte/no-navigation-without-resolve
       await goto('/login');
     }
   }
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
 <svelte:head>
   <link rel="preload" as="image" href="/logo.png" />
 </svelte:head>
