@@ -64,9 +64,10 @@ func TestMessageUseCase_Create(t *testing.T) {
 				{Role: domain.MessageRoleUser, Content: "Hello AI"},
 			},
 			mockGameGet: &domain.Game{
-				ID:           "01HQZYX3VQJQZ3Z0ZGAME1",
-				SystemPrompt: "You are a friendly AI",
-				TargetWord:   "apple",
+				ID:             "01HQZYX3VQJQZ3Z0ZGAME1",
+				SystemPrompt:   "You are a friendly AI",
+				JudgeType:      domain.JudgeTypeTargetWord,
+				JudgeCondition: "apple",
 			},
 			mockLLMResp:      "Hello! I am a friendly AI",
 			mockLLMPromptTok: 10,
@@ -107,8 +108,9 @@ func TestMessageUseCase_Create(t *testing.T) {
 			mockUserMsgCreateRet: &domain.Message{Role: domain.MessageRoleUser},
 			mockMsgGetHistoryRet: []domain.Message{},
 			mockGameGet: &domain.Game{
-				ID:         "01HQZYX3VQJQZ3Z0ZGAME1",
-				TargetWord: "apple",
+				ID:             "01HQZYX3VQJQZ3Z0ZGAME1",
+				JudgeType:      domain.JudgeTypeTargetWord,
+				JudgeCondition: "apple",
 			},
 			mockLLMResp:         "It is an apple.",
 			mockLLMPromptTok:    5,
@@ -135,7 +137,8 @@ func TestMessageUseCase_Create(t *testing.T) {
 			mockUserMsgCreateRet: &domain.Message{Role: domain.MessageRoleUser},
 			mockMsgGetHistoryRet: []domain.Message{},
 			mockGameGet: &domain.Game{
-				TargetWord: "apple", // Won't be mentioned
+				JudgeType:      domain.JudgeTypeTargetWord,
+				JudgeCondition: "apple", // Won't be mentioned
 			},
 			mockLLMResp:         "Sorry, you didn't guess it.",
 			mockLLMPromptTok:    5,

@@ -144,7 +144,7 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 	nextStatus := domain.MatchStatusActive
 
 	// 승리 판정 (TODO: LLM 통해서 JUDGE)
-	if game.TargetWord != "" && strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.TargetWord)) {
+	if game.JudgeType == domain.JudgeTypeTargetWord && game.JudgeCondition != "" && strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.JudgeCondition)) {
 		nextStatus = domain.MatchStatusWon
 	}
 
