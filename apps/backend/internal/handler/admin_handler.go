@@ -75,12 +75,13 @@ func (h *AdminHandler) GameCreateForm(c echo.Context) error {
 
 func (h *AdminHandler) CreateGame(c echo.Context) error {
 	type createGameRequest struct {
-		Title        string `json:"title"`
-		Description  string `json:"description"`
-		AuthorID     string `json:"author_id"`
-		SystemPrompt string `json:"system_prompt"`
-		TargetWord   string `json:"target_word"`
-		MaxTurns     string `json:"max_turns"`
+		Title          string `json:"title"`
+		Description    string `json:"description"`
+		AuthorID       string `json:"author_id"`
+		SystemPrompt   string `json:"system_prompt"`
+		JudgeType      string `json:"judge_type"`
+		JudgeCondition string `json:"judge_condition"`
+		MaxTurns       string `json:"max_turns"`
 	}
 
 	req := new(createGameRequest)
@@ -94,12 +95,13 @@ func (h *AdminHandler) CreateGame(c echo.Context) error {
 	}
 
 	domainReq := &domain.CreateGameRequest{
-		Title:        req.Title,
-		Description:  req.Description,
-		AuthorID:     req.AuthorID,
-		SystemPrompt: req.SystemPrompt,
-		TargetWord:   req.TargetWord,
-		MaxTurns:     maxTurns,
+		Title:          req.Title,
+		Description:    req.Description,
+		AuthorID:       req.AuthorID,
+		SystemPrompt:   req.SystemPrompt,
+		JudgeType:      domain.JudgeType(req.JudgeType),
+		JudgeCondition: req.JudgeCondition,
+		MaxTurns:       maxTurns,
 	}
 
 	ctx := c.Request().Context()

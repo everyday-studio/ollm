@@ -7,7 +7,7 @@ POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {
-    "email": "test.adminn@example.com",
+    "email": "test.admin@example.com",
     "password": "password123"
 }
 
@@ -30,7 +30,7 @@ GET http://localhost:8080/matches/me?game_id=01KJ2XGG4QR2TBFVJDQW3K47T6
 Authorization: Bearer {{login.response.body.access_token}}
 
 ### 4. Get specific match
-GET http://localhost:8080/matches/{{createMatch.response.body.id}}
+GET http://localhost:8080/matches/01KJJ0WJMJNSGT3KYTHC38WGHT
 Authorization: Bearer {{login.response.body.access_token}}
 
 ### 4-1. Get specific match which is not belongs to the authenticated user - should return 403

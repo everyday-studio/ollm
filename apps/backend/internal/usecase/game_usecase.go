@@ -26,14 +26,15 @@ func (uc *gameUseCase) Create(ctx context.Context, req *domain.CreateGameRequest
 	}
 
 	game := &domain.Game{
-		Title:        req.Title,
-		Description:  req.Description,
-		AuthorID:     req.AuthorID,
-		Status:       domain.GameStatusActive,
-		IsPublic:     true,
-		SystemPrompt: req.SystemPrompt,
-		TargetWord:   req.TargetWord,
-		MaxTurns:     maxTurns,
+		Title:          req.Title,
+		Description:    req.Description,
+		AuthorID:       req.AuthorID,
+		Status:         domain.GameStatusActive,
+		IsPublic:       true,
+		SystemPrompt:   req.SystemPrompt,
+		JudgeType:      req.JudgeType,
+		JudgeCondition: req.JudgeCondition,
+		MaxTurns:       maxTurns,
 	}
 
 	createdGame, err := uc.gameRepo.Create(ctx, game)
@@ -113,8 +114,12 @@ func (uc *gameUseCase) Update(ctx context.Context, id string, req *domain.Update
 		existingGame.SystemPrompt = *req.SystemPrompt
 	}
 
-	if req.TargetWord != nil {
-		existingGame.TargetWord = *req.TargetWord
+	if req.JudgeType != nil {
+		existingGame.JudgeType = *req.JudgeType
+	}
+
+	if req.JudgeCondition != nil {
+		existingGame.JudgeCondition = *req.JudgeCondition
 	}
 
 	if req.MaxTurns != nil {

@@ -22,6 +22,78 @@ func (_m *LLMService) EXPECT() *LLMService_Expecter {
 	return &LLMService_Expecter{mock: &_m.Mock}
 }
 
+// EvaluateWinCondition provides a mock function with given fields: ctx, judgeCondition, history
+func (_m *LLMService) EvaluateWinCondition(ctx context.Context, judgeCondition string, history []domain.Message) (bool, int, int, error) {
+	ret := _m.Called(ctx, judgeCondition, history)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EvaluateWinCondition")
+	}
+
+	var r0 bool
+	var r1 int
+	var r2 int
+	var r3 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []domain.Message) (bool, int, int, error)); ok {
+		return rf(ctx, judgeCondition, history)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, []domain.Message) bool); ok {
+		r0 = rf(ctx, judgeCondition, history)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, []domain.Message) int); ok {
+		r1 = rf(ctx, judgeCondition, history)
+	} else {
+		r1 = ret.Get(1).(int)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, string, []domain.Message) int); ok {
+		r2 = rf(ctx, judgeCondition, history)
+	} else {
+		r2 = ret.Get(2).(int)
+	}
+
+	if rf, ok := ret.Get(3).(func(context.Context, string, []domain.Message) error); ok {
+		r3 = rf(ctx, judgeCondition, history)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
+}
+
+// LLMService_EvaluateWinCondition_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EvaluateWinCondition'
+type LLMService_EvaluateWinCondition_Call struct {
+	*mock.Call
+}
+
+// EvaluateWinCondition is a helper method to define mock.On call
+//   - ctx context.Context
+//   - judgeCondition string
+//   - history []domain.Message
+func (_e *LLMService_Expecter) EvaluateWinCondition(ctx interface{}, judgeCondition interface{}, history interface{}) *LLMService_EvaluateWinCondition_Call {
+	return &LLMService_EvaluateWinCondition_Call{Call: _e.mock.On("EvaluateWinCondition", ctx, judgeCondition, history)}
+}
+
+func (_c *LLMService_EvaluateWinCondition_Call) Run(run func(ctx context.Context, judgeCondition string, history []domain.Message)) *LLMService_EvaluateWinCondition_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].([]domain.Message))
+	})
+	return _c
+}
+
+func (_c *LLMService_EvaluateWinCondition_Call) Return(_a0 bool, _a1 int, _a2 int, _a3 error) *LLMService_EvaluateWinCondition_Call {
+	_c.Call.Return(_a0, _a1, _a2, _a3)
+	return _c
+}
+
+func (_c *LLMService_EvaluateWinCondition_Call) RunAndReturn(run func(context.Context, string, []domain.Message) (bool, int, int, error)) *LLMService_EvaluateWinCondition_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GenerateResponse provides a mock function with given fields: ctx, history
 func (_m *LLMService) GenerateResponse(ctx context.Context, history []domain.Message) (string, int, int, error) {
 	ret := _m.Called(ctx, history)

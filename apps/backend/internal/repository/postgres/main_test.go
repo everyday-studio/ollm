@@ -123,7 +123,8 @@ func setupSchema() {
 			status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
 			is_public BOOLEAN DEFAULT true,
 			system_prompt TEXT DEFAULT '',
-			target_word VARCHAR(255) DEFAULT '',
+			judge_type VARCHAR(50) DEFAULT 'target_word',
+			judge_condition TEXT DEFAULT '',
 			max_turns INTEGER DEFAULT 5,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
