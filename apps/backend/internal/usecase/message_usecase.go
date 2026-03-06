@@ -9,23 +9,26 @@ import (
 )
 
 type messageUseCase struct {
-	messageRepo domain.MessageRepository
-	matchRepo   domain.MatchRepository
-	llmService  domain.LLMService
-	gameRepo    domain.GameRepository
+	messageRepo     domain.MessageRepository
+	matchRepo       domain.MatchRepository
+	llmService      domain.LLMService
+	judgeLLMService domain.LLMService
+	gameRepo        domain.GameRepository
 }
 
 func NewMessageUseCase(
 	messageRepo domain.MessageRepository,
 	matchRepo domain.MatchRepository,
 	llmService domain.LLMService,
+	judgeLLMService domain.LLMService,
 	gameRepo domain.GameRepository,
 ) domain.MessageUseCase {
 	return &messageUseCase{
-		messageRepo: messageRepo,
-		matchRepo:   matchRepo,
-		llmService:  llmService,
-		gameRepo:    gameRepo,
+		messageRepo:     messageRepo,
+		matchRepo:       matchRepo,
+		llmService:      llmService,
+		judgeLLMService: judgeLLMService,
+		gameRepo:        gameRepo,
 	}
 }
 
@@ -143,9 +146,28 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 	match.TotalTokens += promptTokens
 	nextStatus := domain.MatchStatusActive
 
-	// 승리 판정 (TODO: LLM 통해서 JUDGE)
-	if game.JudgeType == domain.JudgeTypeTargetWord && game.JudgeCondition != "" && strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.JudgeCondition)) {
-		nextStatus = domain.MatchStatusWon
+	// 승리 판정
+	if game.JudgeType == domain.JudgeTypeTargetWord && game.JudgeCondition != "" {
+		if strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.JudgeCondition)) {
+			nextStatus = domain.MatchStatusWon
+		}
+	} else if game.JudgeType == domain.JudgeTypeLLMJudge && game.JudgeCondition != "" {
+		// LLM 심판 로직
+		// 방금 생성된 AI의 답변만 평가 대상으로 넘김
+		evaluationHistory := []domain.Message{*aiMsg}
+
+		isWon, _, _, evalErr := uc.judgeLLMService.EvaluateWinCondition(ctx, game.JudgeCondition, evaluationHistory)
+
+		if evalErr != nil {
+			// 심판에서 에러가 나면 일단 기록을 남기고 로그 처리하되 (나중에 고도화 필요),
+			// 승리 판정을 스킵하고 진행합니다. 매치 상태를 에러로 돌리지는 않습니다.
+			// TODO: Use structured logger
+			fmt.Printf("failed to evaluate win condition: %v\n", evalErr)
+		} else {
+			if isWon {
+				nextStatus = domain.MatchStatusWon
+			}
+		}
 	}
 
 	// 패배 판정
