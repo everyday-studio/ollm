@@ -56,6 +56,7 @@ type CookieConfig struct {
 
 type LLMConfig struct {
 	OpenAIAPIKey string `mapstructure:"openai_api_key"`
+	GroqAPIKey   string `mapstructure:"groq_api_key"`
 }
 
 func LoadConfig(env string) (*Config, error) {

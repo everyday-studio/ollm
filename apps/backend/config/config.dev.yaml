@@ -29,3 +29,4 @@ secure:
 
 llm:
   openai_api_key: ""
+  groq_api_key: ""
