@@ -31,16 +31,28 @@ func main() {
 			NewLogger,
 			NewDB,
 			echo.New,
-			func(cfg *config.Config) domain.LLMService {
-				return llm.NewOpenAIService(cfg.LLM.OpenAIAPIKey)
-			},
+			fx.Annotate(
+				func(cfg *config.Config) domain.LLMService {
+					return llm.NewOpenAIService(cfg.LLM.OpenAIAPIKey)
+				},
+				fx.ResultTags(`name:"chatLLM"`),
+			),
+			fx.Annotate(
+				func(cfg *config.Config) domain.LLMService {
+					return llm.NewGroqService(cfg.LLM.GroqAPIKey)
+				},
+				fx.ResultTags(`name:"judgeLLM"`),
+			),
 		),
 		fx.Provide(
 			usecase.NewUserUseCase,
 			usecase.NewAuthUseCase,
 			usecase.NewGameUseCase,
 			usecase.NewMatchUseCase,
-			usecase.NewMessageUseCase,
+			fx.Annotate(
+				usecase.NewMessageUseCase,
+				fx.ParamTags("", "", `name:"chatLLM"`, `name:"judgeLLM"`, ""),
+			),
 			usecase.NewLeaderboardUseCase,
 		),
 		fx.Provide(

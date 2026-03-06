@@ -224,6 +224,10 @@ func TestMessageUseCase_Create(t *testing.T) {
 							mockLLMService.On("GenerateResponse", mock.Anything, mock.Anything).Return(tt.mockLLMResp, tt.mockLLMPromptTok, tt.mockLLMCompTok, tt.mockLLMErr)
 
 							if tt.mockLLMErr == nil {
+								// We need to return values for EvaluateWinCondition if JudgeType is LLMJudge.
+								// Since this test case is for TargetWord, it won't be called, but we add a generic mock just in case.
+								mockLLMService.On("EvaluateWinCondition", mock.Anything, mock.Anything, mock.Anything).Return(false, 0, 0, nil).Maybe()
+
 								mockMsgRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Message) bool {
 									return m.Role == domain.MessageRoleUser
 								})).Return(&domain.Message{}, nil) // This fails safely in UC, so return empty
@@ -262,7 +266,7 @@ func TestMessageUseCase_Create(t *testing.T) {
 				}
 			}
 
-			uc := NewMessageUseCase(mockMsgRepo, mockMatchRepo, mockLLMService, mockGameRepo)
+			uc := NewMessageUseCase(mockMsgRepo, mockMatchRepo, mockLLMService, mockLLMService, mockGameRepo)
 			ctx := context.Background()
 			result, err := uc.Create(ctx, tt.matchID, tt.userID, tt.req)
 
@@ -280,7 +284,7 @@ func TestMessageUseCase_GetByID(t *testing.T) {
 	mockMsgRepo := new(mocks.MessageRepository)
 	mockMsgRepo.On("GetByID", mock.Anything, "MSG1").Return(&domain.Message{ID: "MSG1"}, nil)
 
-	uc := NewMessageUseCase(mockMsgRepo, nil, nil, nil)
+	uc := NewMessageUseCase(mockMsgRepo, nil, nil, nil, nil)
 	result, err := uc.GetByID(context.Background(), "MSG1")
 
 	assert.NoError(t, err)
@@ -331,7 +335,7 @@ func TestMessageUseCase_GetByMatchID(t *testing.T) {
 				mockMsgRepo.On("GetByMatchID", mock.Anything, tt.matchID).Return(tt.mockMsgRet, nil)
 			}
 
-			uc := NewMessageUseCase(mockMsgRepo, mockMatchRepo, nil, nil)
+			uc := NewMessageUseCase(mockMsgRepo, mockMatchRepo, nil, nil, nil)
 			result, err := uc.GetByMatchID(context.Background(), tt.matchID, tt.userID)
 
 			if tt.wantErr != nil {
@@ -348,7 +352,7 @@ func TestMessageUseCase_Delete(t *testing.T) {
 	mockMsgRepo := new(mocks.MessageRepository)
 	mockMsgRepo.On("Delete", mock.Anything, "MSG1").Return(nil)
 
-	uc := NewMessageUseCase(mockMsgRepo, nil, nil, nil)
+	uc := NewMessageUseCase(mockMsgRepo, nil, nil, nil, nil)
 	err := uc.Delete(context.Background(), "MSG1")
 
 	assert.NoError(t, err)
