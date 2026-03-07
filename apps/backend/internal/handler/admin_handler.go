@@ -57,6 +57,9 @@ func NewAdminHandler(e *echo.Echo, userUseCase domain.UserUseCase, gameUseCase d
 	adminGroup.GET("/games", handler.Games)
 	adminGroup.GET("/games/create", handler.GameCreateForm)
 	adminGroup.POST("/games", handler.CreateGame)
+	adminGroup.GET("/games/:id/edit", handler.GameEditForm)
+	adminGroup.PUT("/games/:id", handler.UpdateGame)
+	adminGroup.PATCH("/games/:id/visibility", handler.ToggleGameVisibility)
 
 	return handler
 }
@@ -118,6 +121,76 @@ func (h *AdminHandler) CreateGame(c echo.Context) error {
 	// HX-Redirect to games list on success
 	c.Response().Header().Set("HX-Redirect", adminPath+"/games")
 	return c.NoContent(http.StatusCreated)
+}
+
+func (h *AdminHandler) GameEditForm(c echo.Context) error {
+	adminPath := h.config.App.AdminPath
+	if adminPath == "" {
+		adminPath = "/admin"
+	}
+
+	id := c.Param("id")
+	ctx := c.Request().Context()
+	game, err := h.gameUseCase.GetByID(ctx, id)
+	if err != nil {
+		return c.Redirect(http.StatusFound, adminPath+"/games")
+	}
+
+	return Render(c, http.StatusOK, admin.GameEditPage(adminPath, *game))
+}
+
+func (h *AdminHandler) UpdateGame(c echo.Context) error {
+	id := c.Param("id")
+
+	type updateGameRequest struct {
+		Title          string `json:"title"`
+		Description    string `json:"description"`
+		SystemPrompt   string `json:"system_prompt"`
+		JudgeType      string `json:"judge_type"`
+		JudgeCondition string `json:"judge_condition"`
+		MaxTurns       string `json:"max_turns"`
+	}
+
+	req := new(updateGameRequest)
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	// Make sure fields are actually provided
+	if req.Title == "" || req.SystemPrompt == "" {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	maxTurns, err := strconv.Atoi(req.MaxTurns)
+	if err != nil {
+		maxTurns = 10
+	}
+
+	judgeType := domain.JudgeType(req.JudgeType)
+
+	domainReq := &domain.UpdateGameRequest{
+		Title:          &req.Title,
+		Description:    &req.Description,
+		SystemPrompt:   &req.SystemPrompt,
+		JudgeType:      &judgeType,
+		JudgeCondition: &req.JudgeCondition,
+		MaxTurns:       &maxTurns,
+	}
+
+	ctx := c.Request().Context()
+	_, err = h.gameUseCase.Update(ctx, id, domainReq)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+	}
+
+	adminPath := h.config.App.AdminPath
+	if adminPath == "" {
+		adminPath = "/admin"
+	}
+
+	// HX-Redirect to games list on success
+	c.Response().Header().Set("HX-Redirect", adminPath+"/games")
+	return c.NoContent(http.StatusOK)
 }
 
 func (h *AdminHandler) LoginForm(c echo.Context) error {
@@ -286,4 +359,39 @@ func (h *AdminHandler) Games(c echo.Context) error {
 		return Render(c, http.StatusOK, admin.GameTableRows(data, adminPath))
 	}
 	return Render(c, http.StatusOK, admin.GamesPage(data, adminPath))
+}
+
+func (h *AdminHandler) ToggleGameVisibility(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	ctx := c.Request().Context()
+	game, err := h.gameUseCase.GetByID(ctx, id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
+	}
+
+	newVisibility := !game.IsPublic
+	req := &domain.UpdateGameRequest{
+		IsPublic: &newVisibility,
+	}
+
+	updatedGame, err := h.gameUseCase.Update(ctx, id, req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+	}
+
+	adminPath := h.config.App.AdminPath
+	if adminPath == "" {
+		adminPath = "/admin"
+	}
+
+	if c.Request().Header.Get("HX-Request") == "true" {
+		// Just return the updated row for HTMX
+		return Render(c, http.StatusOK, admin.GameTableRow(*updatedGame, adminPath))
+	}
+
+	return c.Redirect(http.StatusFound, adminPath+"/games")
 }

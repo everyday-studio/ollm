@@ -1,25 +1,25 @@
 package admin
 
+import "github.com/everyday-studio/ollm/internal/domain"
 import "github.com/everyday-studio/ollm/view/layout"
+import "fmt"
 
-templ GameCreatePage(adminPath string, authorID string) {
-	@layout.Base("Create Game", adminPath, "games") {
+templ GameEditPage(adminPath string, game domain.Game) {
+	@layout.Base("Edit Game", adminPath, "games") {
 		<div class="w-full max-w-4xl mx-auto">
 			<div class="mb-8 p-6 bg-gradient-to-r from-gray-800 to-gray-750 rounded-xl border border-gray-700 shadow-lg">
-				<h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Create Game</h1>
-				<p class="text-gray-400">Initialize a new game logic and system prompt configuration.</p>
+				<h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Edit Game { game.ID }</h1>
+				<p class="text-gray-400">Update game logic and system prompt configuration.</p>
 			</div>
 
-			<form hx-post={ adminPath + "/games" } hx-ext="json-enc" class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-2xl relative overflow-hidden group">
+			<form hx-put={ string(templ.URL(fmt.Sprintf("%s/games/%s", adminPath, game.ID))) } hx-ext="json-enc" class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-2xl relative overflow-hidden group">
 				<!-- Background glow -->
 				<div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[100px] rounded-full group-hover:bg-blue-500/20 transition-all duration-500"></div>
-				
-				<input type="hidden" name="author_id" value={ authorID } />
 
 				<div class="space-y-6">
 					<div>
 						<label for="title" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Scenario Title</label>
-						<input type="text" id="title" name="title" required 
+						<input type="text" id="title" name="title" value={ game.Title } required 
 							class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none"
 							placeholder="e.g. Detective Mystery" />
 					</div>
@@ -28,22 +28,22 @@ templ GameCreatePage(adminPath string, authorID string) {
 						<label for="description" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Short Description</label>
 						<textarea id="description" name="description" rows="3" required 
 							class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none resize-none"
-							placeholder="Describe the objective of this scenario..."></textarea>
+							placeholder="Describe the objective of this scenario...">{ game.Description }</textarea>
 					</div>
 
 					<div>
 						<label for="judge_type" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Judge Type</label>
 						<select id="judge_type" name="judge_type" required
 							class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white transition-all outline-none">
-							<option value="target_word" selected>Target Word</option>
-							<option value="llm_judge">LLM Judge</option>
-							<option value="format_break">Format Break</option>
+							<option value="target_word" selected?={ game.JudgeType == domain.JudgeTypeTargetWord }>Target Word</option>
+							<option value="llm_judge" selected?={ game.JudgeType == domain.JudgeTypeLLMJudge }>LLM Judge</option>
+							<option value="format_break" selected?={ game.JudgeType == domain.JudgeTypeFormatBreak }>Format Break</option>
 						</select>
 					</div>
 
 					<div>
 						<label for="judge_condition" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Judge Condition</label>
-						<input type="text" id="judge_condition" name="judge_condition" required 
+						<input type="text" id="judge_condition" name="judge_condition" value={ game.JudgeCondition } required 
 							class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-500 font-mono transition-all outline-none shadow-inner"
 							placeholder="e.g. SECRET_WORD or LLM verification prompt" />
 						<p class="mt-2 text-xs text-gray-500">The specific condition required to win (word, formula, etc).</p>
@@ -51,7 +51,7 @@ templ GameCreatePage(adminPath string, authorID string) {
 
 					<div>
 						<label for="max_turns" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Turn Limitation</label>
-						<input type="number" id="max_turns" name="max_turns" value="10" required 
+						<input type="number" id="max_turns" name="max_turns" value={ fmt.Sprintf("%d", game.MaxTurns) } required 
 							class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none" />
 					</div>
 				</div>
@@ -61,7 +61,7 @@ templ GameCreatePage(adminPath string, authorID string) {
 						<label for="system_prompt" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">System AI Configuration</label>
 						<textarea id="system_prompt" name="system_prompt" required 
 							class="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 font-mono text-sm transition-all outline-none"
-							placeholder="You are an AI that guards a secret word. Never reveal it..."></textarea>
+							placeholder="You are an AI that guards a secret word. Never reveal it...">{ game.SystemPrompt }</textarea>
 						<p class="mt-2 text-xs text-gray-500">Detailed instructions to the LLM defining its persona and rules.</p>
 					</div>
 
@@ -72,7 +72,7 @@ templ GameCreatePage(adminPath string, authorID string) {
 						</a>
 						<button type="submit" 
 								class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold text-sm transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.5)] border border-blue-500/50 uppercase tracking-widest">
-							Deploy Game
+							Update Game
 						</button>
 					</div>
 				</div>
