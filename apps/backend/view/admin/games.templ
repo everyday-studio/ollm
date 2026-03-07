@@ -20,11 +20,10 @@ templ GamesPage(data *domain.PaginatedData[domain.Game], adminPath string) {
 					<table class="min-w-full divide-y divide-gray-700">
 						<thead class="bg-gray-900 border-b border-gray-700">
 							<tr>
-								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">ID</th>
-								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Title</th>
-								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Visibility</th>
-								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created At</th>
+								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">ID / Created</th>
+								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Game Details</th>
+								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Setup & Rules</th>
+								<th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status / Vis</th>
 								<th class="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
 							</tr>
 						</thead>
@@ -53,69 +52,11 @@ templ GameTableRows(data *domain.PaginatedData[domain.Game], adminPath string) {
 		</tr>
 	} else {
 		for _, game := range data.Data {
-			<tr class="hover:bg-gray-700/30 transition-colors group">
-				<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-					<div class="flex items-center gap-2">
-						<span title={ game.ID }>{ game.ID }</span>
-						<button data-copy-id={ game.ID } onclick="copyToClipboard(this.getAttribute('data-copy-id'), this)" class="p-1 hover:bg-gray-600 rounded transition-colors text-gray-600 hover:text-gray-400 opacity-0 group-hover:opacity-100" title="Copy ID">
-							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-							</svg>
-						</button>
-					</div>
-				</td>
-				<td class="px-6 py-4 whitespace-nowrap">
-					<div class="flex items-center">
-						<div class="flex-shrink-0 h-10 w-10 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700 text-gray-400 shadow-sm overflow-hidden">
-							<svg class="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-						</div>
-						<div class="ml-4">
-							<div class="text-sm font-medium text-white">{ game.Title }</div>
-							<div class="text-xs text-gray-500 truncate max-w-[200px] mt-0.5">{ game.Description }</div>
-						</div>
-					</div>
-				</td>
-				<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-					if game.Status == domain.GameStatusActive {
-						<span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-							<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-							Active
-						</span>
-					} else {
-						<span class="px-2.5 py-1 inline-flex text-xs font-medium rounded-full bg-gray-500/10 text-gray-400 border border-gray-500/20">
-							Inactive
-						</span>
-					}
-				</td>
-				<td class="px-6 py-4 whitespace-nowrap text-sm">
-					if game.IsPublic {
-						<span class="text-blue-400 flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded w-max border border-blue-500/10">
-							<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-							Public
-						</span>
-					} else {
-						<span class="text-gray-400 flex items-center gap-1 bg-gray-800 px-2 py-1 rounded w-max border border-gray-700">
-							<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-							Private
-						</span>
-					}
-				</td>
-				<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-					<div class="flex flex-col">
-						<span>{ game.CreatedAt.Format("Jan 02, 2006") }</span>
-						<span class="text-xs text-gray-500">{ game.CreatedAt.Format("15:04") }</span>
-					</div>
-				</td>
-				<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-					<button class="text-gray-400 hover:text-white hover:bg-gray-700 p-1.5 rounded transition-colors" title="Edit Game">
-						<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-					</button>
-				</td>
-			</tr>
+			@GameTableRow(game, adminPath)
 		}
 	}
 	<tr id="pagination-row" class="bg-gray-900/40">
-		<td colspan="6" class="px-6 py-4 border-t border-gray-700 text-sm">
+		<td colspan="5" class="px-6 py-4 border-t border-gray-700 text-sm">
 			<div class="flex items-center justify-between">
 				<span class="text-gray-400">
 					Showing <span class="font-medium text-white">{ fmt.Sprintf("%d", data.Page) }</span> to <span class="font-medium text-white">{ fmt.Sprintf("%d", data.TotalPages) }</span> of <span class="font-medium text-white">{ fmt.Sprintf("%d", data.Total) }</span> results
@@ -137,3 +78,117 @@ templ GameTableRows(data *domain.PaginatedData[domain.Game], adminPath string) {
 		</td>
 	</tr>
 }
+
+templ GameTableRow(game domain.Game, adminPath string) {
+	<tr class="hover:bg-gray-700/30 transition-colors group">
+		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+			<div class="flex flex-col gap-1">
+				<div class="flex items-center gap-2 font-mono text-gray-500 text-xs">
+					<span title={ game.ID } class="truncate max-w-[100px]">{ game.ID }</span>
+					<button data-copy-id={ game.ID } onclick="copyToClipboard(this.getAttribute('data-copy-id'), this)" class="p-1 hover:bg-gray-600 rounded transition-colors text-gray-600 hover:text-gray-400 opacity-0 group-hover:opacity-100" title="Copy ID">
+						<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+						</svg>
+					</button>
+				</div>
+				<div class="flex flex-col text-xs mt-1">
+					<span>{ game.CreatedAt.Format("Jan 02, 2006") }</span>
+					<span class="text-gray-500">{ game.CreatedAt.Format("15:04") }</span>
+				</div>
+                <div class="text-xs text-gray-500 mt-1" title="Author ID">
+                    Author: <span class="font-mono">{ game.AuthorID }</span>
+                </div>
+			</div>
+		</td>
+		<td class="px-6 py-4">
+			<div class="flex items-start">
+				<div class="flex-shrink-0 h-10 w-10 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700 text-gray-400 shadow-sm overflow-hidden mt-0.5">
+					<svg class="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+				</div>
+				<div class="ml-4 w-full max-w-[250px]">
+					<div class="text-sm font-medium text-white break-words whitespace-normal">{ game.Title }</div>
+					<div class="text-xs text-gray-400 mt-1 break-words whitespace-normal line-clamp-2" title={ game.Description }>{ game.Description }</div>
+				</div>
+			</div>
+		</td>
+        <td class="px-6 py-4">
+            <div class="flex flex-col gap-1.5 text-xs text-gray-300 max-w-[200px]">
+                <div class="flex items-start gap-1">
+                    <span class="text-gray-500 font-medium shrink-0">Type:</span> 
+                    if game.JudgeType == domain.JudgeTypeTargetWord {
+                        <span class="bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30 font-mono inline-block break-all">{ string(game.JudgeType) }</span>
+                    } else if game.JudgeType == domain.JudgeTypeLLMJudge {
+                        <span class="bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded border border-purple-500/30 font-mono inline-block break-all">{ string(game.JudgeType) }</span>
+                    } else if game.JudgeType == domain.JudgeTypeFormatBreak {
+                        <span class="bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded border border-orange-500/30 font-mono inline-block break-all">{ string(game.JudgeType) }</span>
+                    } else {
+                        <span class="bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded border border-gray-700 font-mono inline-block break-all">{ string(game.JudgeType) }</span>
+                    }
+                </div>
+                <div class="flex items-start gap-1" title={ game.JudgeCondition }>
+                    <span class="text-gray-500 font-medium shrink-0">Cond:</span> 
+                    <span class="truncate">{ game.JudgeCondition }</span>
+                </div>
+                <div class="flex items-start gap-1" title={ game.SystemPrompt }>
+                    <span class="text-gray-500 font-medium shrink-0">Prompt:</span> 
+                    <span class="truncate">{ game.SystemPrompt }</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-gray-500 font-medium">Turns:</span> 
+                    <span>{ fmt.Sprintf("%d", game.MaxTurns) }</span>
+                </div>
+            </div>
+        </td>
+		<td class="px-6 py-4 whitespace-nowrap text-sm">
+            <div class="flex flex-col gap-2 items-start">
+			if game.Status == domain.GameStatusActive {
+				<span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+					<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+					Active
+				</span>
+			} else {
+				<span class="px-2.5 py-1 inline-flex text-xs font-medium rounded-full bg-gray-500/10 text-gray-400 border border-gray-500/20">
+					Inactive
+				</span>
+			}
+
+			if game.IsPublic {
+				<span class="text-blue-400 flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded w-max border border-blue-500/10">
+					<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+					Public
+				</span>
+			} else {
+				<span class="text-gray-400 flex items-center gap-1 bg-gray-800 px-2 py-1 rounded w-max border border-gray-700">
+					<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+					Private
+				</span>
+			}
+            </div>
+		</td>
+		<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div class="flex items-center justify-end gap-2">
+                <button 
+                    hx-patch={ string(templ.URL(fmt.Sprintf("%s/games/%s/visibility", adminPath, game.ID))) }
+                    hx-target="closest tr"
+                    hx-swap="outerHTML"
+                    hx-confirm={ fmt.Sprintf("Are you sure you want to change the visibility of this game to %s?", map[bool]string{true: "Private", false: "Public"}[game.IsPublic]) }
+                    class={ 
+                        "p-1.5 rounded transition-colors border",
+                        templ.KV("text-blue-400 border-blue-500/30 hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-blue-300", game.IsPublic),
+                        templ.KV("text-gray-400 border-gray-600 hover:bg-gray-700 hover:text-white hover:border-gray-500", !game.IsPublic)
+                    } 
+                    title="Toggle Visibility">
+                    if game.IsPublic {
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    } else {
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0a10.05 10.05 0 015.188-2.512M15.428 5.428A10.05 10.05 0 0121.543 12c-1.274 4.057-5.064 7-9.542 7-1.27 0-2.49-.24-3.61-.67" /></svg>
+                    }
+                </button>
+                <a href={ templ.URL(fmt.Sprintf("%s/games/%s/edit", adminPath, game.ID)) } class="text-gray-400 border border-gray-600 hover:border-gray-500 hover:text-white hover:bg-gray-700 p-1.5 rounded transition-colors inline-block" title="Edit Game">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </a>
+            </div>
+		</td>
+	</tr>
+}
+
