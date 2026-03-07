@@ -32,11 +32,21 @@ templ GameCreatePage(adminPath string, authorID string) {
 					</div>
 
 					<div>
-						<label for="target_word" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Target Word (Secret)</label>
-						<input type="text" id="target_word" name="target_word" required 
+						<label for="judge_type" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Judge Type</label>
+						<select id="judge_type" name="judge_type" required
+							class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white transition-all outline-none">
+							<option value="target_word" selected>Target Word</option>
+							<option value="llm_judge">LLM Judge</option>
+							<option value="format_break">Format Break</option>
+						</select>
+					</div>
+
+					<div>
+						<label for="judge_condition" class="block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider">Judge Condition</label>
+						<input type="text" id="judge_condition" name="judge_condition" required 
 							class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-500 font-mono transition-all outline-none shadow-inner"
-							placeholder="SECRET_WORD" />
-						<p class="mt-2 text-xs text-gray-500">The word the player must convince the AI to say.</p>
+							placeholder="e.g. SECRET_WORD or LLM verification prompt" />
+						<p class="mt-2 text-xs text-gray-500">The specific condition required to win (word, formula, etc).</p>
 					</div>
 
 					<div>
