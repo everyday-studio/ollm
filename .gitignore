@@ -3,6 +3,8 @@ node_modules/
 
 # Editor
 .cursor
+.vscode/
+.idea/
 .DS_Store
 
 # Agent Rules
