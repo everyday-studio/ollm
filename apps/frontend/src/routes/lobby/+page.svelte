@@ -121,7 +121,8 @@
           getCachedMyMatches(),
         ]);
 
-        games = rawGames.map(toGameUI);
+        // Filter out inactive or private games from being shown in the main games list.
+        games = rawGames.filter(g => g.status === 'active' && g.is_public).map(toGameUI);
         matches = rawMatches.map(m => toMatchUI(m, rawGames));
 
       } catch (error) {
