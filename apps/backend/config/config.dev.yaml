@@ -30,3 +30,7 @@ secure:
 llm:
   openai_api_key: ""
   groq_api_key: ""
+
+gcp:
+  bucket_name: "ollm-assets-prod"
+  project_id: "ollm-web"

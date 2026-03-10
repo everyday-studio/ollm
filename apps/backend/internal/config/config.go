@@ -15,6 +15,7 @@ type Config struct {
 	DB     DBConfig     `mapstructure:"db"`
 	Secure SecureConfig `mapstructure:"secure"`
 	LLM    LLMConfig    `mapstructure:"llm"`
+	GCP    GCPConfig    `mapstructure:"gcp"`
 }
 
 type AppConfig struct {
@@ -57,6 +58,11 @@ type CookieConfig struct {
 type LLMConfig struct {
 	OpenAIAPIKey string `mapstructure:"openai_api_key"`
 	GroqAPIKey   string `mapstructure:"groq_api_key"`
+}
+
+type GCPConfig struct {
+	BucketName string `mapstructure:"bucket_name"`
+	ProjectID  string `mapstructure:"project_id"`
 }
 
 func LoadConfig(env string) (*Config, error) {

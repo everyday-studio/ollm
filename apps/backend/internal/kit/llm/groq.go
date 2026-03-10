@@ -13,7 +13,7 @@ import (
 // groqService implements the domain.LLMService interface using the Groq API.
 type groqService struct {
 	client *openai.Client
-	model  string // e.g., llama-3.3-70b-versatile
+	model  string
 }
 
 // NewGroqService creates a new Groq service instance.
@@ -37,8 +37,10 @@ func (s *groqService) GenerateResponse(ctx context.Context, history []domain.Mes
 func (s *groqService) EvaluateWinCondition(ctx context.Context, judgeCondition string, history []domain.Message) (bool, int, int, error) {
 	// 1. 심판의 페르소나 (System)
 	systemPrompt := `You are an impartial and strict game judge. 
-Your ONLY job is to evaluate if the AI Assistant's text meets the Win Condition.
-Respond with EXACTLY "true" or "false". Do not include any other text, explanation, or punctuation.`
+	Evaluate if the AI Assistant's text meets the Win Condition.
+		Rules:
+			1. Think step-by-step and write your reasoning inside <reason> tags.
+			2. After reasoning, output your final decision as EXACTLY <result>true</result> or <result>false</result>.`
 
 	// 2. 평가할 텍스트를 하나의 문자열로 합치기
 	var targetTextBuilder strings.Builder
@@ -69,7 +71,7 @@ Respond with EXACTLY "true" or "false". Do not include any other text, explanati
 		Model:       s.model,
 		Messages:    judgeMessages,
 		Temperature: 0.0,
-		MaxTokens:   5,
+		MaxTokens:   300,
 	}
 
 	resp, err := s.client.CreateChatCompletion(ctx, req)

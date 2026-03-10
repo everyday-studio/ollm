@@ -19,6 +19,7 @@ import (
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/handler"
 	"github.com/everyday-studio/ollm/internal/kit/llm"
+	"github.com/everyday-studio/ollm/internal/kit/storage"
 	"github.com/everyday-studio/ollm/internal/middleware"
 	repository "github.com/everyday-studio/ollm/internal/repository/postgres"
 	"github.com/everyday-studio/ollm/internal/usecase"
@@ -43,6 +44,12 @@ func main() {
 				},
 				fx.ResultTags(`name:"judgeLLM"`),
 			),
+			func(cfg *config.Config) (domain.StorageService, error) {
+				if cfg.GCP.BucketName == "" {
+					return nil, nil // Or throw an error if you strictly require GCS
+				}
+				return storage.NewGCSStorageService(context.Background(), cfg.GCP.BucketName)
+			},
 		),
 		fx.Provide(
 			usecase.NewUserUseCase,
@@ -54,6 +61,13 @@ func main() {
 				fx.ParamTags("", "", `name:"chatLLM"`, `name:"judgeLLM"`, ""),
 			),
 			usecase.NewLeaderboardUseCase,
+			func(storage domain.StorageService, userRepo domain.UserRepository, gameRepo domain.GameRepository) domain.UploadUseCase {
+				if storage == nil {
+					return nil
+				}
+				return usecase.NewUploadUseCase(storage, userRepo, gameRepo)
+			},
+			handler.NewUploadHandler,
 		),
 		fx.Provide(
 			repository.NewUserRepository,
@@ -74,6 +88,9 @@ func main() {
 			handler.NewMessageHandler,
 			handler.NewLeaderboardHandler,
 			handler.NewAdminHandler,
+			func(h *handler.UploadHandler) {
+				// Simply invoking to trigger NewUploadHandler which registers the route
+			},
 		),
 		fx.Invoke(StartServer),
 	)
