@@ -14,7 +14,7 @@ templ GamesPage(data *domain.PaginatedData[domain.Game], adminPath string, bucke
 					formData.append('type', type);
 					formData.append('ref_id', refId);
 					formData.append('file', inputEl.files[0]);
-					fetch('/upload/image', { method: 'POST', body: formData })
+					fetch('/api/upload/image', { method: 'POST', body: formData })
 						.then(res => {
 							if (res.ok) window.location.reload();
 							else alert('Upload failed');
