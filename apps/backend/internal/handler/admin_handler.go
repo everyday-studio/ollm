@@ -327,11 +327,12 @@ func (h *AdminHandler) Users(c echo.Context) error {
 	if adminPath == "" {
 		adminPath = "/admin"
 	}
+	bucketName := h.config.GCP.BucketName
 
 	if c.Request().Header.Get("HX-Request") == "true" {
-		return Render(c, http.StatusOK, admin.UserTableRows(data, adminPath))
+		return Render(c, http.StatusOK, admin.UserTableRows(data, adminPath, bucketName))
 	}
-	return Render(c, http.StatusOK, admin.UsersPage(data, adminPath))
+	return Render(c, http.StatusOK, admin.UsersPage(data, adminPath, bucketName))
 }
 
 func (h *AdminHandler) Games(c echo.Context) error {
@@ -354,11 +355,12 @@ func (h *AdminHandler) Games(c echo.Context) error {
 	if adminPath == "" {
 		adminPath = "/admin"
 	}
+	bucketName := h.config.GCP.BucketName
 
 	if c.Request().Header.Get("HX-Request") == "true" {
-		return Render(c, http.StatusOK, admin.GameTableRows(data, adminPath))
+		return Render(c, http.StatusOK, admin.GameTableRows(data, adminPath, bucketName))
 	}
-	return Render(c, http.StatusOK, admin.GamesPage(data, adminPath))
+	return Render(c, http.StatusOK, admin.GamesPage(data, adminPath, bucketName))
 }
 
 func (h *AdminHandler) ToggleGameVisibility(c echo.Context) error {
@@ -387,10 +389,11 @@ func (h *AdminHandler) ToggleGameVisibility(c echo.Context) error {
 	if adminPath == "" {
 		adminPath = "/admin"
 	}
+	bucketName := h.config.GCP.BucketName
 
 	if c.Request().Header.Get("HX-Request") == "true" {
 		// Just return the updated row for HTMX
-		return Render(c, http.StatusOK, admin.GameTableRow(*updatedGame, adminPath))
+		return Render(c, http.StatusOK, admin.GameTableRow(*updatedGame, adminPath, bucketName))
 	}
 
 	return c.Redirect(http.StatusFound, adminPath+"/games")

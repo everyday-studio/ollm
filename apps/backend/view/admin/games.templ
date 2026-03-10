@@ -4,9 +4,24 @@ import "github.com/everyday-studio/ollm/internal/domain"
 import "github.com/everyday-studio/ollm/view/layout"
 import "fmt"
 
-templ GamesPage(data *domain.PaginatedData[domain.Game], adminPath string) {
+templ GamesPage(data *domain.PaginatedData[domain.Game], adminPath string, bucketName string) {
 	@layout.Base("Games Management", adminPath, "games") {
 		<div class="w-full max-w-7xl mx-auto">
+			<script>
+				function uploadImage(type, refId, inputEl) {
+					if (!inputEl.files || inputEl.files.length === 0) return;
+					const formData = new FormData();
+					formData.append('type', type);
+					formData.append('ref_id', refId);
+					formData.append('file', inputEl.files[0]);
+					fetch('/upload/image', { method: 'POST', body: formData })
+						.then(res => {
+							if (res.ok) window.location.reload();
+							else alert('Upload failed');
+						})
+						.catch(err => alert('Error: ' + err));
+				}
+			</script>
 			<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
 				<h1 class="text-3xl font-bold text-white">Games <span class="text-sm font-normal text-gray-400 ml-2 bg-gray-800 px-3 py-1 rounded-full border border-gray-700">{ fmt.Sprintf("%d", data.Total) } Total</span></h1>
 				<a href={ templ.URL(adminPath + "/games/create") } class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] flex items-center gap-2 border border-blue-500/50">
@@ -28,7 +43,7 @@ templ GamesPage(data *domain.PaginatedData[domain.Game], adminPath string) {
 							</tr>
 						</thead>
 						<tbody id="games-table-body" class="bg-gray-800 divide-y divide-gray-700/50 relative">
-							@GameTableRows(data, adminPath)
+							@GameTableRows(data, adminPath, bucketName)
 						</tbody>
 					</table>
 				</div>
@@ -37,7 +52,7 @@ templ GamesPage(data *domain.PaginatedData[domain.Game], adminPath string) {
 	}
 }
 
-templ GameTableRows(data *domain.PaginatedData[domain.Game], adminPath string) {
+templ GameTableRows(data *domain.PaginatedData[domain.Game], adminPath string, bucketName string) {
 	if len(data.Data) == 0 {
 		<tr>
 			<td colspan="6" class="px-6 py-12 text-center">
@@ -52,7 +67,7 @@ templ GameTableRows(data *domain.PaginatedData[domain.Game], adminPath string) {
 		</tr>
 	} else {
 		for _, game := range data.Data {
-			@GameTableRow(game, adminPath)
+			@GameTableRow(game, adminPath, bucketName)
 		}
 	}
 	<tr id="pagination-row" class="bg-gray-900/40">
@@ -79,7 +94,7 @@ templ GameTableRows(data *domain.PaginatedData[domain.Game], adminPath string) {
 	</tr>
 }
 
-templ GameTableRow(game domain.Game, adminPath string) {
+templ GameTableRow(game domain.Game, adminPath string, bucketName string) {
 	<tr class="hover:bg-gray-700/30 transition-colors group">
 		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
 			<div class="flex flex-col gap-1">
@@ -102,8 +117,14 @@ templ GameTableRow(game domain.Game, adminPath string) {
 		</td>
 		<td class="px-6 py-4">
 			<div class="flex items-start">
-				<div class="flex-shrink-0 h-10 w-10 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700 text-gray-400 shadow-sm overflow-hidden mt-0.5">
-					<svg class="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+				<div class="relative group/thumbnail flex-shrink-0 h-10 w-10 mt-0.5">
+					<img src={ fmt.Sprintf("https://storage.googleapis.com/%s/game/%s.png", bucketName, game.ID) } 
+						onerror="this.onerror=null; this.outerHTML=`<div class='flex-shrink-0 h-10 w-10 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700 text-gray-400 shadow-sm overflow-hidden'><svg class='w-6 h-6 opacity-50' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z'/><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/></svg></div>`;"
+						class="w-full h-full bg-gray-900 rounded-lg object-cover border border-gray-700 shadow-sm" />
+					<button { templ.Attributes{"onclick": fmt.Sprintf("document.getElementById('upload-game-%s').click()", game.ID)}... } class="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center opacity-0 group-hover/thumbnail:opacity-100 transition-opacity cursor-pointer" title="Upload Thumbnail">
+						<svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+					</button>
+					<input type="file" id={ fmt.Sprintf("upload-game-%s", game.ID) } class="hidden" accept="image/*" { templ.Attributes{"onchange": fmt.Sprintf("uploadImage('game', '%s', this)", game.ID)}... } />
 				</div>
 				<div class="ml-4 w-full max-w-[250px]">
 					<div class="text-sm font-medium text-white break-words whitespace-normal">{ game.Title }</div>
