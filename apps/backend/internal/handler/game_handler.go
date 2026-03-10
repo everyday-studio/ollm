@@ -23,12 +23,12 @@ func NewGameHandler(e *echo.Echo, gameUseCase domain.GameUseCase) *GameHandler {
 	}
 
 	// Public routes
-	publicGroup := e.Group("/games", middleware.AllowRoles(domain.RolePublic))
+	publicGroup := e.Group("/api/games", middleware.AllowRoles(domain.RolePublic))
 	publicGroup.GET("", handler.GetAll)
 	publicGroup.GET("/:id", handler.GetByID)
 
 	// Admin routes
-	adminGroup := e.Group("/games", middleware.AllowRoles(domain.RoleAdmin))
+	adminGroup := e.Group("/api/games", middleware.AllowRoles(domain.RoleAdmin))
 	adminGroup.POST("", handler.Create)
 	adminGroup.PUT("/:id", handler.Update)
 	adminGroup.DELETE("/:id", handler.Delete)

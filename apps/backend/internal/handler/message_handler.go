@@ -21,7 +21,7 @@ func NewMessageHandler(e *echo.Echo, messageUC domain.MessageUseCase) *MessageHa
 	}
 
 	// Group routes with JWT auth
-	userGroup := e.Group("/matches/:match_id/messages", middleware.AllowRoles(domain.RoleUser))
+	userGroup := e.Group("/api/matches/:match_id/messages", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("", handler.Create)
 	userGroup.GET("", handler.GetHistory)
 

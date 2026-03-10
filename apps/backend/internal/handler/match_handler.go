@@ -22,14 +22,14 @@ func NewMatchHandler(e *echo.Echo, matchUseCase domain.MatchUseCase) *MatchHandl
 	}
 
 	// User routes
-	userGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleUser))
+	userGroup := e.Group("/api/matches", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("", handler.Create)
 	userGroup.GET("/me", handler.GetMyMatches)
 	userGroup.GET("/:id", handler.GetByID)
 	userGroup.POST("/:id/resign", handler.Resign)
 
 	// Admin routes
-	adminGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleAdmin))
+	adminGroup := e.Group("/api/matches", middleware.AllowRoles(domain.RoleAdmin))
 	adminGroup.DELETE("/:id", handler.Delete)
 
 	return handler

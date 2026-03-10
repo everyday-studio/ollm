@@ -18,11 +18,11 @@ type UserHandler struct {
 func NewUserHandler(e *echo.Echo, userUseCase domain.UserUseCase) *UserHandler {
 	handler := &UserHandler{userUseCase: userUseCase}
 
-	userGroup := e.Group("/users", middleware.AllowRoles(domain.RoleUser))
+	userGroup := e.Group("/api/users", middleware.AllowRoles(domain.RoleUser))
 	userGroup.GET("/me", handler.GetMe)
 	userGroup.PUT("/me", handler.UpdateMe)
 
-	adminGroup := e.Group("/users", middleware.AllowRoles(domain.RoleAdmin))
+	adminGroup := e.Group("/api/users", middleware.AllowRoles(domain.RoleAdmin))
 	adminGroup.GET("", handler.GetAll)
 	adminGroup.GET("/:id", handler.GetByID)
 

@@ -26,12 +26,12 @@ func NewAuthHandler(e *echo.Echo, authUseCase domain.AuthUsecase, config *config
 		config:      config,
 	}
 
-	publicGroup := e.Group("/auth", middleware.AllowRoles(domain.RolePublic))
+	publicGroup := e.Group("/api/auth", middleware.AllowRoles(domain.RolePublic))
 	publicGroup.POST("/signup", handler.SignUpUser)
 	publicGroup.POST("/login", handler.Login)
 	publicGroup.POST("/refresh", handler.RefreshToken)
 
-	userGroup := e.Group("/auth", middleware.AllowRoles(domain.RoleUser))
+	userGroup := e.Group("/api/auth", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("/logout", handler.Logout)
 
 	return handler
