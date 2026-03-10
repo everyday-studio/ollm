@@ -31,7 +31,6 @@ func NewGameHandler(e *echo.Echo, gameUseCase domain.GameUseCase) *GameHandler {
 	adminGroup := e.Group("/api/games", middleware.AllowRoles(domain.RoleAdmin))
 	adminGroup.POST("", handler.Create)
 	adminGroup.PUT("/:id", handler.Update)
-	adminGroup.DELETE("/:id", handler.Delete)
 
 	return handler
 }
@@ -125,31 +124,6 @@ func (h *GameHandler) Update(c echo.Context) error {
 	game, err := h.gameUseCase.Update(ctx, id, req)
 	if err == nil {
 		return c.JSON(http.StatusOK, game)
-	}
-
-	switch {
-	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(err))
-	case errors.Is(err, domain.ErrInvalidInput):
-		return c.JSON(http.StatusBadRequest, ErrResponse(err))
-	default:
-		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
-	}
-}
-
-// Delete handles DELETE /games/:id - deletes a game
-func (h *GameHandler) Delete(c echo.Context) error {
-	id := c.Param("id")
-	if id == "" {
-		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
-	}
-
-	ctx := c.Request().Context()
-	err := h.gameUseCase.Delete(ctx, id)
-	if err == nil {
-		return c.JSON(http.StatusOK, map[string]string{
-			"message": "game deleted successfully",
-		})
 	}
 
 	switch {

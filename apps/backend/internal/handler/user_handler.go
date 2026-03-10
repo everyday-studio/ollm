@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -21,10 +20,6 @@ func NewUserHandler(e *echo.Echo, userUseCase domain.UserUseCase) *UserHandler {
 	userGroup := e.Group("/api/users", middleware.AllowRoles(domain.RoleUser))
 	userGroup.GET("/me", handler.GetMe)
 	userGroup.PUT("/me", handler.UpdateMe)
-
-	adminGroup := e.Group("/api/users", middleware.AllowRoles(domain.RoleAdmin))
-	adminGroup.GET("", handler.GetAll)
-	adminGroup.GET("/:id", handler.GetByID)
 
 	return handler
 }
@@ -69,49 +64,6 @@ func (h *UserHandler) UpdateMe(c echo.Context) error {
 	switch {
 	case errors.Is(err, domain.ErrInvalidInput):
 		return c.JSON(http.StatusBadRequest, ErrResponse(err))
-	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
-	default:
-		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
-	}
-}
-
-func (h *UserHandler) GetByID(c echo.Context) error {
-	id := c.Param("id")
-	if id == "" {
-		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
-	}
-
-	ctx := c.Request().Context()
-	user, err := h.userUseCase.GetByID(ctx, id)
-	if err == nil {
-		return c.JSON(http.StatusOK, user)
-	}
-	switch {
-	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
-	default:
-		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
-	}
-}
-
-func (h *UserHandler) GetAll(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	if page < 1 {
-		page = 1
-	}
-
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
-	if limit < 1 {
-		limit = 10
-	}
-
-	ctx := c.Request().Context()
-	paginatedData, err := h.userUseCase.GetPaginated(ctx, page, limit)
-	if err == nil {
-		return c.JSON(http.StatusOK, paginatedData)
-	}
-	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
 	default:
