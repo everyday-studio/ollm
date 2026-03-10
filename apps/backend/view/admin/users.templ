@@ -4,9 +4,24 @@ import "github.com/everyday-studio/ollm/internal/domain"
 import "github.com/everyday-studio/ollm/view/layout"
 import "fmt"
 
-templ UsersPage(data *domain.PaginatedData[domain.User], adminPath string) {
+templ UsersPage(data *domain.PaginatedData[domain.User], adminPath string, bucketName string) {
 	@layout.Base("Users Management", adminPath, "users") {
 		<div class="w-full max-w-7xl mx-auto">
+			<script>
+				function uploadImage(type, refId, inputEl) {
+					if (!inputEl.files || inputEl.files.length === 0) return;
+					const formData = new FormData();
+					formData.append('type', type);
+					formData.append('ref_id', refId);
+					formData.append('file', inputEl.files[0]);
+					fetch('/upload/image', { method: 'POST', body: formData })
+						.then(res => {
+							if (res.ok) window.location.reload();
+							else alert('Upload failed');
+						})
+						.catch(err => alert('Error: ' + err));
+				}
+			</script>
 			<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
 				<h1 class="text-3xl font-bold text-white">Users</h1>
 			</div>
@@ -23,7 +38,7 @@ templ UsersPage(data *domain.PaginatedData[domain.User], adminPath string) {
 							</tr>
 						</thead>
 						<tbody id="users-table-body" class="bg-gray-800 divide-y divide-gray-700">
-							@UserTableRows(data, adminPath)
+							@UserTableRows(data, adminPath, bucketName)
 						</tbody>
 					</table>
 				</div>
@@ -32,7 +47,7 @@ templ UsersPage(data *domain.PaginatedData[domain.User], adminPath string) {
 	}
 }
 
-templ UserTableRows(data *domain.PaginatedData[domain.User], adminPath string) {
+templ UserTableRows(data *domain.PaginatedData[domain.User], adminPath string, bucketName string) {
 	if len(data.Data) == 0 {
 		<tr>
 			<td colspan="5" class="px-6 py-8 text-center text-gray-500">
@@ -53,8 +68,15 @@ templ UserTableRows(data *domain.PaginatedData[domain.User], adminPath string) {
 					</div>
 				</td>
 				<td class="px-6 py-4 whitespace-nowrap text-sm text-white font-medium flex items-center gap-2">
-					<div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold shadow-inner">
-						{ string([]rune(user.Name)[0:1]) }
+					<div class="relative group/avatar cursor-pointer shrink-0">
+						<img src={ fmt.Sprintf("https://storage.googleapis.com/%s/user/%s.png", bucketName, user.ID) } 
+							onerror="this.onerror=null; this.outerHTML=`<div class='h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold shadow-inner'>${this.getAttribute('data-initial')}</div>`;"
+							data-initial={ string([]rune(user.Name)[0:1]) }
+							class="h-8 w-8 rounded-full object-cover shadow-inner bg-gray-900" />
+						<button { templ.Attributes{"onclick": fmt.Sprintf("document.getElementById('upload-user-%s').click()", user.ID)}... } class="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity" title="Upload Profile Pic">
+							<svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+						</button>
+						<input type="file" id={ fmt.Sprintf("upload-user-%s", user.ID) } class="hidden" accept="image/*" { templ.Attributes{"onchange": fmt.Sprintf("uploadImage('user', '%s', this)", user.ID)}... } />
 					</div>
 					{ user.Name }
 				</td>

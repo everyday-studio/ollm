@@ -1,0 +1,57 @@
+###
+# 1. Login to get access token (Requires User Role or Admin for game thumbnails)
+# @name login
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "email": "test.admin@example.com",
+  "password": "password123"
+}
+
+###
+# 2. Upload Game Thumbnail
+# Note: You need a real file. Replace 'test_image.png' with an actual path if your HTTP client requires it,
+# or create a dummy file in the root directory like `touch test.png`.
+# The ref_id should be an existing game ID you created.
+# You MUST be logged in as an Admin or the Author of this game.
+POST http://localhost:8080/upload/image
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="type"
+
+game
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="ref_id"
+
+01KK3N6XRFS52TZ2JD8JD9VDA1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.png"
+Content-Type: image/png
+
+< ./test.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+# 3. Upload User Profile Image
+# The ref_id MUST be your own user_id.
+POST http://localhost:8080/upload/image
+Authorization: Bearer {{login.response.body.access_token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="type"
+
+user
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="ref_id"
+
+01KHK281ZRYYH35KQH56XZH215
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.png"
+Content-Type: image/png
+
+< ./test.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
