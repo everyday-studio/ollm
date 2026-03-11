@@ -33,17 +33,22 @@ client.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // 401 에러이고, 아직 재시도를 안 했다면?
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // 401 에러이고, 아직 재시도를 안 했다면? (단, 로그인이나 회원가입 시 발생한 401은 무시)
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/api/auth/login') &&
+      !originalRequest.url?.includes('/api/auth/signup')
+    ) {
       originalRequest._retry = true;
 
       try {
         // 1. 토큰 갱신 요청 (쿠키에 있는 Refresh Token 사용)
         // 주의: 이 경로는 백엔드 명세서의 Refresh 엔드포인트와 일치해야 합니다.
         const { data } = await axios.post(
-            `${BASE_URL}/auth/refresh`, 
-            {}, 
-            { withCredentials: true } // 중요: 쿠키 전송
+          `${BASE_URL}/api/auth/refresh`,
+          {},
+          { withCredentials: true } // 중요: 쿠키 전송
         );
 
         // 2. 새 토큰을 스토어에 저장
@@ -59,9 +64,9 @@ client.interceptors.response.use(
         // 갱신마저 실패하면 진짜 로그아웃 처리
         console.error('Session expired, logging out...');
         authStore.logout();
-        
-        // 로그인 페이지로 리다이렉트 (필요 시)
-        // window.location.href = '/login'; 
+
+        // 로그인 페이지로 리다이렉트
+        window.location.href = '/login?clear=true';
         return Promise.reject(refreshError);
       }
     }
