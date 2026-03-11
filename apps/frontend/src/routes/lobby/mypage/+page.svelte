@@ -27,7 +27,7 @@
 	let isUploading = $state(false);
 	let avatarCacheBust = $state('');
 	const GCS_BASE = 'https://storage.googleapis.com/ollm-assets-prod';
-	const DEFAULT_AVATAR = `${GCS_BASE}/user_profile_default.png`;
+	const DEFAULT_AVATAR = `${GCS_BASE}/default/user_profile.png`;
 	let avatarUrl = $derived(
 		user ? `${GCS_BASE}/user/${user.id}.png${avatarCacheBust}` : DEFAULT_AVATAR
 	);

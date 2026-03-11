@@ -22,8 +22,9 @@
 			alt={game.title}
 			class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
 			onerror={(e) => {
-				(e.target as HTMLImageElement).src =
-					'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+				const el = e.currentTarget as HTMLImageElement;
+				el.onerror = null;
+				el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
 			}}
 		/>
 		<div
