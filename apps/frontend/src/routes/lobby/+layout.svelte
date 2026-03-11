@@ -186,13 +186,13 @@
 					<img
 						src={$authStore.user?.id
 							? `https://storage.googleapis.com/ollm-assets-prod/user/${$authStore.user.id}.png`
-							: 'https://storage.googleapis.com/ollm-assets-prod/user_profile_default.png'}
+							: 'https://storage.googleapis.com/ollm-assets-prod/default/user_profile.png'}
 						alt="프로필"
 						class="w-8 h-8 rounded-full object-cover shadow-sm"
 						onerror={(e) => {
 							const el = e.currentTarget as HTMLImageElement;
 							el.onerror = null;
-							el.src = 'https://storage.googleapis.com/ollm-assets-prod/user_profile_default.png';
+							el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/user_profile.png';
 						}}
 					/>
 
