@@ -77,7 +77,7 @@ func LoadConfig(env string) (*Config, error) {
 	envPath := filepath.Join(projectRoot, ".env")
 
 	if err := godotenv.Load(envPath); err != nil {
-		return nil, fmt.Errorf("failed to read env file: %w", err)
+		fmt.Printf("no env file, use system env\n")
 	}
 
 	viper.SetConfigName(fmt.Sprintf("config.%s", env))

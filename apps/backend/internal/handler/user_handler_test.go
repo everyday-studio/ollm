@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -14,57 +15,75 @@ import (
 	"github.com/everyday-studio/ollm/internal/domain/mocks"
 )
 
-func TestUserHandler_GetByID(t *testing.T) {
+// --- GetMe ---
+
+func TestUserHandler_GetMe(t *testing.T) {
 	tests := []struct {
 		name       string
-		pathParam  string
-		mockReturn interface{}
+		userID     string
+		mockReturn *domain.User
 		mockError  error
 		wantStatus int
 		wantBody   string
 	}{
 		{
-			name:       "Get users by id successfully",
-			pathParam:  "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5",
-			mockReturn: &domain.User{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com", Role: domain.RoleUser},
+			name:   "Get my profile successfully",
+			userID: "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+			mockReturn: &domain.User{
+				ID:    "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+				Name:  "John",
+				Tag:   "john123",
+				Email: "john@example.com",
+				Role:  domain.RoleUser,
+			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","tag":"","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2ZUSER1","name":"John","tag":"john123","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
-			name:       "Fail to find user",
-			pathParam:  "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6",
+			name:       "Fail due to missing user_id in context (unauthorized)",
+			userID:     "", // not set in context
+			mockReturn: nil,
+			mockError:  nil,
+			wantStatus: http.StatusUnauthorized,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrUnauthorized.Error()),
+		},
+		{
+			name:       "Fail due to user not found",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER9",
 			mockReturn: nil,
 			mockError:  domain.ErrNotFound,
 			wantStatus: http.StatusNotFound,
 			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
 		},
 		{
-			name:       "Fail to find user due to invalid id",
-			pathParam:  "",
+			name:       "Fail due to internal error",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
 			mockReturn: nil,
-			mockError:  domain.ErrInvalidInput,
-			wantStatus: http.StatusBadRequest,
-			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInvalidInput.Error()),
+			mockError:  domain.ErrInternal,
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInternal.Error()),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/users/"+tt.pathParam, nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/users/me", nil)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
-			c.SetParamNames("id")
-			c.SetParamValues(tt.pathParam)
+
+			// Only set user_id when it is not an unauthorized test case
+			if tt.userID != "" {
+				c.Set("user_id", tt.userID)
+			}
 
 			mockUseCase := new(mocks.UserUseCase)
-			// Use pathParam directly as string (ULID)
-			mockUseCase.On("GetByID", mock.Anything, tt.pathParam).Return(tt.mockReturn, tt.mockError).Maybe()
-			handler := NewUserHandler(e, mockUseCase)
+			mockUseCase.On("GetByID", mock.Anything, tt.userID).Return(tt.mockReturn, tt.mockError).Maybe()
 
-			err := handler.GetByID(c)
+			h := NewUserHandler(e, mockUseCase)
+			err := h.GetMe(c)
+
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantStatus, rec.Code)
 			assert.JSONEq(t, tt.wantBody, rec.Body.String())
@@ -74,52 +93,103 @@ func TestUserHandler_GetByID(t *testing.T) {
 	}
 }
 
-func TestUserHandler_GetAll(t *testing.T) {
+// --- UpdateMe ---
 
+func TestUserHandler_UpdateMe(t *testing.T) {
 	tests := []struct {
 		name       string
-		mockReturn *domain.PaginatedData[domain.User]
+		userID     string
+		body       string
+		mockReturn *domain.User
 		mockError  error
 		wantStatus int
 		wantBody   string
 	}{
 		{
-			name: "Get all users successfully",
-			mockReturn: &domain.PaginatedData[domain.User]{
-				Data: []domain.User{
-					{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5", Name: "John", Email: "john@example.com", Role: domain.RoleUser},
-					{ID: "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6", Name: "Jane", Email: "jane@example.com", Role: domain.RoleUser},
-				},
-				Total:      2,
-				Page:       1,
-				Limit:      10,
-				TotalPages: 1,
+			name:   "Update nickname successfully",
+			userID: "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+			body:   `{"name":"NewNick"}`,
+			mockReturn: &domain.User{
+				ID:    "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+				Name:  "NewNick",
+				Tag:   "john123",
+				Email: "john@example.com",
+				Role:  domain.RoleUser,
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"data":[{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","name":"John","tag":"","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z6","name":"Jane","tag":"","email":"jane@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}],"total":2,"page":1,"limit":10,"total_pages":1}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2ZUSER1","name":"NewNick","tag":"john123","email":"john@example.com","role":"User","created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
-			name:       "Fail to find any users",
+			name:       "Fail due to missing user_id in context (unauthorized)",
+			userID:     "", // not set in context
+			body:       `{"name":"NewNick"}`,
+			mockReturn: nil,
+			mockError:  nil,
+			wantStatus: http.StatusUnauthorized,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrUnauthorized.Error()),
+		},
+		{
+			name:       "Fail due to invalid JSON body",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+			body:       `invalid json`,
+			mockReturn: nil,
+			mockError:  nil,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInvalidInput.Error()),
+		},
+		{
+			name:       "Fail due to nickname validation error (too short/long)",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+			body:       `{"name":"X"}`,
+			mockReturn: nil,
+			mockError:  domain.ErrInvalidInput,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInvalidInput.Error()),
+		},
+		{
+			name:       "Fail due to user not found",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER9",
+			body:       `{"name":"NewNick"}`,
 			mockReturn: nil,
 			mockError:  domain.ErrNotFound,
 			wantStatus: http.StatusNotFound,
 			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
+		},
+		{
+			name:       "Fail due to internal error",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+			body:       `{"name":"NewNick"}`,
+			mockReturn: nil,
+			mockError:  domain.ErrInternal,
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInternal.Error()),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/users", nil)
+			req := httptest.NewRequest(http.MethodPut, "/api/users/me", strings.NewReader(tt.body))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			mockUseCase := new(mocks.UserUseCase)
-			mockUseCase.On("GetPaginated", mock.Anything, 1, 10).Return(tt.mockReturn, tt.mockError)
-			handler := NewUserHandler(e, mockUseCase)
+			// Only set user_id when it is not an unauthorized test case
+			if tt.userID != "" {
+				c.Set("user_id", tt.userID)
+			}
 
-			err := handler.GetAll(c)
+			mockUseCase := new(mocks.UserUseCase)
+			// Only register mock if we expect the usecase to be called
+			// (i.e., not the unauthorized or invalid JSON cases)
+			if tt.userID != "" && tt.body != `invalid json` {
+				mockUseCase.On("UpdateNickname", mock.Anything, tt.userID, mock.AnythingOfType("string")).Return(tt.mockReturn, tt.mockError).Maybe()
+			}
+
+			h := NewUserHandler(e, mockUseCase)
+			err := h.UpdateMe(c)
+
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantStatus, rec.Code)
 			assert.JSONEq(t, tt.wantBody, rec.Body.String())

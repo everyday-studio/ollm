@@ -22,15 +22,11 @@ func NewMatchHandler(e *echo.Echo, matchUseCase domain.MatchUseCase) *MatchHandl
 	}
 
 	// User routes
-	userGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleUser))
+	userGroup := e.Group("/api/matches", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("", handler.Create)
 	userGroup.GET("/me", handler.GetMyMatches)
 	userGroup.GET("/:id", handler.GetByID)
 	userGroup.POST("/:id/resign", handler.Resign)
-
-	// Admin routes
-	adminGroup := e.Group("/matches", middleware.AllowRoles(domain.RoleAdmin))
-	adminGroup.DELETE("/:id", handler.Delete)
 
 	return handler
 }
@@ -122,29 +118,6 @@ func (h *MatchHandler) GetMyMatches(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
-}
-
-// Delete handles DELETE /matches/:id - deletes a match (admin only)
-func (h *MatchHandler) Delete(c echo.Context) error {
-	id := c.Param("id")
-	if id == "" {
-		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
-	}
-
-	ctx := c.Request().Context()
-	err := h.matchUseCase.Delete(ctx, id)
-	if err == nil {
-		return c.JSON(http.StatusOK, map[string]string{
-			"message": "match deleted successfully",
-		})
-	}
-
-	switch {
-	case errors.Is(err, domain.ErrNotFound):
-		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
-	default:
-		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
-	}
 }
 
 // Resign handles POST /matches/:id/resign - allows user to forfeit a match

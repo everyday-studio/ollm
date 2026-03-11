@@ -19,7 +19,7 @@ func NewLeaderboardHandler(e *echo.Echo, usecase domain.LeaderboardUseCase) *Lea
 		usecase: usecase,
 	}
 
-	e.GET("/games/:id/leaderboard", handler.GetLeaderboard)
+	e.GET("/api/games/:id/leaderboard", handler.GetLeaderboard)
 
 	return handler
 }

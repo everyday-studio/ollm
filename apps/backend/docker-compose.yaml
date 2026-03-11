@@ -1,6 +1,9 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:18.1
+    restart: always # 서버 재부팅 시 자동 실행
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -9,22 +12,30 @@ services:
       - db_data:/var/lib/postgresql
     ports:
       - '5432:5432'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: always
     ports:
       - '8080:8080'
     env_file:
       - .env
     environment:
       - DB_HOST=db
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+      - DB_NAME=mydb
+      - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp-key.json
+    volumes:
+      - ./gcp-key.json:/run/secrets/gcp-key.json:ro
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   db_data:

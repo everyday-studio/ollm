@@ -269,64 +269,6 @@ func TestMatchHandler_GetMyMatches(t *testing.T) {
 	}
 }
 
-// --- Delete ---
-
-func TestMatchHandler_Delete(t *testing.T) {
-	tests := []struct {
-		name       string
-		pathParam  string
-		mockError  error
-		wantStatus int
-		wantBody   string
-	}{
-		{
-			name:       "Delete match successfully",
-			pathParam:  "01HQZYX3VQJQZ3Z0Z1ZMATCH01",
-			mockError:  nil,
-			wantStatus: http.StatusOK,
-			wantBody:   `{"message":"match deleted successfully"}`,
-		},
-		{
-			name:       "Fail due to not found",
-			pathParam:  "01HQZYX3VQJQZ3Z0Z1Z2NONEXIST",
-			mockError:  domain.ErrNotFound,
-			wantStatus: http.StatusNotFound,
-			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
-		},
-		{
-			name:       "Fail due to empty path param",
-			pathParam:  "",
-			mockError:  nil,
-			wantStatus: http.StatusBadRequest,
-			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInvalidInput.Error()),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := echo.New()
-			req := httptest.NewRequest(http.MethodDelete, "/matches/"+tt.pathParam, nil)
-			rec := httptest.NewRecorder()
-			c := e.NewContext(req, rec)
-			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1") // user_id is mostly irrelevant as it's an admin route, but for sanity
-			c.SetParamNames("id")
-			c.SetParamValues(tt.pathParam)
-
-			mockUseCase := new(mocks.MatchUseCase)
-			mockUseCase.On("Delete", mock.Anything, tt.pathParam).Return(tt.mockError).Maybe()
-
-			h := NewMatchHandler(e, mockUseCase)
-			err := h.Delete(c)
-
-			assert.NoError(t, err)
-			assert.Equal(t, tt.wantStatus, rec.Code)
-			assert.JSONEq(t, tt.wantBody, rec.Body.String())
-
-			mockUseCase.AssertExpectations(t)
-		})
-	}
-}
-
 // --- Resign ---
 
 func TestMatchHandler_Resign(t *testing.T) {

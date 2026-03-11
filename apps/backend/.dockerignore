@@ -1,0 +1,12 @@
+# Sensitive files – must NEVER be baked into the image.
+# Inject credentials at runtime via environment variables instead.
+.env
+gcp-key.json
+
+# Development artifacts
+tmp/
+.git/
+.gitignore
+
+# Test files
+**/*_test.go

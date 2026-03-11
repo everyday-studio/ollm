@@ -22,7 +22,7 @@ func NewUploadHandler(e *echo.Echo, uploadUseCase domain.UploadUseCase) *UploadH
 	}
 
 	// Since uploading requires tracking user ownership, RoleUser is the minimum.
-	userGroup := e.Group("/upload", middleware.AllowRoles(domain.RoleUser))
+	userGroup := e.Group("/api/upload", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("/image", handler.UploadImage)
 
 	return handler
