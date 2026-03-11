@@ -1,31 +1,39 @@
 // src/routes/lobby/adapter.ts
 import type { GameDTO, GameUI, MatchDTO, MatchUI } from '$lib/features/game/types';
 
+// GCS bucket base URL for uploaded assets
+const GCS_BASE_URL = 'https://storage.googleapis.com/ollm-assets-prod';
+
 // Static assets mapping based on Game ID (ULID)
-// You need to update these Keys with real Game IDs from your database.
+// Kept as fallback for games without uploaded thumbnails.
 const GAME_ASSETS: Record<string, { subtitle: string; image: string; tags: string[] }> = {
-  // Example ID 1: Gatekeeper
-  "01JCQK5Y8A3BCDEFGHIJKLM567": {
-    subtitle: "Lv.1 Basic Injection",
-    image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070",
-    tags: ["Logic", "Basic"]
-  },
   // Default fallback asset
   "default": {
     subtitle: "Custom Scenario",
-    image: "https://storage.googleapis.com/ollm-assets-prod/thumbnail_test_2.png",
+    image: `${GCS_BASE_URL}/default/game_thumbnail.png`,
     tags: []
   }
 };
 
 /**
+ * Builds a GCS-based thumbnail URL for a given game ID.
+ * The upload handler stores game thumbnails as: game/{gameId}
+ */
+function buildGameThumbnailUrl(gameId: string): string {
+  return `${GCS_BASE_URL}/game/${gameId}.png`;
+}
+
+/**
  * Transforms Backend GameDTO to Frontend GameUI
  */
 export function toGameUI(dto: GameDTO): GameUI {
-  const assets = GAME_ASSETS[dto.id] || GAME_ASSETS["default"];
+  const staticAssets = GAME_ASSETS[dto.id] || GAME_ASSETS["default"];
   return {
     ...dto,
-    ...assets
+    subtitle: staticAssets.subtitle,
+    // Prefer GCS uploaded thumbnail; fallback to static asset
+    image: buildGameThumbnailUrl(dto.id),
+    tags: staticAssets.tags
   };
 }
 
@@ -35,12 +43,12 @@ export function toGameUI(dto: GameDTO): GameUI {
 export function toMatchUI(match: MatchDTO, games: GameDTO[]): MatchUI {
   // Find the game title associated with this match
   const relatedGame = games.find(g => g.id === match.game_id);
-  
+
   return {
     ...match,
     gameTitle: relatedGame ? relatedGame.title : "Unknown Game",
     // Simple time formatting logic (can be improved with 'date-fns')
-    displayTime: new Date(match.updated_at).toLocaleDateString(), 
+    displayTime: new Date(match.updated_at).toLocaleDateString(),
     lastMessage: `턴 ${match.turn_count} / ${match.max_turns ?? '?'}`
   };
 }

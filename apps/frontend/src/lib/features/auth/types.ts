@@ -20,11 +20,6 @@ export interface AuthResponse {
   access_token: string;
 }
 
-// 닉네임 변경 요청
-export interface UpdateNicknameRequest {
-  name: string;
-}
-
 // API 요청 타입
 export interface LoginRequest { email: string; password: string; }
 export interface SignupRequest { email: string; password: string; }

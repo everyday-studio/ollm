@@ -3,8 +3,9 @@
 
 import { authApi } from './api';
 import { authStore } from './model';
+import { userApi } from '$lib/features/user/api';
 
-let refreshPromise: Promise<void> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
 /**
  * Ensures the access token is available by calling POST /auth/refresh once.
@@ -14,7 +15,7 @@ let refreshPromise: Promise<void> | null = null;
  * Safe to call from any component's onMount — first caller triggers the
  * actual refresh, subsequent callers piggyback on the same promise.
  */
-export function ensureSession(): Promise<void> {
+export function ensureSession(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
@@ -25,16 +26,21 @@ export function ensureSession(): Promise<void> {
         // Populate user from refresh response (id, name, tag, email)
         const { id, name, tag, email } = res.data;
         authStore.updateUser({ id, name, tag, email, role: '', created_at: '', updated_at: '' });
+      } else {
+        return false;
       }
       // Fetch full user info to fill in role etc.
       try {
-        const meRes = await authApi.getMe();
+        const meRes = await userApi.getMe();
         authStore.updateUser(meRes.data);
       } catch (meErr) {
         console.warn('[ensureSession] getMe failed:', meErr);
       }
+      return true;
     } catch {
       // Ignore — the Axios interceptor will handle 401 on subsequent calls
+      // Return false indicating no valid session was established
+      return false;
     }
   })();
 
