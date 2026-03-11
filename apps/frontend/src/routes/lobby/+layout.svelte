@@ -3,6 +3,7 @@
 	import { goto, invalidateAll, onNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, setContext } from 'svelte';
+	import type { Navigation } from '@sveltejs/kit';
 
 	import { authApi } from '$lib/features/auth/api';
 	import { authStore } from '$lib/features/auth/model';
@@ -33,6 +34,7 @@
 		if (!isValidSession) {
 			console.warn('Session is invalid or expired, redirecting to login...');
 			authStore.logout();
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			goto('/login?clear=true');
 		}
 	});
@@ -54,10 +56,10 @@
 	// ----------------------------------------------------------------
 	// View Transitions API — smooth cross-fade between page navigations
 	// ----------------------------------------------------------------
-	onNavigate((navigation) => {
+	onNavigate((navigation: Navigation) => {
 		if (!document.startViewTransition) return;
 
-		return new Promise((resolve) => {
+		return new Promise<void>((resolve) => {
 			document.startViewTransition(async () => {
 				resolve();
 				await navigation.complete;
@@ -236,7 +238,7 @@
 						>
 						{#if $authStore.user?.role === 'Admin'}
 							<a
-								href="http://localhost:8080/admin"
+								href={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/admin`}
 								target="_blank"
 								rel="noopener noreferrer"
 								class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-purple-400 hover:bg-gray-900 hover:text-purple-300' : 'text-purple-600 hover:bg-gray-50 hover:text-purple-700'}`}

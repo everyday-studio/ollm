@@ -2,11 +2,13 @@
 node_modules/
 
 # Editor
+.vscode/
+.cursorrules
 .cursor
 .DS_Store
 
 # Agent Rules
-apps/frontend/AGENT_RULES.md
+AGENT_RULES.md
 
 #dummydata
 apps/frontend/static/data/games.json
