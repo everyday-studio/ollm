@@ -1,0 +1,36 @@
+app:
+  env: "prod"
+  port: 8080
+  admin_path: "/admin"
+  debug: false
+  log_level: "info"
+
+db:
+  host: "db"
+  user: 
+  password: 
+  port: 5432
+  dbname: "mydb"
+  sslmode: "disable"
+
+secure:
+  cors_allow_origins:
+    - "ollm.everydaystudio.xyz"
+  jwt:
+    private_key_base64: ""
+    public_key_base64: ""
+    access_expiration_min: 60
+    refresh_expiration_day: 30
+    cookie:
+      secure: true
+      http_only: true
+      same_site: "Strict"
+      domain: "ollm.everydaystudio.xyz"
+
+llm:
+  openai_api_key: ""
+  groq_api_key: ""
+
+gcp:
+  bucket_name: "ollm-assets-prod"
+  project_id: "ollm-web"
