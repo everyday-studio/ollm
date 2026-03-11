@@ -15,7 +15,7 @@ db:
 
 secure:
   cors_allow_origins:
-    - "ollm.everydaystudio.xyz"
+    - "https://ollm.everydaystudio.xyz"
   jwt:
     private_key_base64: ""
     public_key_base64: ""

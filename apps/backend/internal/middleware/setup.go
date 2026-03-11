@@ -65,26 +65,6 @@ func Setup(cfg *config.Config, logger *slog.Logger, e *echo.Echo) error {
 	e.Server.WriteTimeout = 40 * time.Second // 응답 쓰기 타임아웃 (Handler Timeout보다 길게)
 	e.Server.IdleTimeout = 120 * time.Second // 유휴 연결 타임아웃
 
-	// ✅ CSRF: Cross-Site Request Forgery 방어
-	if cfg.App.Env != "dev" {
-		// CSRF token route handler
-		e.GET("/csrf-token", func(c echo.Context) error {
-			token := c.Get(middleware.DefaultCSRFConfig.ContextKey).(string)
-			return c.JSON(http.StatusOK, map[string]string{
-				"csrf_token": token,
-			})
-		})
-
-		e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-			TokenLookup:    "header:" + echo.HeaderXCSRFToken,
-			CookieSecure:   false,                // HTTPS에서만 쿠키 전송
-			CookiePath:     "/",                  // 이 설정 추가
-			CookieName:     "_csrf",              // 이 설정 추가
-			CookieHTTPOnly: true,                 // JavaScript 접근 금지
-			CookieSameSite: http.SameSiteLaxMode, // 동일 출처 외 요청 차단
-		}))
-	}
-
 	// ✅ CORS 설정
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: cfg.Secure.CORSAllowOrigins,
