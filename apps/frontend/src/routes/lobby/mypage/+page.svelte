@@ -31,7 +31,7 @@
 	let avatarUrl = $derived(
 		user ? `${GCS_BASE}/user/${user.id}.png${avatarCacheBust}` : DEFAULT_AVATAR
 	);
-	let fileInput: HTMLInputElement;
+	let fileInput = $state<HTMLInputElement | null>(null);
 
 	// Derived
 	let memberSince = $derived(
@@ -55,8 +55,9 @@
 			const res = await userApi.getMe();
 			user = res.data;
 			authStore.updateUser(res.data);
-		} catch {
-			toast.error('프로필을 불러오지 못했습니다.');
+		} catch (e: unknown) {
+			const err = e as { response?: { data?: { message?: string } } };
+			toast.error(err.response?.data?.message || '프로필을 불러오지 못했습니다.');
 		} finally {
 			isLoading = false;
 		}
@@ -92,12 +93,14 @@
 			authStore.updateUser(res.data);
 			isEditing = false;
 			toast.success('닉네임이 변경되었습니다.');
-		} catch (e: any) {
-			if (e?.response?.status === 400) {
-				nicknameError = '유효하지 않은 닉네임입니다.';
+		} catch (e: unknown) {
+			const err = e as { response?: { status?: number; data?: { message?: string } } };
+			if (err?.response?.status === 400) {
+				nicknameError = err.response?.data?.message || '유효하지 않은 닉네임입니다.';
 			} else {
-				nicknameError = '변경에 실패했습니다. 다시 시도해주세요.';
+				nicknameError = err.response?.data?.message || '변경에 실패했습니다. 다시 시도해주세요.';
 			}
+			toast.error(nicknameError);
 		} finally {
 			isSaving = false;
 		}
@@ -141,14 +144,15 @@
 			// Cache-bust to force the browser to reload the image from GCS
 			avatarCacheBust = `?t=${Date.now()}`;
 			toast.success('프로필 이미지가 변경되었습니다.');
-		} catch (err: any) {
+		} catch (e: unknown) {
+			const err = e as { response?: { status?: number; data?: { message?: string } } };
 			const status = err?.response?.status;
 			if (status === 400) {
-				toast.error('잘못된 파일 형식입니다.');
+				toast.error(err.response?.data?.message || '잘못된 파일 형식입니다.');
 			} else if (status === 401) {
 				toast.error('로그인이 필요합니다.');
 			} else {
-				toast.error('이미지 업로드에 실패했습니다.');
+				toast.error(err.response?.data?.message || '이미지 업로드에 실패했습니다.');
 			}
 		} finally {
 			isUploading = false;
@@ -193,7 +197,7 @@
 						</div>
 					</div>
 					<div class="px-6 md:px-8 py-6 space-y-4">
-						{#each Array(3) as _}
+						{#each Array.from({ length: 3 }, (_, i) => i) as _i (_i)}
 							<div class="flex items-center justify-between">
 								<div
 									class={`h-4 w-20 rounded skeleton ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
@@ -412,7 +416,10 @@
 					in:fly={{ y: 20, duration: 300, delay: 100 }}
 				>
 					<button
-						onclick={() => goto('/lobby')}
+						onclick={() => {
+							// eslint-disable-next-line svelte/no-navigation-without-resolve
+							goto('/lobby');
+						}}
 						class={`flex items-center gap-4 p-5 rounded-2xl border transition-all group ${
 							isDarkMode
 								? 'bg-gray-950 border-gray-800 hover:border-gray-700 hover:bg-gray-900'
@@ -452,7 +459,10 @@
 					</button>
 
 					<button
-						onclick={() => goto('/lobby/leaderboard')}
+						onclick={() => {
+							// eslint-disable-next-line svelte/no-navigation-without-resolve
+							goto('/lobby/match/01KKEFM1TMBP7SERYKMZDJAP8Q');
+						}}
 						class={`flex items-center gap-4 p-5 rounded-2xl border transition-all group ${
 							isDarkMode
 								? 'bg-gray-950 border-gray-800 hover:border-gray-700 hover:bg-gray-900'
@@ -493,7 +503,10 @@
 					프로필을 불러올 수 없습니다
 				</p>
 				<button
-					onclick={() => goto('/lobby')}
+					onclick={() => {
+						// eslint-disable-next-line svelte/no-navigation-without-resolve
+						goto('/lobby');
+					}}
 					class="px-5 py-2.5 bg-[#FF4D00] text-white rounded-lg font-semibold text-sm hover:bg-[#ff3300] transition-colors"
 				>
 					로비로 돌아가기
