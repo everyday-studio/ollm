@@ -2,18 +2,12 @@ version: '3.8'
 
 services:
   frontend:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: llm-games-frontend
-    working_dir: /app
     ports:
       - "5173:5173"
-    volumes:
-      - ./:/app
-      - /app/node_modules
-    environment:
-      # 백엔드와 통신하기 위한 주소 (중요)
-      - PUBLIC_API_URL=http://host.docker.internal:8080
-    # 실행 명령어
-    command: sh -c "npm install && npm run dev -- --host"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped
