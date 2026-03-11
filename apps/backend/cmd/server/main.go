@@ -13,6 +13,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/db"
@@ -93,25 +94,47 @@ func main() {
 			},
 		),
 		fx.Invoke(StartServer),
+		fx.WithLogger(
+			func(cfg *config.Config, logger *slog.Logger) fxevent.Logger {
+				if cfg.App.Env == "prod" || !cfg.App.Debug {
+					// Production or non-debug: Silence noisy Fx startup logs.
+					return fxevent.NopLogger
+				}
+				// Dev/Debug: Use default console logger or slog; returning NopLogger disables it, but let's map Fx logs to our slog.
+				return &fxevent.SlogLogger{Logger: logger}
+			},
+		),
 	)
 
 	app.Run()
 }
 
 func NewConfig() *config.Config {
-	env := flag.String("env", "dev", "Environment (dev, prod)")
+	envFlag := flag.String("env", "", "Environment (dev, prod)")
 	flag.Parse()
 
-	validEnvs := map[string]bool{"dev": true, "prod": true}
-	if !validEnvs[*env] {
-		log.Fatalf("Invalid environment: %s. Valid environments are: dev, prod", *env)
+	env := *envFlag
+	if env == "" {
+		env = os.Getenv("APP_ENV")
+	}
+	if env == "" {
+		env = "dev"
 	}
 
-	cfg, err := config.LoadConfig(*env)
+	validEnvs := map[string]bool{"dev": true, "prod": true}
+	if !validEnvs[env] {
+		log.Fatalf("Invalid environment: %s. Valid environments are: dev, prod", env)
+	}
+
+	cfg, err := config.LoadConfig(env)
 	if err != nil {
 		log.Fatalf("Config load error: %v", err)
 	}
-	fmt.Printf("config: %+v\n", cfg)
+
+	fmt.Printf("Config loaded for environment: %s\n", env)
+	if env == "dev" {
+		fmt.Printf("config: %+v\n", cfg)
+	}
 
 	return cfg
 }
@@ -162,6 +185,11 @@ func NewDB(lc fx.Lifecycle, cfg *config.Config) *sql.DB {
 }
 
 func StartServer(lc fx.Lifecycle, e *echo.Echo, cfg *config.Config) {
+	if cfg.App.Env == "prod" || !cfg.App.Debug {
+		e.HideBanner = true
+		e.HidePort = true
+	}
+
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {

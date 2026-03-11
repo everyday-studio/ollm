@@ -28,6 +28,7 @@ services:
     env_file:
       - .env
     environment:
+      - APP_ENV=prod
       - DB_HOST=db
       - DB_NAME=mydb
       - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp-key.json
