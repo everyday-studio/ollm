@@ -42,6 +42,7 @@ type MatchRepository interface {
 	GetByID(ctx context.Context, id string) (*Match, error)
 	GetByUserID(ctx context.Context, userID string) ([]Match, error)
 	GetByUserIDAndGameID(ctx context.Context, userID string, gameID string) ([]Match, error)
+	CountByUserIDAndStatus(ctx context.Context, userID string, status MatchStatus) (int, error)
 	Update(ctx context.Context, match *Match) (*Match, error)
 	Delete(ctx context.Context, id string) error
 }

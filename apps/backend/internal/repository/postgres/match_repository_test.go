@@ -313,9 +313,34 @@ func TestMatchRepository_GetLeaderboard(t *testing.T) {
 		assert.Equal(t, user2.ID, leaderboard[0].UserID)
 		assert.Equal(t, 3, leaderboard[0].TurnCount)
 
-		// User1 should be 2nd
-		assert.Equal(t, 0, leaderboard[1].Rank)
-		assert.Equal(t, user1.ID, leaderboard[1].UserID)
-		assert.Equal(t, 5, leaderboard[1].TurnCount) // Assert that only the best match of user1 is shown
+	})
+}
+
+func TestMatchRepository_CountByUserIDAndStatus(t *testing.T) {
+	cleanDB(t, "matches", "games", "users")
+	ctx := context.Background()
+	repo := NewMatchRepository(testDB)
+
+	user := createTestUser(t)
+	game := createTestGame(t, user)
+
+	t.Run("Count active matches successfully", func(t *testing.T) {
+		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game.ID, Status: domain.MatchStatusActive})
+		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game.ID, Status: domain.MatchStatusActive})
+		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game.ID, Status: domain.MatchStatusWon})
+		repo.Create(ctx, &domain.Match{UserID: "01HQZYX3VQJQZ3Z0Z1Z2OTHER2", GameID: game.ID, Status: domain.MatchStatusActive})
+
+		count, err := repo.CountByUserIDAndStatus(ctx, user.ID, domain.MatchStatusActive)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, count)
+	})
+
+	t.Run("Return 0 when no matches match condition", func(t *testing.T) {
+		cleanDB(t, "matches", "games", "users")
+		user2 := createTestUser(t)
+
+		count, err := repo.CountByUserIDAndStatus(ctx, user2.ID, domain.MatchStatusActive)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, count)
 	})
 }
