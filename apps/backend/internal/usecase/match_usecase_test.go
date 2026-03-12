@@ -17,6 +17,8 @@ func TestMatchUseCase_Create(t *testing.T) {
 		req          *domain.CreateMatchRequest
 		mockGameRet  *domain.Game
 		mockGameErr  error
+		mockCountRet int
+		mockCountErr error
 		mockMatchRet *domain.Match
 		mockMatchErr error
 		want         *domain.Match
@@ -33,6 +35,8 @@ func TestMatchUseCase_Create(t *testing.T) {
 				MaxTurns: 10,
 			},
 			mockGameErr: nil,
+			mockCountRet: 0,
+			mockCountErr: nil,
 			mockMatchRet: &domain.Match{
 				ID:          "01HQZYX3VQJQZ3Z0Z1ZMATCH01",
 				UserID:      "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
@@ -62,6 +66,8 @@ func TestMatchUseCase_Create(t *testing.T) {
 			},
 			mockGameRet:  nil,
 			mockGameErr:  domain.ErrNotFound,
+			mockCountRet: 0,
+			mockCountErr: nil,
 			mockMatchRet: nil,
 			mockMatchErr: nil,
 			want:         nil,
@@ -78,8 +84,28 @@ func TestMatchUseCase_Create(t *testing.T) {
 				MaxTurns: 10,
 			},
 			mockGameErr:  nil,
+			mockCountRet: 0,
+			mockCountErr: nil,
 			mockMatchRet: nil,
 			mockMatchErr: domain.ErrInternal,
+			want:         nil,
+			wantErr:      true,
+		},
+		{
+			name: "Fail to create match due to too many active matches",
+			req: &domain.CreateMatchRequest{
+				UserID: "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+				GameID: "01HQZYX3VQJQZ3Z0Z1Z2ZGAME1",
+			},
+			mockGameRet: &domain.Game{
+				ID:       "01HQZYX3VQJQZ3Z0Z1Z2ZGAME1",
+				MaxTurns: 10,
+			},
+			mockGameErr:  nil,
+			mockCountRet: 5,
+			mockCountErr: nil,
+			mockMatchRet: nil,
+			mockMatchErr: nil,
 			want:         nil,
 			wantErr:      true,
 		},
@@ -93,7 +119,10 @@ func TestMatchUseCase_Create(t *testing.T) {
 			mockGameRepo.On("GetByID", mock.Anything, tt.req.GameID).Return(tt.mockGameRet, tt.mockGameErr)
 
 			if tt.mockGameErr == nil {
-				mockMatchRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.Match")).Return(tt.mockMatchRet, tt.mockMatchErr)
+				mockMatchRepo.On("CountByUserIDAndStatus", mock.Anything, tt.req.UserID, domain.MatchStatusActive).Return(tt.mockCountRet, tt.mockCountErr)
+				if tt.mockCountErr == nil && tt.mockCountRet < 5 {
+					mockMatchRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.Match")).Return(tt.mockMatchRet, tt.mockMatchErr)
+				}
 			}
 
 			uc := NewMatchUseCase(mockMatchRepo, mockGameRepo)
