@@ -3,44 +3,44 @@
 #   UPDATE users SET role = 'Admin' WHERE email = 'test.admin@example.com';
 
 # @name login
-POST http://localhost:8080/auth/login
+POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-    "email": "test.admin@example.com",
+    "email": "test1234@example.com",
     "password": "password123"
 }
 
-### 2. Create match (with Admin token)
+### 2. Create matc
 # @name createMatch
-POST http://localhost:8080/matches
+POST http://localhost:8080/api/matches
 Content-Type: application/json
 Authorization: Bearer {{login.response.body.access_token}}
 
 {
-    "game_id": "01KJ2XGG4QR2TBFVJDQW3K47T6"
+    "game_id": "01KK1XJSBCH9WCNV6DY3VHD3S1"
 }
 
 ### 3. Get user's matches - retrieves matches for authenticated user from JWT token
-GET http://localhost:8080/matches/me
+GET http://localhost:8080/api/matches/me
 Authorization: Bearer {{login.response.body.access_token}}
 
 ### 3-1. Get user's matches with game_id query param
-GET http://localhost:8080/matches/me?game_id=01KJ2XGG4QR2TBFVJDQW3K47T6
+GET http://localhost:8080/api/matches/me?game_id=01KJ2XGG4QR2TBFVJDQW3K47T6
 Authorization: Bearer {{login.response.body.access_token}}
 
 ### 4. Get specific match
-GET http://localhost:8080/matches/01KJJ0WJMJNSGT3KYTHC38WGHT
+GET http://localhost:8080/api/matches/01KJJ0WJMJNSGT3KYTHC38WGHT
 Authorization: Bearer {{login.response.body.access_token}}
 
 ### 4-1. Get specific match which is not belongs to the authenticated user - should return 403
-GET http://localhost:8080/matches/01KJ2XH1QAA1JH9CSWC3W86ZE6
+GET http://localhost:8080/api/matches/01KJ2XH1QAA1JH9CSWC3W86ZE6
 Authorization: Bearer {{login.response.body.access_token}}
 
 ### 4-2. Resign from match
-POST http://localhost:8080/matches/{{createMatch.response.body.id}}/resign
+POST http://localhost:8080/api/matches/{{createMatch.response.body.id}}/resign
 Authorization: Bearer {{login.response.body.access_token}}
 
 ### 5. Delete match (Admin only) - uses id from createMatch response
-DELETE http://localhost:8080/matches/{{createMatch.response.body.id}}
+DELETE http://localhost:8080/api/matches/{{createMatch.response.body.id}}
 Authorization: Bearer {{login.response.body.access_token}}

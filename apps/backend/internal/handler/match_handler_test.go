@@ -62,6 +62,14 @@ func TestMatchHandler_Create(t *testing.T) {
 			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
 		},
 		{
+			name:       "Fail due to max active matches reached",
+			body:       `{"game_id":"01HQZYX3VQJQZ3Z0Z1Z2ZGAME1"}`,
+			mockReturn: nil,
+			mockError:  domain.ErrConflict,
+			wantStatus: http.StatusConflict,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrConflict.Error()),
+		},
+		{
 			name:       "Fail due to internal error",
 			body:       `{"game_id":"01HQZYX3VQJQZ3Z0Z1Z2ZGAME1"}`,
 			mockReturn: nil,
