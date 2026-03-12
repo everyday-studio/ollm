@@ -10,6 +10,19 @@
 		isDarkMode: boolean;
 		onclick: () => void;
 	} = $props();
+
+	const judgeBadge = $derived.by(() => {
+		switch (game.judge_type) {
+			case 'target_word':
+				return { label: 'Target Word', bg: 'bg-purple-500/80', text: 'text-white' };
+			case 'llm_judge':
+				return { label: 'LLM Judge', bg: 'bg-blue-500/80', text: 'text-white' };
+			case 'format_break':
+				return { label: 'Format Break', bg: 'bg-orange-500/80', text: 'text-white' };
+			default:
+				return { label: 'Unknown', bg: 'bg-gray-500/80', text: 'text-white' };
+		}
+	});
 </script>
 
 <button
@@ -37,6 +50,12 @@
 					{tag}
 				</span>
 			{/each}
+		</div>
+
+		<div class="absolute top-2 right-2">
+			<span class="{judgeBadge.bg} {judgeBadge.text} backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold">
+				{judgeBadge.label}
+			</span>
 		</div>
 
 		<div

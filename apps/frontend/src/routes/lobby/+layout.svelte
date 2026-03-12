@@ -143,6 +143,13 @@
 				>
 					리더보드
 				</a>
+				<span class={`mx-2 self-center ${isDarkMode ? 'text-gray-700' : 'text-gray-300'}`}>|</span>
+				<a
+					href="/lobby/guide"
+					class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/lobby/guide') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+				>
+					가이드
+				</a>
 			</nav>
 		</div>
 

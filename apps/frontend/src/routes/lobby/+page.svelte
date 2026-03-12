@@ -25,6 +25,18 @@
 
 	let isLoading = $state(true);
 	let activeSection = $state<'games' | 'matches'>('games');
+	let judgeFilter = $state<'all' | 'target_word' | 'llm_judge' | 'format_break'>('all');
+
+	const judgeFilters = [
+		{ id: 'all' as const, label: '전체' },
+		{ id: 'target_word' as const, label: 'Target Word' },
+		{ id: 'llm_judge' as const, label: 'LLM Judge' },
+		{ id: 'format_break' as const, label: 'Format Break' }
+	];
+
+	let filteredGames = $derived(
+		judgeFilter === 'all' ? games : games.filter((g) => g.judge_type === judgeFilter)
+	);
 
 	// Hero Carousel
 	let currentSlide = $state(0);
@@ -359,12 +371,38 @@
 			<!-- Games Section -->
 			{#if activeSection === 'games'}
 				<div in:fly={{ y: 20, duration: 300 }}>
+					<!-- Judge Type Filter -->
+					<div class="flex gap-2 mb-4 overflow-x-auto pb-1">
+						{#each judgeFilters as jf (jf.id)}
+							<button
+								onclick={() => (judgeFilter = jf.id)}
+								class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {judgeFilter === jf.id
+									? jf.id === 'target_word'
+										? 'bg-purple-500 text-white shadow'
+										: jf.id === 'llm_judge'
+											? 'bg-blue-500 text-white shadow'
+											: jf.id === 'format_break'
+												? 'bg-orange-500 text-white shadow'
+												: 'bg-[#FF4D00] text-white shadow'
+									: isDarkMode
+										? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800'
+										: 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'}"
+							>
+								{jf.label}
+							</button>
+						{/each}
+					</div>
 					<!-- Games Grid -->
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-						{#each games as game (game.id)}
+						{#each filteredGames as game (game.id)}
 							<GameCard {game} {isDarkMode} onclick={() => openGameModal(game)} />
 						{/each}
 					</div>
+					{#if filteredGames.length === 0}
+						<div class={`text-center py-12 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+							<p class="text-sm">해당 유형의 게임이 없습니다.</p>
+						</div>
+					{/if}
 				</div>
 			{:else if activeSection === 'matches'}
 				<!-- Matches Section: Game cards with match stats -->
