@@ -43,7 +43,13 @@
 	class={`min-h-screen flex items-center justify-center p-4 transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950 text-white' : 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900'}`}
 >
 	<div class="text-center max-w-md mx-auto">
-		<div class="text-7xl mb-6">{emoji}</div>
+		{#if status === 404}
+			<div class="mb-6">
+				<img src="/Gemini_Generated_Image_lvz09rlvz09rlvz0.svg" alt="404 Lost Dinosaur" class="w-auto h-auto mx-auto" />
+			</div>
+		{:else}
+			<div class="text-7xl mb-6">{emoji}</div>
+		{/if}
 
 		<h1
 			class={`text-8xl font-black mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}
