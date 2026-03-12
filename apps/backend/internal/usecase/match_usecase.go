@@ -28,6 +28,16 @@ func (uc *matchUseCase) Create(ctx context.Context, req *domain.CreateMatchReque
 		return nil, fmt.Errorf("failed to get game for match creation: %w", err)
 	}
 
+	// Restrict to max 5 active matches
+	count, err := uc.matchRepo.CountByUserIDAndStatus(ctx, req.UserID, domain.MatchStatusActive)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count active matches: %w", err)
+	}
+
+	if count >= 5 {
+		return nil, fmt.Errorf("%w: maximum number of active matches (5) reached", domain.ErrConflict)
+	}
+
 	match := &domain.Match{
 		UserID:      req.UserID,
 		GameID:      req.GameID,

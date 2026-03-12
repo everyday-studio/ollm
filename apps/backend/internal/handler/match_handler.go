@@ -55,6 +55,8 @@ func (h *MatchHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
 	case errors.Is(err, domain.ErrNotFound):
 		return c.JSON(http.StatusNotFound, ErrResponse(domain.ErrNotFound))
+	case errors.Is(err, domain.ErrConflict):
+		return c.JSON(http.StatusConflict, ErrResponse(domain.ErrConflict))
 	default:
 		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
 	}
