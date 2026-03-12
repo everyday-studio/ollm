@@ -25,6 +25,35 @@
 
   let errorMessage = '';
 
+  // Guide tooltip
+  let showGuide = false;
+  let guideStep = 0;
+
+  const guideSteps = [
+    { icon: '🎮', title: '게임 선택', desc: '다양한 프롬프트 인젝션 게임 중 도전할 게임을 고르세요.' },
+    { icon: '💬', title: 'AI와 대화', desc: 'AI에게 메시지를 보내 방어를 뚫어보세요. 턴 수 제한이 있습니다.' },
+    { icon: '⚖️', title: '심판 판정', desc: '매 턴마다 심판이 인젝션 성공 여부를 판정합니다.' },
+    { icon: '🏆', title: '리더보드', desc: '적은 턴과 토큰으로 승리할수록 높은 순위를 받습니다.' }
+  ];
+
+  function handleToggleGuide() {
+    showGuide = !showGuide;
+    guideStep = 0;
+  }
+
+  function handleNextStep() {
+    if (guideStep < guideSteps.length - 1) {
+      guideStep++;
+    } else {
+      showGuide = false;
+      guideStep = 0;
+    }
+  }
+
+  function handlePrevStep() {
+    if (guideStep > 0) guideStep--;
+  }
+
   // 모달 열기/닫기
   const openModal = () => {
     showRegisterModal = true;
@@ -158,7 +187,60 @@
           alt="LLM GAMES Logo" 
           class="mx-auto h-16 w-auto mb-4" 
         />
-        <p class="text-gray-500 mt-2 text-sm">프롬프트 인젝션 플레이그라운드</p>
+        <div class="relative inline-flex items-center justify-center gap-1.5 mt-2">
+          <p class="text-gray-500 text-sm">LLM 플레이그라운드</p>
+          <button
+            type="button"
+            on:click={handleToggleGuide}
+            class="w-5 h-5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 text-xs font-bold flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+            aria-label="이용 가이드 보기"
+          >
+            ?
+          </button>
+
+          {#if showGuide}
+            <div
+              class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
+              transition:scale={{ duration: 150, start: 0.95 }}
+            >
+              <!-- Progress bar -->
+              <div class="h-1 bg-gray-100">
+                <div
+                  class="h-full bg-blue-500 transition-all duration-300"
+                  style="width: {((guideStep + 1) / guideSteps.length) * 100}%"
+                ></div>
+              </div>
+
+              <div class="p-5">
+                <div class="text-3xl mb-3">{guideSteps[guideStep].icon}</div>
+                <h3 class="text-sm font-bold text-gray-900 mb-1">
+                  <span class="text-blue-500">{guideStep + 1}/{guideSteps.length}</span>
+                  {guideSteps[guideStep].title}
+                </h3>
+                <p class="text-xs text-gray-500 leading-relaxed">{guideSteps[guideStep].desc}</p>
+              </div>
+
+              <div class="flex border-t border-gray-100">
+                {#if guideStep > 0}
+                  <button
+                    type="button"
+                    on:click={handlePrevStep}
+                    class="flex-1 py-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    이전
+                  </button>
+                {/if}
+                <button
+                  type="button"
+                  on:click={handleNextStep}
+                  class="flex-1 py-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer {guideStep > 0 ? 'border-l border-gray-100' : ''}"
+                >
+                  {guideStep < guideSteps.length - 1 ? '다음' : '닫기'}
+                </button>
+              </div>
+            </div>
+          {/if}
+        </div>
       </div>
 
       <form on:submit|preventDefault={handleLogin} class="space-y-5">
@@ -254,8 +336,18 @@
       </button>
   </div>
   
-  <div class="absolute bottom-4 text-center text-xs text-gray-400">
-    &copy; 2025 LLM GAMES. 모든 권리 보유.
+  <div class="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1.5 text-xs text-gray-400">
+    <p>&copy; 2026 <a href="https://everydaystudio.xyz" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-blue-500 font-semibold transition-colors">everydaystudio</a> &middot; ollm</p>
+    <a href="mailto:everydaystudio365@gmail.com" class="text-[10px] text-gray-400 hover:text-gray-600 transition-colors">everydaystudio365@gmail.com</a>
+    <a
+      href="https://everydaystudio.xyz"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 text-[11px] text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all"
+    >
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+      everydaystudio.xyz
+    </a>
   </div>
 
   {#if showRegisterModal}
