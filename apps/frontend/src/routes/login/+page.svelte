@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade, scale } from 'svelte/transition';
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { toast } from 'svelte-french-toast';
 
@@ -25,21 +26,58 @@
 
   let errorMessage = '';
 
-  // Guide tooltip
+  // Guide tooltip / modal
   let showGuide = false;
   let guideStep = 0;
 
   const guideSteps = [
-    { icon: '🎮', title: '게임 선택', desc: '다양한 프롬프트 인젝션 게임 중 도전할 게임을 고르세요.' },
-    { icon: '💬', title: 'AI와 대화', desc: 'AI에게 메시지를 보내 방어를 뚫어보세요. 턴 수 제한이 있습니다.' },
-    { icon: '⚖️', title: '심판 판정', desc: '매 턴마다 심판이 인젝션 성공 여부를 판정합니다.' },
-    { icon: '🏆', title: '리더보드', desc: '적은 턴과 토큰으로 승리할수록 높은 순위를 받습니다.' }
+    {
+      icon: '🎮',
+      title: '게임 선택',
+      desc:
+        'Ollm 에 오신 걸 환영합니다! 먼저 플레이하고 싶은 게임을 골라보세요. 각 게임 카드에서 규칙과 컨셉을 확인할 수 있습니다.'
+    },
+    {
+      icon: '💬',
+      title: 'AI와 대화',
+      desc:
+        '매치에서 AI와 번갈아 대화를 주고받습니다. AI는 게임의 상대방이자 심판입니다. 대화 내용이 게임의 승패를 결정하니, 창의적이고 전략적으로 접근해 보세요!'
+    },
+    {
+      icon: '⚖️',
+      title: '심판 판정',
+      desc:
+        '심판은 대화 내용을 바탕으로 승패를 판단합니다. 판정 로직은 게임마다 다르니 규칙을 잘 확인하세요. 승리 조건을 달성하면 매치에서 승리하게 됩니다.'
+    },
+    {
+      icon: '🏆',
+      title: '리더보드',
+      desc:
+        '턴 수와 사용한 토큰 수가 적을수록 상위에 오릅니다. 자신의 기록을 확인하고 다른 플레이어와 경쟁해 보세요 — 번뜩이는 아이디어로 순위 상승이 가능합니다.'
+    }
   ];
 
   function handleToggleGuide() {
     showGuide = !showGuide;
     guideStep = 0;
   }
+
+  // Open guide automatically on client mount (only once per browser via localStorage)
+  onMount(() => {
+    const key = 'ollm_guide_shown_v1';
+    try {
+      const shown = localStorage.getItem(key);
+      if (!shown) {
+        showGuide = true;
+        guideStep = 0;
+        localStorage.setItem(key, '1');
+      }
+    } catch (e) {
+      // If localStorage is unavailable for any reason, fall back to showing the guide.
+      showGuide = true;
+      guideStep = 0;
+    }
+  });
 
   function handleNextStep() {
     if (guideStep < guideSteps.length - 1) {
@@ -198,48 +236,7 @@
             ?
           </button>
 
-          {#if showGuide}
-            <div
-              class="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
-              transition:scale={{ duration: 150, start: 0.95 }}
-            >
-              <!-- Progress bar -->
-              <div class="h-1 bg-gray-100">
-                <div
-                  class="h-full bg-blue-500 transition-all duration-300"
-                  style="width: {((guideStep + 1) / guideSteps.length) * 100}%"
-                ></div>
-              </div>
-
-              <div class="p-5">
-                <div class="text-3xl mb-3">{guideSteps[guideStep].icon}</div>
-                <h3 class="text-sm font-bold text-gray-900 mb-1">
-                  <span class="text-blue-500">{guideStep + 1}/{guideSteps.length}</span>
-                  {guideSteps[guideStep].title}
-                </h3>
-                <p class="text-xs text-gray-500 leading-relaxed">{guideSteps[guideStep].desc}</p>
-              </div>
-
-              <div class="flex border-t border-gray-100">
-                {#if guideStep > 0}
-                  <button
-                    type="button"
-                    on:click={handlePrevStep}
-                    class="flex-1 py-2.5 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    이전
-                  </button>
-                {/if}
-                <button
-                  type="button"
-                  on:click={handleNextStep}
-                  class="flex-1 py-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer {guideStep > 0 ? 'border-l border-gray-100' : ''}"
-                >
-                  {guideStep < guideSteps.length - 1 ? '다음' : '닫기'}
-                </button>
-              </div>
-            </div>
-          {/if}
+          <!-- guide tooltip removed; guide will show as modal on page load -->
         </div>
       </div>
 
@@ -349,6 +346,51 @@
       everydaystudio.xyz
     </a>
   </div>
+
+  {#if showGuide}
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-6">
+      <div
+        class="fixed inset-0 bg-black/50"
+        transition:fade
+        role="button"
+        tabindex="0"
+        on:click={() => { showGuide = false; guideStep = 0; }}
+        on:keydown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') { showGuide = false; guideStep = 0 } }}
+      ></div>
+
+      <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl z-60 overflow-hidden" transition:scale={{ duration: 150, start: 0.95 }} role="dialog" aria-modal="true">
+        <div class="h-1 bg-gray-100">
+          <div class="h-full bg-blue-500" style="width: {((guideStep + 1) / guideSteps.length) * 100}%"></div>
+        </div>
+
+        <div class="p-6">
+          <button
+            type="button"
+            aria-label="가이드 닫기"
+            on:click={() => { showGuide = false; guideStep = 0; }}
+            class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-2 rounded-full focus:outline-none"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+          <div class="text-4xl mb-4">{guideSteps[guideStep].icon}</div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">
+            <span class="text-blue-500">{guideStep + 1}/{guideSteps.length}</span>
+            <span class="ml-2">{guideSteps[guideStep].title}</span>
+          </h3>
+          <p class="text-sm text-gray-600">{guideSteps[guideStep].desc}</p>
+        </div>
+
+        <div class="flex border-t border-gray-100">
+          {#if guideStep > 0}
+            <button type="button" on:click={handlePrevStep} class="flex-1 py-3 text-sm font-semibold text-gray-500 hover:bg-gray-50">이전</button>
+          {/if}
+          <button type="button" on:click={handleNextStep} class="flex-1 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50">
+            {guideStep < guideSteps.length -1 ? '다음' : '닫기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   {#if showRegisterModal}
     <div 

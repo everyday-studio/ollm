@@ -14,10 +14,20 @@
 
 	let showLogoutConfirm = $state(false);
 	let isDarkMode = $state(true);
+	let uiScale = $state<'small' | 'default' | 'large'>('default');
+
+	const scaleToFontSize = { small: '14px', default: '16px', large: '18px' } as const;
 
 	setContext('theme', {
 		get isDark() {
 			return isDarkMode;
+		},
+		get uiScale() {
+			return uiScale;
+		},
+		setUiScale(scale: 'small' | 'default' | 'large') {
+			uiScale = scale;
+			localStorage.setItem('ui-scale', scale);
 		}
 	});
 
@@ -28,6 +38,11 @@
 	onMount(async () => {
 		const savedTheme = localStorage.getItem('theme');
 		isDarkMode = savedTheme !== 'light';
+
+		const savedScale = localStorage.getItem('ui-scale');
+		if (savedScale === 'small' || savedScale === 'large') {
+			uiScale = savedScale;
+		}
 
 		// Restore session (deduplicated — safe if child pages also call ensureSession)
 		const isValidSession = await ensureSession();
@@ -46,6 +61,14 @@
 		} else {
 			document.documentElement.classList.remove('dark');
 		}
+	});
+
+	// Sync UI scale → html element font-size
+	$effect(() => {
+		document.documentElement.style.fontSize = scaleToFontSize[uiScale];
+		return () => {
+			document.documentElement.style.fontSize = '';
+		};
 	});
 
 	function toggleTheme() {

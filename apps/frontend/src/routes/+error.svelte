@@ -45,7 +45,7 @@
 	<div class="text-center max-w-md mx-auto">
 		{#if status === 404}
 			<div class="mb-6">
-				<img src="/Gemini_Generated_Image_lvz09rlvz09rlvz0.svg" alt="404 Lost Dinosaur" class="w-auto h-auto mx-auto" />
+				<img src={isDarkMode ? "/Gemini_Generated_Image_darkmode.svg" : "/Gemini_Generated_Image_lvz09rlvz09rlvz0.svg"} alt="404 Lost Dinosaur" class="w-auto h-auto mx-auto" />
 			</div>
 		{:else}
 			<div class="text-7xl mb-6">{emoji}</div>

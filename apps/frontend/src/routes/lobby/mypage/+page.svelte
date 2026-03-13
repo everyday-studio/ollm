@@ -10,7 +10,7 @@
 	import { uploadApi } from '$lib/features/upload/api';
 	import type { User } from '$lib/features/auth/types';
 
-	const theme = getContext<{ isDark: boolean }>('theme');
+	const theme = getContext<{ isDark: boolean; uiScale: 'small' | 'default' | 'large'; setUiScale: (s: 'small' | 'default' | 'large') => void }>('theme');
 	let isDarkMode = $derived(theme.isDark);
 
 	// ----------------------------------------------------------------
@@ -531,6 +531,45 @@
 							</div>
 						</div>
 					</button>
+				</div>
+
+				<!-- UI Settings -->
+				<div
+					class={`rounded-2xl border overflow-hidden shadow-lg transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
+					in:fly={{ y: 20, duration: 300, delay: 150 }}
+				>
+					<div class={`px-6 py-5 md:px-8 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+						<h3 class={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+							UI 설정
+						</h3>
+						<p class={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+							화면 표시 설정을 조정합니다
+						</p>
+					</div>
+					<div class="px-6 py-5 md:px-8 space-y-5">
+						<!-- Font size -->
+						<div>
+							<span class={`text-sm font-medium block mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+								글씨 크기
+							</span>
+							<div class="flex gap-2">
+								{#each [{ value: 'small', label: '작게' }, { value: 'default', label: '보통' }, { value: 'large', label: '크게' }] as opt (opt.value)}
+									<button
+										onclick={() => theme.setUiScale(opt.value as 'small' | 'default' | 'large')}
+										class={`flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+											theme.uiScale === opt.value
+												? 'bg-[#FF4D00] text-white'
+												: isDarkMode
+													? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+													: 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+										}`}
+									>
+										{opt.label}
+									</button>
+								{/each}
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		{:else}

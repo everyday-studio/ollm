@@ -33,6 +33,7 @@
 	let errorMessage = $state('');
 	let showResignModal = $state(false);
 	let showSidebar = $state(false);
+	let showGameInfo = $state(false);
 	let sessionRestored = $state(false);
 	let latestLoadToken = 0;
 
@@ -52,6 +53,11 @@
 	let isGamePlayable = $derived(game?.status === 'active' && game?.is_public === true);
 	let statusLabel = $derived(getStatusLabel(match?.status));
 	let statusColor = $derived(getStatusColor(match?.status));
+	let gameThumbnailUrl = $derived(
+		game
+			? `https://storage.googleapis.com/ollm-assets-prod/game/${game.id}.png`
+			: ''
+	);
 
 	// ----------------------------------------------------------------
 	// Chat container ref for auto-scroll
@@ -498,12 +504,12 @@
 
 				<!-- Top bar -->
 				<div
-					class={`relative shrink-0 flex items-center justify-center py-2.5 border-b transition-colors ${
+					class={`relative shrink-0 flex items-center justify-between py-2.5 px-3 border-b transition-colors ${
 						isDarkMode ? 'border-gray-800/70' : 'border-gray-200'
 					}`}
 				>
-					<!-- Left: Back to lobby (absolute) -->
-					<div class="absolute left-3">
+					<!-- Left: Back to lobby + match list toggle (small screens) -->
+					<div class="flex items-center gap-1">
 						<button
 							onclick={goToLobby}
 							class={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -522,15 +528,55 @@
 							</svg>
 							로비
 						</button>
+						<button
+							onclick={() => (showSidebar = !showSidebar)}
+							class={`lg:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+								isDarkMode
+									? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+									: 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+							}`}
+							aria-label="매치 목록"
+						>
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 6h16M4 12h16M4 18h7"
+								/>
+							</svg>
+							매치
+						</button>
 					</div>
 
-					<!-- Center: Game title -->
-					<span class={`font-semibold text-sm truncate max-w-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+					<!-- Center: Game title (absolute center) -->
+					<span class={`absolute left-1/2 -translate-x-1/2 font-semibold text-sm truncate max-w-[40%] pointer-events-none ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
 						{gameTitle}
 					</span>
 
-					<!-- Right: Resign button (absolute) -->
-					<div class="absolute right-3">
+					<!-- Right: Game info toggle (small screens) + Resign -->
+					<div class="flex items-center gap-1">
+						{#if game}
+							<button
+								onclick={() => (showGameInfo = !showGameInfo)}
+								class={`xl:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+									isDarkMode
+										? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+										: 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+								}`}
+								aria-label="게임 정보"
+							>
+								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+									/>
+								</svg>
+								정보
+							</button>
+						{/if}
 						{#if isMatchActive}
 							<button
 								onclick={() => (showResignModal = true)}
@@ -544,25 +590,6 @@
 							</button>
 						{/if}
 					</div>
-
-					<!-- Mobile: hamburger overlay -->
-					<button
-						onclick={() => (showSidebar = !showSidebar)}
-						class={`lg:hidden shrink-0 p-1.5 rounded-lg transition-colors absolute left-3 bottom-full mb-2 ${
-							isDarkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
-						}`}
-						aria-label="매치 목록"
-						style="display: {showSidebar ? 'none' : 'block'}"
-					>
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 6h16M4 12h16M4 18h7"
-							/>
-						</svg>
-					</button>
 				</div>
 
 				<!-- Body row: sidebar + bordered chat column -->
@@ -1067,6 +1094,45 @@
 							</div>
 						{/if}
 					</div>
+
+					<!-- ===== Right panel: Game info (desktop) ===== -->
+					{#if game}
+						<aside
+							class={`hidden xl:flex flex-col w-[280px] shrink-0 transition-colors ${
+								isDarkMode ? 'bg-gray-950' : 'bg-gray-50'
+							}`}
+						>
+							<div class="p-4 space-y-4 overflow-y-auto scrollbar-hide">
+								<!-- Thumbnail -->
+								<div class={`rounded-xl overflow-hidden ring-1 ${isDarkMode ? 'ring-gray-800' : 'ring-gray-200'}`}>
+									<img
+										src={gameThumbnailUrl}
+										alt={game.title}
+										class="w-full aspect-[4/3] object-cover"
+										onerror={(e) => {
+											const el = e.currentTarget as HTMLImageElement;
+											el.onerror = null;
+											el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+										}}
+									/>
+								</div>
+
+								<!-- Title -->
+								<div>
+									<h3 class={`font-bold text-sm leading-snug ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+										{game.title}
+									</h3>
+								</div>
+
+								<!-- Description -->
+								{#if game.description}
+									<p class={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+										{game.description}
+									</p>
+								{/if}
+							</div>
+						</aside>
+					{/if}
 				</div>
 			</div>
 		{/if}
@@ -1228,6 +1294,76 @@
 				</button>
 			</div>
 		{/if}
+	</aside>
+{/if}
+
+<!-- ==================== Mobile game info panel ==================== -->
+{#if showGameInfo && game}
+	<div
+		class="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 xl:hidden"
+		onclick={() => (showGameInfo = false)}
+		transition:fade={{ duration: 150 }}
+		role="presentation"
+	></div>
+	<aside
+		class={`fixed top-16 right-0 bottom-0 w-[300px] z-40 flex flex-col xl:hidden shadow-2xl ${
+			isDarkMode ? 'bg-gray-900' : 'bg-white'
+		}`}
+		transition:fly={{ x: 300, duration: 200 }}
+	>
+		<!-- Header -->
+		<div
+			class={`shrink-0 px-4 pt-4 pb-3 border-b flex items-center justify-between ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}
+		>
+			<h2 class={`font-bold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+				게임 정보
+			</h2>
+			<button
+				onclick={() => (showGameInfo = false)}
+				class={`shrink-0 p-1 rounded-lg ${isDarkMode ? 'text-gray-500 hover:bg-gray-800' : 'text-gray-400 hover:bg-gray-100'}`}
+				aria-label="닫기"
+			>
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M6 18L18 6M6 6l12 12"
+					/>
+				</svg>
+			</button>
+		</div>
+
+		<!-- Content -->
+		<div class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+			<!-- Thumbnail -->
+			<div class={`rounded-xl overflow-hidden ring-1 ${isDarkMode ? 'ring-gray-800' : 'ring-gray-200'}`}>
+				<img
+					src={gameThumbnailUrl}
+					alt={game.title}
+					class="w-full aspect-[4/3] object-cover"
+					onerror={(e) => {
+						const el = e.currentTarget as HTMLImageElement;
+						el.onerror = null;
+						el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+					}}
+				/>
+			</div>
+
+			<!-- Title -->
+			<h3 class={`font-bold text-base leading-snug ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+				{game.title}
+			</h3>
+
+			<!-- Description -->
+			{#if game.description}
+				<p class={`text-sm leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+					{game.description}
+				</p>
+			{/if}
+
+
+		</div>
 	</aside>
 {/if}
 
