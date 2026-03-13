@@ -244,6 +244,11 @@
 									src={games[currentSlide].image}
 									alt={games[currentSlide].title}
 									class="w-full h-full object-cover"
+									onerror={(e) => {
+										const el = e.currentTarget as HTMLImageElement;
+										el.onerror = null;
+										el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+									}}
 								/>
 								<div
 									class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"
@@ -436,8 +441,11 @@
 											<img
 												src={gameUI.image}
 												alt={group.gameTitle}
-												class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-											/>
+												class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"											onerror={(e) => {
+												const el = e.currentTarget as HTMLImageElement;
+												el.onerror = null;
+												el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+											}}											/>
 										{:else}
 											<div
 												class={`w-full h-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
