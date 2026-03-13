@@ -14,13 +14,25 @@
 	const judgeBadge = $derived.by(() => {
 		switch (game.judge_type) {
 			case 'target_word':
-				return { label: 'Target Word', bg: 'bg-purple-500/80', text: 'text-white' };
+				return {
+					label: 'Target Word',
+					classes: 'bg-purple-500/90 text-white border border-purple-300/40'
+				};
 			case 'llm_judge':
-				return { label: 'LLM Judge', bg: 'bg-blue-500/80', text: 'text-white' };
+				return {
+					label: 'LLM Judge',
+					classes: 'bg-blue-500/90 text-white border border-blue-300/40'
+				};
 			case 'format_break':
-				return { label: 'Format Break', bg: 'bg-orange-500/80', text: 'text-white' };
+				return {
+					label: 'Format Break',
+					classes: 'bg-orange-500/90 text-white border border-orange-300/40'
+				};
 			default:
-				return { label: 'Unknown', bg: 'bg-gray-500/80', text: 'text-white' };
+				return {
+					label: 'Unknown',
+					classes: 'bg-gray-500/90 text-white border border-gray-300/40'
+				};
 		}
 	});
 </script>
@@ -53,7 +65,9 @@
 		</div>
 
 		<div class="absolute top-2 right-2">
-			<span class="{judgeBadge.bg} {judgeBadge.text} backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold">
+			<span
+				class="{judgeBadge.classes} backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm"
+			>
 				{judgeBadge.label}
 			</span>
 		</div>
