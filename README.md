@@ -39,7 +39,10 @@
   에셋 관리를 위해 클라이언트 다이렉트 업로드 대신 서버를 경유하는 GCP GCS 이미지 통신 로직을 구축했습니다.
 
 - **Modern Frontend Architecture & Security**
-  **Svelte 5 Runes**를 도입해 선언적이고 직관적인 상태 관리를 구현했습니다. **Tailwind CSS v4**로 유연하고 일관된 UI를 구성하고, **Axios Interceptor**를 활용한 Access/Refresh Token 기반 Soft Auth 로직으로 매끄럽고 안전한 사용자 세션 연장을 보장합니다.
+  **Svelte 5 Runes**를 도입해 선언적이고 직관적인 상태 관리를 구현했습니다. **Tailwind CSS v4**로 유연하고 일관된 UI를 구성하고, **Axios Interceptor**를 활용한 Access/Refresh Token 기반 Soft Auth 로직으로 매끄럽고 안전한 사용자 세션 연장을 보장합니다. 더불어 Promise Deduplication을 적용해 여러 컴포넌트 마운트 시에도 토큰 갱신 요청(`ensureSession`)이 중복 발생하지 않도록 네트워크를 최적화했습니다.
+
+- **Frontend Performance & Caching**
+  프론트엔드 단에 자체적인 TTL 기반 인메모리 캐시 레이어(`lib/cache`)를 구축해 무분별한 데이터 페칭을 제한했습니다. 매치 생성이나 완료 등 실제 상태 변경이 발생하는 특정 시점에만 데이터 캐시 무효화(Invalidate)를 수행해, 서버 부하와 사용자 체감 속도의 균형을 맞췄습니다.
 
 - **Admin Dashboard & RBAC Authorization**
   유저 및 게임 데이터의 원활한 라이브 서비스를 위해 자체적인 Admin 백오피스를 구축했습니다. 백엔드에서 Role-Based 미들웨어를 통해 권한별 접근을 엄격하게 제어하며, 프론트엔드에서도 관리자 전용 라우팅과 API를 완전히 분리하여 안전한 운영 환경을 확보했습니다.
@@ -58,7 +61,13 @@ apps/
 │   ├── usecase/    # 실제 비즈니스, 권한 판별 로직 및 외부 연동 (LLM/GCS) 오케스트레이션 계층
 │   └── handler/    # HTTP 통신 (Echo v4), 파라미터 바인딩 및 무결성 검증 계층
 └── frontend/src/
-    └── routes/     # SvelteKit 파일 기반 라우팅 및 UI/상태 관리 컴포넌트 계층 (+page.svelte)
+    ├── lib/        # API 클라이언트, 인메모리 캐시, Svelte Store 및 공통 컴포넌트 계층
+    └── routes/     # SvelteKit 파일 기반 라우팅 및 UI/상태 관리 계층 (page/layout 분리)
+        ├── login/      # 로그인/회원가입 라우팅 (+page.server.ts 기반 서버 검증)
+        └── lobby/      # 'refresh_token' 쿠키 기반 보호 라우팅 (+layout.server.ts)
+            ├── match/      # 실시간 대화 플레이 및 상태 전환
+            ├── leaderboard/# 게임별 랭킹 및 한글 자모 검색
+            └── mypage/     # 유저 프로필 관리
 ```
 
 ---
