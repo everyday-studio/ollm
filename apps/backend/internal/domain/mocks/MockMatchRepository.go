@@ -22,27 +22,27 @@ func (_m *MatchRepository) EXPECT() *MatchRepository_Expecter {
 	return &MatchRepository_Expecter{mock: &_m.Mock}
 }
 
-// CountByUserIDAndStatus provides a mock function with given fields: ctx, userID, status
-func (_m *MatchRepository) CountByUserIDAndStatus(ctx context.Context, userID string, status domain.MatchStatus) (int, error) {
-	ret := _m.Called(ctx, userID, status)
+// CountByUserIDGameIDAndStatus provides a mock function with given fields: ctx, userID, gameID, status
+func (_m *MatchRepository) CountByUserIDGameIDAndStatus(ctx context.Context, userID string, gameID string, status domain.MatchStatus) (int, error) {
+	ret := _m.Called(ctx, userID, gameID, status)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CountByUserIDAndStatus")
+		panic("no return value specified for CountByUserIDGameIDAndStatus")
 	}
 
 	var r0 int
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, domain.MatchStatus) (int, error)); ok {
-		return rf(ctx, userID, status)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, domain.MatchStatus) (int, error)); ok {
+		return rf(ctx, userID, gameID, status)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, domain.MatchStatus) int); ok {
-		r0 = rf(ctx, userID, status)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, domain.MatchStatus) int); ok {
+		r0 = rf(ctx, userID, gameID, status)
 	} else {
 		r0 = ret.Get(0).(int)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, domain.MatchStatus) error); ok {
-		r1 = rf(ctx, userID, status)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, domain.MatchStatus) error); ok {
+		r1 = rf(ctx, userID, gameID, status)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -50,32 +50,33 @@ func (_m *MatchRepository) CountByUserIDAndStatus(ctx context.Context, userID st
 	return r0, r1
 }
 
-// MatchRepository_CountByUserIDAndStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CountByUserIDAndStatus'
-type MatchRepository_CountByUserIDAndStatus_Call struct {
+// MatchRepository_CountByUserIDGameIDAndStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CountByUserIDGameIDAndStatus'
+type MatchRepository_CountByUserIDGameIDAndStatus_Call struct {
 	*mock.Call
 }
 
-// CountByUserIDAndStatus is a helper method to define mock.On call
+// CountByUserIDGameIDAndStatus is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID string
+//   - gameID string
 //   - status domain.MatchStatus
-func (_e *MatchRepository_Expecter) CountByUserIDAndStatus(ctx interface{}, userID interface{}, status interface{}) *MatchRepository_CountByUserIDAndStatus_Call {
-	return &MatchRepository_CountByUserIDAndStatus_Call{Call: _e.mock.On("CountByUserIDAndStatus", ctx, userID, status)}
+func (_e *MatchRepository_Expecter) CountByUserIDGameIDAndStatus(ctx interface{}, userID interface{}, gameID interface{}, status interface{}) *MatchRepository_CountByUserIDGameIDAndStatus_Call {
+	return &MatchRepository_CountByUserIDGameIDAndStatus_Call{Call: _e.mock.On("CountByUserIDGameIDAndStatus", ctx, userID, gameID, status)}
 }
 
-func (_c *MatchRepository_CountByUserIDAndStatus_Call) Run(run func(ctx context.Context, userID string, status domain.MatchStatus)) *MatchRepository_CountByUserIDAndStatus_Call {
+func (_c *MatchRepository_CountByUserIDGameIDAndStatus_Call) Run(run func(ctx context.Context, userID string, gameID string, status domain.MatchStatus)) *MatchRepository_CountByUserIDGameIDAndStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(domain.MatchStatus))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(domain.MatchStatus))
 	})
 	return _c
 }
 
-func (_c *MatchRepository_CountByUserIDAndStatus_Call) Return(_a0 int, _a1 error) *MatchRepository_CountByUserIDAndStatus_Call {
+func (_c *MatchRepository_CountByUserIDGameIDAndStatus_Call) Return(_a0 int, _a1 error) *MatchRepository_CountByUserIDGameIDAndStatus_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MatchRepository_CountByUserIDAndStatus_Call) RunAndReturn(run func(context.Context, string, domain.MatchStatus) (int, error)) *MatchRepository_CountByUserIDAndStatus_Call {
+func (_c *MatchRepository_CountByUserIDGameIDAndStatus_Call) RunAndReturn(run func(context.Context, string, string, domain.MatchStatus) (int, error)) *MatchRepository_CountByUserIDGameIDAndStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

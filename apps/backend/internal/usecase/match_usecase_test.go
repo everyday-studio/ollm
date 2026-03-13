@@ -119,7 +119,7 @@ func TestMatchUseCase_Create(t *testing.T) {
 			mockGameRepo.On("GetByID", mock.Anything, tt.req.GameID).Return(tt.mockGameRet, tt.mockGameErr)
 
 			if tt.mockGameErr == nil {
-				mockMatchRepo.On("CountByUserIDAndStatus", mock.Anything, tt.req.UserID, domain.MatchStatusActive).Return(tt.mockCountRet, tt.mockCountErr)
+				mockMatchRepo.On("CountByUserIDGameIDAndStatus", mock.Anything, tt.req.UserID, tt.req.GameID, domain.MatchStatusActive).Return(tt.mockCountRet, tt.mockCountErr)
 				if tt.mockCountErr == nil && tt.mockCountRet < 5 {
 					mockMatchRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.Match")).Return(tt.mockMatchRet, tt.mockMatchErr)
 				}

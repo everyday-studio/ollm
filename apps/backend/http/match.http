@@ -11,14 +11,24 @@ Content-Type: application/json
     "password": "password123"
 }
 
-### 2. Create matc
-# @name createMatch
+### 2. Create match for Game A
+# @name createMatchGameA
 POST http://localhost:8080/api/matches
 Content-Type: application/json
 Authorization: Bearer {{login.response.body.access_token}}
 
 {
     "game_id": "01KK1XJSBCH9WCNV6DY3VHD3S1"
+}
+
+### 2-1. Create another match for Game B (should succeed independently of Game A's count)
+# @name createMatchGameB
+POST http://localhost:8080/api/matches
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
+
+{
+    "game_id": "01KJ2XGG4QR2TBFVJDQW3K47T6"
 }
 
 ### 3. Get user's matches - retrieves matches for authenticated user from JWT token
@@ -35,12 +45,4 @@ Authorization: Bearer {{login.response.body.access_token}}
 
 ### 4-1. Get specific match which is not belongs to the authenticated user - should return 403
 GET http://localhost:8080/api/matches/01KJ2XH1QAA1JH9CSWC3W86ZE6
-Authorization: Bearer {{login.response.body.access_token}}
-
-### 4-2. Resign from match
-POST http://localhost:8080/api/matches/{{createMatch.response.body.id}}/resign
-Authorization: Bearer {{login.response.body.access_token}}
-
-### 5. Delete match (Admin only) - uses id from createMatch response
-DELETE http://localhost:8080/api/matches/{{createMatch.response.body.id}}
 Authorization: Bearer {{login.response.body.access_token}}
