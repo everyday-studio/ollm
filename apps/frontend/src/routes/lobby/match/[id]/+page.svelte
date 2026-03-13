@@ -9,6 +9,8 @@
 	import { ensureSession } from '$lib/features/auth/session';
 	import { invalidateMatchesCache } from '$lib/cache/gameCache';
 	import type { MatchDTO, GameDTO, MessageDTO, MatchStatus } from '$lib/features/game/types';
+	import { getStatusLabel, getStatusColor, getShortStatusLabel } from '$lib/utils/gameHelpers';
+	import { handleImageError, DEFAULT_GAME_THUMBNAIL } from '$lib/utils/imageFallback';
 
 	const theme = getContext<{ isDark: boolean }>('theme');
 	let isDarkMode = $derived(theme.isDark);
@@ -323,72 +325,6 @@
 		if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
 			e.preventDefault();
 			handleSendMessage();
-		}
-	}
-
-	// ----------------------------------------------------------------
-	// Status helpers
-	// ----------------------------------------------------------------
-	function getStatusLabel(status: MatchStatus | undefined): string {
-		switch (status) {
-			case 'active':
-				return '진행 중';
-			case 'generating':
-				return 'AI 응답 중...';
-			case 'won':
-				return '승리';
-			case 'lost':
-				return '패배';
-			case 'resigned':
-				return '기권';
-			case 'expired':
-				return '만료';
-			case 'error':
-				return '오류';
-			default:
-				return '—';
-		}
-	}
-
-	function getStatusColor(status: MatchStatus | undefined): string {
-		switch (status) {
-			case 'active':
-				return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-			case 'generating':
-				return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-			case 'won':
-				return 'bg-green-500/20 text-green-400 border-green-500/30';
-			case 'lost':
-				return 'bg-red-500/20 text-red-400 border-red-500/30';
-			case 'resigned':
-				return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-			case 'expired':
-				return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-			case 'error':
-				return 'bg-red-500/20 text-red-400 border-red-500/30';
-			default:
-				return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-		}
-	}
-
-	function getShortStatusLabel(status: MatchStatus): string {
-		switch (status) {
-			case 'active':
-				return '진행 중';
-			case 'generating':
-				return '생성 중';
-			case 'won':
-				return '승리';
-			case 'lost':
-				return '패배';
-			case 'resigned':
-				return '기권';
-			case 'expired':
-				return '만료';
-			case 'error':
-				return '오류';
-			default:
-				return status;
 		}
 	}
 
@@ -1109,11 +1045,7 @@
 										src={gameThumbnailUrl}
 										alt={game.title}
 										class="w-full aspect-[4/3] object-cover"
-										onerror={(e) => {
-											const el = e.currentTarget as HTMLImageElement;
-											el.onerror = null;
-											el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
-										}}
+										onerror={handleImageError(DEFAULT_GAME_THUMBNAIL)}
 									/>
 								</div>
 
@@ -1342,11 +1274,7 @@
 					src={gameThumbnailUrl}
 					alt={game.title}
 					class="w-full aspect-[4/3] object-cover"
-					onerror={(e) => {
-						const el = e.currentTarget as HTMLImageElement;
-						el.onerror = null;
-						el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
-					}}
+					onerror={handleImageError(DEFAULT_GAME_THUMBNAIL)}
 				/>
 			</div>
 

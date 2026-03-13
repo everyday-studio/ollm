@@ -24,6 +24,7 @@ src/
 │   │   ├── game/       # 게임·매치·메시지 API
 │   │   ├── upload/     # GCS 이미지 업로드
 │   │   └── user/       # 유저 프로필 API
+│   ├── utils/          # 공통 유틸리티 (게임 헬퍼, 이미지 폴백 등)
 │   └── components/ui/  # 공통 UI 컴포넌트 (GameCard 등)
 ├── routes/
 │   ├── +page.server.ts     # 루트 → /lobby 또는 /login 리다이렉트

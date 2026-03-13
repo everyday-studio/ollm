@@ -9,6 +9,7 @@
 	import { authStore } from '$lib/features/auth/model';
 	import { ensureSession, resetSession } from '$lib/features/auth/session';
 	import { invalidateCache } from '$lib/cache/apiCache';
+	import { handleImageError, DEFAULT_USER_PROFILE } from '$lib/utils/imageFallback';
 
 	let { children } = $props();
 
@@ -32,7 +33,6 @@
 	});
 
 	let currentUserEmail = $derived($authStore?.user?.email ?? 'Guest');
-	//let currentUserInitial = $derived(($authStore?.user?.email && $authStore.user.email[0]) ? $authStore.user.email[0].toUpperCase() : 'U');
 	let currentPath = $derived($page.url.pathname);
 
 	onMount(async () => {
@@ -223,14 +223,10 @@
 					<img
 						src={$authStore.user?.id
 							? `https://storage.googleapis.com/ollm-assets-prod/user/${$authStore.user.id}.png`
-							: 'https://storage.googleapis.com/ollm-assets-prod/default/user_profile.png'}
+							: DEFAULT_USER_PROFILE}
 						alt="프로필"
 						class="w-8 h-8 rounded-full object-cover shadow-sm"
-						onerror={(e) => {
-							const el = e.currentTarget as HTMLImageElement;
-							el.onerror = null;
-							el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/user_profile.png';
-						}}
+						onerror={handleImageError(DEFAULT_USER_PROFILE)}
 					/>
 
 					<div class="flex flex-col">

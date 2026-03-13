@@ -9,6 +9,7 @@
 	import { userApi } from '$lib/features/user/api';
 	import { uploadApi } from '$lib/features/upload/api';
 	import type { User } from '$lib/features/auth/types';
+	import { handleImageError, DEFAULT_USER_PROFILE } from '$lib/utils/imageFallback';
 
 	const theme = getContext<{ isDark: boolean; uiScale: 'small' | 'default' | 'large'; setUiScale: (s: 'small' | 'default' | 'large') => void }>('theme');
 	let isDarkMode = $derived(theme.isDark);
@@ -27,9 +28,8 @@
 	let isUploading = $state(false);
 	let avatarCacheBust = $state('');
 	const GCS_BASE = 'https://storage.googleapis.com/ollm-assets-prod';
-	const DEFAULT_AVATAR = `${GCS_BASE}/default/user_profile.png`;
 	let avatarUrl = $derived(
-		user ? `${GCS_BASE}/user/${user.id}.png${avatarCacheBust}` : DEFAULT_AVATAR
+		user ? `${GCS_BASE}/user/${user.id}.png${avatarCacheBust}` : DEFAULT_USER_PROFILE
 	);
 	let fileInput = $state<HTMLInputElement | null>(null);
 
@@ -244,11 +244,7 @@
 								src={avatarUrl}
 								alt="프로필"
 								class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
-								onerror={(e) => {
-									const el = e.currentTarget as HTMLImageElement;
-									el.onerror = null;
-									el.src = DEFAULT_AVATAR;
-								}}
+								onerror={handleImageError(DEFAULT_USER_PROFILE)}
 							/>
 							<!-- Hover overlay -->
 							<div
