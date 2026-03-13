@@ -24,20 +24,23 @@
 	let match = $state<MatchDTO | null>(null);
 	let game = $state<GameDTO | null>(null);
 	let messages = $state<MessageDTO[]>([]);
+	let gameTitle = $derived(game?.title ?? 'Game');
 	let siblingMatches = $state<MatchDTO[]>([]);
 	let inputText = $state('');
 	let isLoading = $state(true);
 	let isChatLoading = $state(false);
-	let isSending = $state(false);
+	let sendingMatchId = $state<string | null>(null);
 	let errorMessage = $state('');
 	let showResignModal = $state(false);
 	let showSidebar = $state(false);
 	let sessionRestored = $state(false);
+	let latestLoadToken = 0;
 
 	// Derived helpers
 	let visibleMessages = $derived(messages.filter((m) => m.is_visible));
 	let isMatchActive = $derived(match?.status === 'active');
 	let isGenerating = $derived(match?.status === 'generating');
+	let isSending = $derived(sendingMatchId === matchId);
 	let isTerminal = $derived(
 		match?.status === 'won' ||
 			match?.status === 'lost' ||
@@ -80,6 +83,7 @@
 	});
 
 	async function loadMatchData(id: string) {
+		const loadToken = ++latestLoadToken;
 		// If we already have sidebar data (same game), only reload chat
 		// Use untrack to prevent game/siblingMatches from becoming $effect dependencies
 		const isIntraGameNav = untrack(() => game !== null && siblingMatches.length > 0);
@@ -97,6 +101,10 @@
 				messageApi.getHistory(id)
 			]);
 
+			if (loadToken !== latestLoadToken || id !== matchId) {
+				return;
+			}
+
 			match = matchRes.data;
 			messages = messagesRes.data ?? [];
 
@@ -107,6 +115,11 @@
 						gameApi.getGameById(match.game_id),
 						gameApi.getMyMatchesByGame(match.game_id)
 					]);
+
+					if (loadToken !== latestLoadToken || id !== matchId) {
+						return;
+					}
+
 					game = gameRes.data;
 					siblingMatches = (siblingsRes.data ?? []).sort(
 						(a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -118,6 +131,10 @@
 
 			scrollToBottom();
 		} catch (e: unknown) {
+			if (loadToken !== latestLoadToken || id !== matchId) {
+				return;
+			}
+
 			const err = e as { response?: { status?: number } };
 			const status = err?.response?.status;
 			if (status === 403) {
@@ -128,8 +145,10 @@
 				errorMessage = '매치 정보를 불러오는 데 실패했습니다.';
 			}
 		} finally {
-			isLoading = false;
-			isChatLoading = false;
+			if (loadToken === latestLoadToken && id === matchId) {
+				isLoading = false;
+				isChatLoading = false;
+			}
 		}
 	}
 
@@ -138,12 +157,18 @@
 	// ----------------------------------------------------------------
 	async function handleSendMessage() {
 		const currentMatchId = matchId;
-		if (!currentMatchId || !inputText.trim() || isSending || !isMatchActive || !isGamePlayable)
+		if (
+			!currentMatchId ||
+			!inputText.trim() ||
+			sendingMatchId === currentMatchId ||
+			!isMatchActive ||
+			!isGamePlayable
+		)
 			return;
 
 		const userContent = inputText.trim();
 		inputText = '';
-		isSending = true;
+		sendingMatchId = currentMatchId;
 		errorMessage = '';
 
 		// Optimistic: add user message to UI immediately
@@ -170,6 +195,10 @@
 			const res = await messageApi.sendMessage(currentMatchId, { content: userContent });
 			const aiMessage = res.data;
 
+			if (currentMatchId !== matchId) {
+				return;
+			}
+
 			messages = [...messages, aiMessage];
 
 			// Refresh match state to get updated status/turn_count
@@ -189,6 +218,10 @@
 
 			scrollToBottom();
 		} catch (e: unknown) {
+			if (currentMatchId !== matchId) {
+				return;
+			}
+
 			const err = e as { response?: { status?: number } };
 			const status = err?.response?.status;
 			if (status === 409) {
@@ -210,7 +243,9 @@
 				match = { ...match, status: 'active' as MatchStatus };
 			}
 		} finally {
-			isSending = false;
+			if (sendingMatchId === currentMatchId) {
+				sendingMatchId = null;
+			}
 		}
 	}
 
@@ -248,7 +283,24 @@
 			// Navigate to the new match (triggers $effect reload)
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			await goto(`/lobby/match/${res.data.id}`);
-		} catch {
+		} catch (e: unknown) {
+			const err = e as { response?: { status?: number } };
+			if (err?.response?.status === 409) {
+				try {
+					const matchesRes = await gameApi.getMyMatchesByGame(game.id);
+					const latestMatch = (matchesRes.data ?? []).sort(
+						(a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+					)[0];
+
+					if (latestMatch?.id) {
+						// eslint-disable-next-line svelte/no-navigation-without-resolve
+						await goto(`/lobby/match/${latestMatch.id}`);
+						return;
+					}
+				} catch {
+					/* ignore and fall through to user-facing error */
+				}
+			}
 			errorMessage = '새 매치 생성에 실패했습니다.';
 		}
 	}
@@ -446,16 +498,15 @@
 
 				<!-- Top bar -->
 				<div
-					class={`shrink-0 flex items-center justify-between py-2.5 border-b transition-colors ${
+					class={`relative shrink-0 flex items-center justify-center py-2.5 border-b transition-colors ${
 						isDarkMode ? 'border-gray-800/70' : 'border-gray-200'
 					}`}
 				>
-					<!-- Left group -->
-					<div class="flex items-center gap-2 min-w-0">
-						<!-- Back to lobby -->
+					<!-- Left: Back to lobby (absolute) -->
+					<div class="absolute left-3">
 						<button
 							onclick={goToLobby}
-							class={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+							class={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
 								isDarkMode
 									? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
 									: 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -471,56 +522,15 @@
 							</svg>
 							로비
 						</button>
-						<!-- Mobile: hamburger -->
-						<button
-							onclick={() => (showSidebar = !showSidebar)}
-							class={`lg:hidden shrink-0 p-1.5 rounded-lg transition-colors ${
-								isDarkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
-							}`}
-							aria-label="매치 목록"
-						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M4 6h16M4 12h16M4 18h7"
-								/>
-							</svg>
-						</button>
-						<!-- Mobile: game title -->
-						<span
-							class={`lg:hidden font-semibold text-sm truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}
-						>
-							{game?.title ?? '게임'}
-						</span>
-						<!-- Mobile: status (desktop shows in sidebar) -->
-						<div class="flex items-center gap-2 lg:hidden">
-							<span
-								class={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${statusColor}`}
-							>
-								{#if match?.status === 'generating'}
-									<span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-								{:else if match?.status === 'active'}
-									<span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-								{/if}
-								{statusLabel}
-							</span>
-							<span
-								class={`text-xs tabular-nums font-medium hidden sm:inline ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
-							>
-								턴 {turnDisplay}
-							</span>
-						</div>
 					</div>
 
-					<!-- Right group -->
-					<div class="flex items-center gap-2 shrink-0">
-						<span
-							class={`sm:hidden lg:hidden text-[11px] tabular-nums ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
-						>
-							{turnDisplay}
-						</span>
+					<!-- Center: Game title -->
+					<span class={`font-semibold text-sm truncate max-w-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+						{gameTitle}
+					</span>
+
+					<!-- Right: Resign button (absolute) -->
+					<div class="absolute right-3">
 						{#if isMatchActive}
 							<button
 								onclick={() => (showResignModal = true)}
@@ -534,6 +544,25 @@
 							</button>
 						{/if}
 					</div>
+
+					<!-- Mobile: hamburger overlay -->
+					<button
+						onclick={() => (showSidebar = !showSidebar)}
+						class={`lg:hidden shrink-0 p-1.5 rounded-lg transition-colors absolute left-3 bottom-full mb-2 ${
+							isDarkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
+						}`}
+						aria-label="매치 목록"
+						style="display: {showSidebar ? 'none' : 'block'}"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4 6h16M4 12h16M4 18h7"
+							/>
+						</svg>
+					</button>
 				</div>
 
 				<!-- Body row: sidebar + bordered chat column -->
