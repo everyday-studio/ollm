@@ -162,16 +162,16 @@ func (r *matchRepository) GetByUserIDAndGameID(ctx context.Context, userID strin
 	return matches, nil
 }
 
-// CountByUserIDAndStatus returns the number of matches for a specific user and status
-func (r *matchRepository) CountByUserIDAndStatus(ctx context.Context, userID string, status domain.MatchStatus) (int, error) {
+// CountByUserIDGameIDAndStatus returns the number of matches for a specific user, game and status
+func (r *matchRepository) CountByUserIDGameIDAndStatus(ctx context.Context, userID string, gameID string, status domain.MatchStatus) (int, error) {
 	const query = `
 		SELECT COUNT(*)
 		FROM matches
-		WHERE user_id = $1 AND status = $2
+		WHERE user_id = $1 AND game_id = $2 AND status = $3
 	`
 
 	var count int
-	err := r.db.QueryRowContext(ctx, query, userID, status).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query, userID, gameID, status).Scan(&count)
 	if err != nil {
 		return 0, mapDBError(err)
 	}
