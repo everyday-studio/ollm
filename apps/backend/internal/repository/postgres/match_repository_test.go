@@ -316,30 +316,34 @@ func TestMatchRepository_GetLeaderboard(t *testing.T) {
 	})
 }
 
-func TestMatchRepository_CountByUserIDAndStatus(t *testing.T) {
+func TestMatchRepository_CountByUserIDGameIDAndStatus(t *testing.T) {
 	cleanDB(t, "matches", "games", "users")
 	ctx := context.Background()
 	repo := NewMatchRepository(testDB)
 
 	user := createTestUser(t)
-	game := createTestGame(t, user)
+	game1 := createTestGame(t, user)
+	game2 := createTestGame(t, user)
 
-	t.Run("Count active matches successfully", func(t *testing.T) {
-		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game.ID, Status: domain.MatchStatusActive})
-		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game.ID, Status: domain.MatchStatusActive})
-		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game.ID, Status: domain.MatchStatusWon})
-		repo.Create(ctx, &domain.Match{UserID: "01HQZYX3VQJQZ3Z0Z1Z2OTHER2", GameID: game.ID, Status: domain.MatchStatusActive})
+	t.Run("Count active matches per game successfully", func(t *testing.T) {
+		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game1.ID, Status: domain.MatchStatusActive})
+		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game1.ID, Status: domain.MatchStatusActive})
+		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game1.ID, Status: domain.MatchStatusWon})
+		repo.Create(ctx, &domain.Match{UserID: user.ID, GameID: game2.ID, Status: domain.MatchStatusActive})
 
-		count, err := repo.CountByUserIDAndStatus(ctx, user.ID, domain.MatchStatusActive)
+		// Check game1 active matches
+		count1, err := repo.CountByUserIDGameIDAndStatus(ctx, user.ID, game1.ID, domain.MatchStatusActive)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, count)
+		assert.Equal(t, 2, count1)
+
+		// Check game2 active matches
+		count2, err := repo.CountByUserIDGameIDAndStatus(ctx, user.ID, game2.ID, domain.MatchStatusActive)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, count2)
 	})
 
 	t.Run("Return 0 when no matches match condition", func(t *testing.T) {
-		cleanDB(t, "matches", "games", "users")
-		user2 := createTestUser(t)
-
-		count, err := repo.CountByUserIDAndStatus(ctx, user2.ID, domain.MatchStatusActive)
+		count, err := repo.CountByUserIDGameIDAndStatus(ctx, user.ID, game1.ID, domain.MatchStatusExpired)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, count)
 	})
