@@ -461,7 +461,7 @@
 					<button
 						onclick={() => {
 							// eslint-disable-next-line svelte/no-navigation-without-resolve
-							goto('/lobby/match/01KKEFM1TMBP7SERYKMZDJAP8Q');
+							goto('/lobby/leaderboard');
 						}}
 						class={`flex items-center gap-4 p-5 rounded-2xl border transition-all group ${
 							isDarkMode
@@ -491,6 +491,43 @@
 							</div>
 							<div class={`text-xs mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
 								순위 확인하기
+							</div>
+						</div>
+					</button>
+
+					<button
+						onclick={() => {
+							// eslint-disable-next-line svelte/no-navigation-without-resolve
+							goto('/lobby/achievements');
+						}}
+						class={`flex items-center gap-4 p-5 rounded-2xl border transition-all group ${
+							isDarkMode
+								? 'bg-gray-950 border-gray-800 hover:border-gray-700 hover:bg-gray-900'
+								: 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+						}`}
+					>
+						<div
+							class={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+								isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'
+							}`}
+						>
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+								/>
+							</svg>
+						</div>
+						<div class="text-left">
+							<div
+								class={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}
+							>
+								업적
+							</div>
+							<div class={`text-xs mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+								도전과제 확인하기
 							</div>
 						</div>
 					</button>

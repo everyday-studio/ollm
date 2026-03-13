@@ -18,6 +18,7 @@
 	// ----------------------------------------------------------------
 
 	let games = $state<GameUI[]>([]);
+	let allGames = $state<GameUI[]>([]);
 	let matches = $state<MatchUI[]>([]);
 
 	let selectedGame = $state<GameUI | null>(null);
@@ -36,6 +37,35 @@
 
 	let filteredGames = $derived(
 		judgeFilter === 'all' ? games : games.filter((g) => g.judge_type === judgeFilter)
+	);
+
+	function getJudgeBadgeStyle(judgeType: string): { label: string; classes: string } {
+		switch (judgeType) {
+			case 'target_word':
+				return {
+					label: 'Target Word',
+					classes: 'bg-purple-500/90 text-white border border-purple-300/40'
+				};
+			case 'llm_judge':
+				return {
+					label: 'LLM Judge',
+					classes: 'bg-blue-500/90 text-white border border-blue-300/40'
+				};
+			case 'format_break':
+				return {
+					label: 'Format Break',
+					classes: 'bg-orange-500/90 text-white border border-orange-300/40'
+				};
+			default:
+				return {
+					label: 'Unknown',
+					classes: 'bg-gray-500/90 text-white border border-gray-300/40'
+				};
+		}
+	}
+
+	let modalJudgeBadge = $derived(
+		selectedGame ? getJudgeBadgeStyle(selectedGame.judge_type) : getJudgeBadgeStyle('unknown')
 	);
 
 	// Hero Carousel
@@ -129,6 +159,14 @@
 		return groups;
 	});
 
+	let filteredMatchGroups = $derived.by(() => {
+		if (judgeFilter === 'all') return matchGroups ?? [];
+		return (matchGroups ?? []).filter((group) => {
+			const gameUI = allGames?.find((g) => g.id === group.gameId);
+			return gameUI?.judge_type === judgeFilter;
+		});
+	});
+
 	// ----------------------------------------------------------------
 	// Lifecycle & Logic
 	// ----------------------------------------------------------------
@@ -140,8 +178,9 @@
 
 				const [rawGames, rawMatches] = await Promise.all([getCachedGames(), getCachedMyMatches()]);
 
+				allGames = rawGames.map(toGameUI);
 				// Filter out inactive or private games from being shown in the main games list.
-				games = rawGames.filter((g) => g.status === 'active' && g.is_public).map(toGameUI);
+				games = allGames.filter((g) => g.status === 'active' && g.is_public);
 				matches = rawMatches.map((m) => toMatchUI(m, rawGames));
 			} catch (error) {
 				console.error('Failed to load lobby data:', error);
@@ -161,6 +200,31 @@
 		showGameModal = true;
 	}
 
+	async function redirectToLatestMatch(gameId: string): Promise<boolean> {
+		let latestMatchId = matchGroups.find((group) => group.gameId === gameId)?.latestMatch.id;
+
+		if (!latestMatchId) {
+			try {
+				const res = await gameApi.getMyMatchesByGame(gameId);
+				const latest = (res.data ?? []).sort(
+					(a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+				)[0];
+				latestMatchId = latest?.id;
+			} catch (fetchError) {
+				console.error('Failed to fetch latest match by game:', fetchError);
+			}
+		}
+
+		if (!latestMatchId) {
+			return false;
+		}
+
+		showGameModal = false;
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		await goto(`/lobby/match/${latestMatchId}`);
+		return true;
+	}
+
 	async function startNewMatch(game: GameUI) {
 		try {
 			const res = await gameApi.createMatch(game.id);
@@ -170,6 +234,14 @@
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			await goto(`/lobby/match/${res.data.id}`);
 		} catch (error) {
+			const status = (error as { response?: { status?: number } })?.response?.status;
+			if (status === 409) {
+				const redirected = await redirectToLatestMatch(game.id);
+				if (!redirected) {
+					console.error('Match limit reached but no existing match found for game:', game.id);
+				}
+				return;
+			}
 			console.error('Failed to create match:', error);
 		}
 	}
@@ -244,6 +316,11 @@
 									src={games[currentSlide].image}
 									alt={games[currentSlide].title}
 									class="w-full h-full object-cover"
+									onerror={(e) => {
+										const el = e.currentTarget as HTMLImageElement;
+										el.onerror = null;
+										el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+									}}
 								/>
 								<div
 									class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"
@@ -407,6 +484,27 @@
 			{:else if activeSection === 'matches'}
 				<!-- Matches Section: Game cards with match stats -->
 				<div in:fly={{ y: 20, duration: 300 }}>
+					<!-- Judge Type Filter (for matches too) -->
+					<div class="flex gap-2 mb-4 overflow-x-auto pb-1">
+						{#each judgeFilters as jf (jf.id)}
+							<button
+								onclick={() => (judgeFilter = jf.id)}
+								class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {judgeFilter === jf.id
+									? jf.id === 'target_word'
+										? 'bg-purple-500 text-white shadow'
+										: jf.id === 'llm_judge'
+											? 'bg-blue-500 text-white shadow'
+											: jf.id === 'format_break'
+												? 'bg-orange-500 text-white shadow'
+												: 'bg-[#FF4D00] text-white shadow'
+									: isDarkMode
+										? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800'
+										: 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'}"
+							>
+								{jf.label}
+							</button>
+						{/each}
+					</div>
 					{#if matches.length === 0}
 						<div
 							class={`text-center py-16 md:py-20 rounded-2xl shadow-lg border ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
@@ -422,11 +520,17 @@
 							</button>
 						</div>
 					{:else}
-						<div
-							class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
-						>
-							{#each matchGroups as group (group.gameId)}
-								{@const gameUI = games.find((g) => g.id === group.gameId)}
+						{#if filteredMatchGroups.length === 0}
+							<div class={`text-center py-12 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+								<p class="text-sm">해당 유형의 매치가 없습니다.</p>
+							</div>
+						{:else}
+							<div
+								class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
+							>
+								{#each filteredMatchGroups as group (group.gameId)}
+									{@const gameUI = allGames.find((g) => g.id === group.gameId)}
+									{@const judgeBadge = getJudgeBadgeStyle(gameUI?.judge_type ?? 'unknown')}
 								<button
 									onclick={() => goToMatch(group.latestMatch.id)}
 									class={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-100 flex flex-col border text-left ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
@@ -437,6 +541,11 @@
 												src={gameUI.image}
 												alt={group.gameTitle}
 												class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+												onerror={(e) => {
+												const el = e.currentTarget as HTMLImageElement;
+												el.onerror = null;
+												el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+											}}
 											/>
 										{:else}
 											<div
@@ -473,6 +582,14 @@
 												class="bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-bold text-white"
 											>
 												{group.total}회
+											</span>
+										</div>
+
+										<div class="absolute top-2 right-2">
+											<span
+												class={`backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm ${judgeBadge.classes}`}
+											>
+												{judgeBadge.label}
 											</span>
 										</div>
 
@@ -528,8 +645,9 @@
 										</div>
 									</div>
 								</button>
-							{/each}
-						</div>
+								{/each}
+							</div>
+						{/if}
 					{/if}
 				</div>
 			{/if}
@@ -554,10 +672,27 @@
 			role="presentation"
 		>
 			<div class="relative h-[250px] md:h-[300px] bg-gray-200">
-				<img src={selectedGame.image} alt={selectedGame.title} class="w-full h-full object-cover" />
+				<img
+					src={selectedGame.image}
+					alt={selectedGame.title}
+					class="w-full h-full object-cover"
+					onerror={(e) => {
+						const el = e.currentTarget as HTMLImageElement;
+						el.onerror = null;
+						el.src = 'https://storage.googleapis.com/ollm-assets-prod/default/game_thumbnail.png';
+					}}
+				/>
 				<div
 					class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"
 				></div>
+
+				<div class="absolute top-4 left-4">
+					<span
+						class={`backdrop-blur-sm px-2.5 py-1 rounded-lg text-[11px] font-bold shadow-sm ${modalJudgeBadge.classes}`}
+					>
+						{modalJudgeBadge.label}
+					</span>
+				</div>
 
 				<button
 					onclick={() => (showGameModal = false)}

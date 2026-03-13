@@ -150,6 +150,13 @@
 				>
 					가이드
 				</a>
+				<span class={`mx-2 self-center ${isDarkMode ? 'text-gray-700' : 'text-gray-300'}`}>|</span>
+				<a
+					href="/lobby/achievements"
+					class={`px-4 h-full flex items-center border-b-4 transition-colors ${currentPath.startsWith('/lobby/achievements') ? 'text-[#FF4D00] border-[#FF4D00] font-bold' : isDarkMode ? 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600' : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+				>
+					업적
+				</a>
 			</nav>
 		</div>
 
@@ -242,6 +249,11 @@
 							href="/lobby/leaderboard"
 							class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}
 							>리더보드</a
+						>
+						<a
+							href="/lobby/achievements"
+							class={`flex items-center px-4 py-2 text-sm transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}
+							>업적</a
 						>
 						{#if $authStore.user?.role === 'Admin'}
 							<a
