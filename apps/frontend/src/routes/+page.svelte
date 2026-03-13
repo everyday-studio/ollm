@@ -3,8 +3,9 @@
   import { goto } from '$app/navigation';
 
   onMount(() => {
-    // 접속하자마자 로그인 페이지로 이동
-    goto('/login');
+    // 서버 로드가 실패한 경우의 클라이언트 폴백
+    // 로비 레이아웃 서버 가드가 비로그인 유저를 /login으로 리다이렉트
+    goto('/lobby');
   });
 </script>
 
