@@ -34,3 +34,4 @@ llm:
 gcp:
   bucket_name: "ollm-assets-prod"
   project_id: "ollm-web"
+  google_client_id: ""

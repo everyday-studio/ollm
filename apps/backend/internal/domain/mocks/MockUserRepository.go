@@ -363,6 +363,65 @@ func (_c *UserRepository_UpdateNickname_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// UpsertGoogleUser provides a mock function with given fields: ctx, user
+func (_m *UserRepository) UpsertGoogleUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+	ret := _m.Called(ctx, user)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertGoogleUser")
+	}
+
+	var r0 *domain.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) (*domain.User, error)); ok {
+		return rf(ctx, user)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) *domain.User); ok {
+		r0 = rf(ctx, user)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.User) error); ok {
+		r1 = rf(ctx, user)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserRepository_UpsertGoogleUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpsertGoogleUser'
+type UserRepository_UpsertGoogleUser_Call struct {
+	*mock.Call
+}
+
+// UpsertGoogleUser is a helper method to define mock.On call
+//   - ctx context.Context
+//   - user *domain.User
+func (_e *UserRepository_Expecter) UpsertGoogleUser(ctx interface{}, user interface{}) *UserRepository_UpsertGoogleUser_Call {
+	return &UserRepository_UpsertGoogleUser_Call{Call: _e.mock.On("UpsertGoogleUser", ctx, user)}
+}
+
+func (_c *UserRepository_UpsertGoogleUser_Call) Run(run func(ctx context.Context, user *domain.User)) *UserRepository_UpsertGoogleUser_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.User))
+	})
+	return _c
+}
+
+func (_c *UserRepository_UpsertGoogleUser_Call) Return(_a0 *domain.User, _a1 error) *UserRepository_UpsertGoogleUser_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserRepository_UpsertGoogleUser_Call) RunAndReturn(run func(context.Context, *domain.User) (*domain.User, error)) *UserRepository_UpsertGoogleUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewUserRepository creates a new instance of UserRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserRepository(t interface {

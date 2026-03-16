@@ -82,6 +82,65 @@ func (_c *AuthUsecase_Login_Call) RunAndReturn(run func(context.Context, string,
 	return _c
 }
 
+// LoginWithGoogle provides a mock function with given fields: ctx, idToken
+func (_m *AuthUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*domain.LoginResponse, error) {
+	ret := _m.Called(ctx, idToken)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LoginWithGoogle")
+	}
+
+	var r0 *domain.LoginResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.LoginResponse, error)); ok {
+		return rf(ctx, idToken)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.LoginResponse); ok {
+		r0 = rf(ctx, idToken)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.LoginResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, idToken)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AuthUsecase_LoginWithGoogle_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoginWithGoogle'
+type AuthUsecase_LoginWithGoogle_Call struct {
+	*mock.Call
+}
+
+// LoginWithGoogle is a helper method to define mock.On call
+//   - ctx context.Context
+//   - idToken string
+func (_e *AuthUsecase_Expecter) LoginWithGoogle(ctx interface{}, idToken interface{}) *AuthUsecase_LoginWithGoogle_Call {
+	return &AuthUsecase_LoginWithGoogle_Call{Call: _e.mock.On("LoginWithGoogle", ctx, idToken)}
+}
+
+func (_c *AuthUsecase_LoginWithGoogle_Call) Run(run func(ctx context.Context, idToken string)) *AuthUsecase_LoginWithGoogle_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *AuthUsecase_LoginWithGoogle_Call) Return(_a0 *domain.LoginResponse, _a1 error) *AuthUsecase_LoginWithGoogle_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *AuthUsecase_LoginWithGoogle_Call) RunAndReturn(run func(context.Context, string) (*domain.LoginResponse, error)) *AuthUsecase_LoginWithGoogle_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Logout provides a mock function with given fields: ctx, userID
 func (_m *AuthUsecase) Logout(ctx context.Context, userID string) error {
 	ret := _m.Called(ctx, userID)
