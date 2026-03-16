@@ -3,15 +3,16 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/lib/pq"
 	"github.com/oklog/ulid/v2"
-	"github.com/pkg/errors"
 
 	"github.com/everyday-studio/ollm/internal/domain"
+	"github.com/everyday-studio/ollm/internal/kit/tag"
 )
 
 type userRepository struct {
@@ -181,3 +182,73 @@ func (r *userRepository) UpdateNickname(ctx context.Context, id string, name str
 
 	return nil
 }
+
+// UpsertGoogleUser finds an existing user by google_id and returns it.
+// If no user exists with that google_id, it creates a new one.
+// On tag collision, it retries up to 5 times.
+func (r *userRepository) UpsertGoogleUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+	// First, try to find an existing user by google_id.
+	const selectQuery = `
+		SELECT id, name, tag, email, role, created_at, updated_at
+		FROM users
+		WHERE google_id = $1
+	`
+	existing := &domain.User{}
+	err := r.db.QueryRowContext(ctx, selectQuery, user.GoogleID).Scan(
+		&existing.ID,
+		&existing.Name,
+		&existing.Tag,
+		&existing.Email,
+		&existing.Role,
+		&existing.CreatedAt,
+		&existing.UpdatedAt,
+	)
+	if err == nil {
+		// User already exists; return it immediately.
+		return existing, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to lookup user by google_id: %w", err)
+	}
+
+	// User does not exist; create a new one.
+	// Retry up to 5 times to handle rare tag collisions.
+	for i := 0; i < 5; i++ {
+		generatedTag, tagErr := tag.Generate()
+		if tagErr != nil {
+			return nil, tagErr
+		}
+		user.Tag = generatedTag
+
+		entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
+		user.ID = ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+
+		if user.Role == "" {
+			user.Role = domain.RoleUser
+		}
+
+		const insertQuery = `
+			INSERT INTO users (id, name, tag, email, password, google_id, role)
+			VALUES ($1, $2, $3, $4, NULL, $5, $6)
+			RETURNING created_at, updated_at
+		`
+		insertErr := r.db.QueryRowContext(
+			ctx, insertQuery,
+			user.ID, user.Name, user.Tag, user.Email, user.GoogleID, user.Role,
+		).Scan(&user.CreatedAt, &user.UpdatedAt)
+		if insertErr == nil {
+			return user, nil
+		}
+
+		if pqErr, ok := insertErr.(*pq.Error); ok && pqErr.Code == "23505" {
+			if pqErr.Constraint == "users_tag_key" {
+				continue // Retry on tag collision
+			}
+			return nil, fmt.Errorf("duplicate email or google_id: %w", domain.ErrAlreadyExists)
+		}
+		return nil, fmt.Errorf("failed to insert google user: %w", insertErr)
+	}
+
+	return nil, fmt.Errorf("max tag retries exceeded: %w", domain.ErrConflict)
+}
+
