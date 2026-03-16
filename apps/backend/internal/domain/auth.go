@@ -32,6 +32,12 @@ type LoginResponse struct {
 	RefreshTokenExpiration time.Time `json:"-"` // Not included in JSON response
 }
 
+// GoogleLoginRequest is the request body for the Google social login endpoint.
+// The frontend must obtain the ID token from Google Sign-In and send it here.
+type GoogleLoginRequest struct {
+	IDToken string `json:"id_token"`
+}
+
 type AuthRepository interface {
 }
 
@@ -40,4 +46,7 @@ type AuthUsecase interface {
 	Login(ctx context.Context, email string, password string) (*LoginResponse, error)
 	Logout(ctx context.Context, userID string) error
 	RefreshToken(ctx context.Context, refreshToken string) (*LoginResponse, error)
+	// LoginWithGoogle verifies a Google ID token and upserts the user,
+	// returning a LoginResponse with JWT tokens on success.
+	LoginWithGoogle(ctx context.Context, idToken string) (*LoginResponse, error)
 }
