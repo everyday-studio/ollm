@@ -1,5 +1,5 @@
 ### /signup 테스트
-POST http://localhost:8080/auth/signup
+POST http://localhost:8080/api/auth/signup
 Content-Type: application/json
 
 {
@@ -8,7 +8,7 @@ Content-Type: application/json
 }
 
 ### /signup 테스트 - admin
-POST http://localhost:8080/auth/signup
+POST http://localhost:8080/api/auth/signup
 Content-Type: application/json
 
 {
@@ -17,7 +17,7 @@ Content-Type: application/json
 }
 
 ### /login 테스트
-POST http://localhost:8080/auth/login
+POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
@@ -26,10 +26,20 @@ Content-Type: application/json
 }
 
 ### /login 테스트 - 존재하지 않는 이메일
-POST http://localhost:8080/auth/login
+POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
     "email": "nonexistent@example.com",
     "password": "password123"
+}
+
+### 구글 소셜 로그인 테스트
+# 프론트엔드에서 Google Sign-In으로 획득한 id_token을 아래에 붙여넣으세요.
+# Google Identity Services (GIS) 라이브러리의 credential.credential 값입니다.
+POST http://localhost:8080/api/auth/google
+Content-Type: application/json
+
+{
+    "id_token": "PASTE_YOUR_GOOGLE_ID_TOKEN_HERE"
 }

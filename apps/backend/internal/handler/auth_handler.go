@@ -30,6 +30,7 @@ func NewAuthHandler(e *echo.Echo, authUseCase domain.AuthUsecase, config *config
 	publicGroup.POST("/signup", handler.SignUpUser)
 	publicGroup.POST("/login", handler.Login)
 	publicGroup.POST("/refresh", handler.RefreshToken)
+	publicGroup.POST("/google", handler.GoogleLogin)
 
 	userGroup := e.Group("/api/auth", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("/logout", handler.Logout)
@@ -187,5 +188,36 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	c.SetCookie(newCookie)
 
 	// Return new access token
+	return c.JSON(http.StatusOK, loginResponse)
+}
+
+// GoogleLogin handles the social login flow for Google.
+// It expects a JSON body with an `id_token` field (obtained via Google Sign-In on the frontend).
+// On success, it sets the refresh token as an HttpOnly cookie and returns the access token in the JSON body.
+func (h *AuthHandler) GoogleLogin(c echo.Context) error {
+	req := new(domain.GoogleLoginRequest)
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	if req.IDToken == "" {
+		return c.JSON(http.StatusBadRequest, ErrResponse(domain.ErrInvalidInput))
+	}
+
+	ctx := c.Request().Context()
+	loginResponse, err := h.authUseCase.LoginWithGoogle(ctx, req.IDToken)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrUnauthorized):
+			return c.JSON(http.StatusUnauthorized, ErrResponse(domain.ErrUnauthorized))
+		default:
+			return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+		}
+	}
+
+	// Set refresh token as secure HttpOnly cookie (same as regular login).
+	cookie := h.createRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiration)
+	c.SetCookie(cookie)
+
 	return c.JSON(http.StatusOK, loginResponse)
 }

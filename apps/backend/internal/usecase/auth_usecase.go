@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/api/idtoken"
+
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/kit/nickname"
@@ -99,6 +101,48 @@ func (uc *authUseCase) Login(ctx context.Context, email string, password string)
 
 func (uc *authUseCase) Logout(ctx context.Context, userID string) error {
 	return nil
+}
+
+// LoginWithGoogle verifies the Google ID token provided by the frontend,
+// then upserts the user in the database and issues JWT tokens.
+func (uc *authUseCase) LoginWithGoogle(ctx context.Context, idToken string) (*domain.LoginResponse, error) {
+	// Validate the Google ID token using Google's public key infrastructure.
+	payload, err := idtoken.Validate(ctx, idToken, uc.config.GCP.GoogleClientID)
+	if err != nil {
+		return nil, domain.ErrUnauthorized
+	}
+
+	// Extract required claims from the verified payload.
+	sub, _ := payload.Claims["sub"].(string) // Unique Google user ID
+	email, _ := payload.Claims["email"].(string)
+	googleName, _ := payload.Claims["name"].(string)
+
+	if sub == "" || email == "" {
+		return nil, domain.ErrUnauthorized
+	}
+
+	// Generate a fallback display name if Google name is empty.
+	if googleName == "" {
+		googleName, err = nickname.Generate()
+		if err != nil {
+			googleName = nickname.GenerateFallback()
+		}
+	}
+
+	user := &domain.User{
+		Name:     googleName,
+		Email:    email,
+		GoogleID: sub,
+		Role:     domain.RoleUser,
+	}
+
+	// Upsert: create if new, return existing if already registered.
+	savedUser, err := uc.userRepo.UpsertGoogleUser(ctx, user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert google user: %w", err)
+	}
+
+	return uc.generateTokens(savedUser)
 }
 
 func (uc *authUseCase) RefreshToken(ctx context.Context, refreshToken string) (*domain.LoginResponse, error) {
