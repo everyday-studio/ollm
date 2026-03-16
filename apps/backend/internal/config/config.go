@@ -60,9 +60,11 @@ type LLMConfig struct {
 	GroqAPIKey   string `mapstructure:"groq_api_key"`
 }
 
+// GCPConfig holds Google Cloud Platform settings including OAuth2 credentials.
 type GCPConfig struct {
-	BucketName string `mapstructure:"bucket_name"`
-	ProjectID  string `mapstructure:"project_id"`
+	BucketName     string `mapstructure:"bucket_name"`
+	ProjectID      string `mapstructure:"project_id"`
+	GoogleClientID string `mapstructure:"google_client_id"`
 }
 
 func LoadConfig(env string) (*Config, error) {
