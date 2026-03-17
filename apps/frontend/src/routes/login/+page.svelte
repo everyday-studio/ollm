@@ -11,6 +11,7 @@
   // 상태 변수들
   let showRegisterModal = false;
   let isLoading = false;
+  let googleBtnContainer: HTMLDivElement;
   
   // ✅ [추가] 비밀번호 보임/숨김 상태 관리
   let showLoginPassword = false;
@@ -77,7 +78,52 @@
       showGuide = true;
       guideStep = 0;
     }
+
+    initGoogleButton();
   });
+
+  // 구글 로그인 콜백
+  async function handleGoogleCallback(response: { credential: string }) {
+    isLoading = true;
+    errorMessage = '';
+    try {
+      const res = await authApi.googleLogin({ id_token: response.credential });
+      const { access_token, id, name, tag, email } = res.data as AuthResponse;
+      authStore.loginSuccess(access_token, { id, name, tag, email, role: '', created_at: '', updated_at: '' });
+      toast.success('Google 로그인 성공!', { duration: 3000, position: 'top-center', icon: '✅' });
+      // eslint-disable-next-line svelte/no-navigation-without-resolve
+      await goto('/lobby');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number } };
+      errorMessage = axiosErr.response?.status === 401
+        ? 'Google 인증에 실패했습니다. 다시 시도해주세요.'
+        : '서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      toast.error(errorMessage, { position: 'top-center' });
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  // GIS 라이브러리 초기화 및 숨겨진 버튼 렌더링
+  // renderButton()은 클릭 시 팝업 다이얼로그를 열어줌 (prompt()의 One Tap과 달리 억제되지 않음)
+  function initGoogleButton() {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    const tryInit = () => {
+      type GIS = { accounts: { id: { initialize: (c: object) => void; renderButton: (el: HTMLElement, o: object) => void; } } };
+      const g = (window as unknown as { google?: GIS }).google;
+      if (!g?.accounts?.id) {
+        setTimeout(tryInit, 200);
+        return;
+      }
+      g.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCallback,
+      });
+      g.accounts.id.renderButton(googleBtnContainer, { type: 'standard', size: 'large', width: 1 });
+    };
+    tryInit();
+  }
 
   function handleNextStep() {
     if (guideStep < guideSteps.length - 1) {
@@ -217,50 +263,9 @@
       toast.error('Google 로그인이 설정되지 않았습니다.', { position: 'top-center' });
       return;
     }
-
     if (isLoading) return;
-
-    const google = (window as unknown as { google?: { accounts: { id: { initialize: (config: { client_id: string; callback: (response: { credential: string }) => void; }) => void; prompt: () => void; } } } }).google;
-
-    if (!google) {
-      toast.error('Google 로그인 스크립트를 불러오는 중입니다. 잠시 후 다시 시도해주세요.', { position: 'top-center' });
-      return;
-    }
-
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: async (response: { credential: string }) => {
-        isLoading = true;
-        errorMessage = '';
-
-        try {
-          const res = await authApi.googleLogin({ id_token: response.credential });
-          const { access_token, id, name, tag, email } = res.data as AuthResponse;
-          authStore.loginSuccess(access_token, { id, name, tag, email, role: '', created_at: '', updated_at: '' });
-
-          toast.success('Google 로그인 성공!', {
-            duration: 3000,
-            position: 'top-center',
-            icon: '✅',
-          });
-
-          // eslint-disable-next-line svelte/no-navigation-without-resolve
-          await goto('/lobby');
-        } catch (err: unknown) {
-          const axiosErr = err as { response?: { status?: number } };
-          if (axiosErr.response?.status === 401) {
-            errorMessage = 'Google 인증에 실패했습니다. 다시 시도해주세요.';
-          } else {
-            errorMessage = '서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
-          }
-          toast.error(errorMessage, { position: 'top-center' });
-        } finally {
-          isLoading = false;
-        }
-      },
-    });
-
-    google.accounts.id.prompt();
+    // 숨겨진 Google 공식 버튼을 programmatic 클릭 → 팝업 다이얼로그 오픈
+    googleBtnContainer?.querySelector<HTMLElement>('div[role="button"]')?.click();
   };
 </script>
 
@@ -366,6 +371,9 @@
           <span class="px-2 bg-white text-gray-500">또는</span>
         </div>
       </div>
+
+      <!-- GIS renderButton() 숨겨진 컨테이너 (팝업 트리거용) -->
+      <div bind:this={googleBtnContainer} class="absolute w-px h-px overflow-hidden opacity-0" aria-hidden="true"></div>
 
       <button 
         on:click={handleGoogleLogin}
