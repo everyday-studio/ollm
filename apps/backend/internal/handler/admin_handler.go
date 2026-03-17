@@ -82,6 +82,7 @@ func (h *AdminHandler) CreateGame(c echo.Context) error {
 		Description    string `json:"description"`
 		AuthorID       string `json:"author_id"`
 		SystemPrompt   string `json:"system_prompt"`
+		FirstMessage   string `json:"first_message"`
 		JudgeType      string `json:"judge_type"`
 		JudgeCondition string `json:"judge_condition"`
 		MaxTurns       string `json:"max_turns"`
@@ -102,6 +103,7 @@ func (h *AdminHandler) CreateGame(c echo.Context) error {
 		Description:    req.Description,
 		AuthorID:       req.AuthorID,
 		SystemPrompt:   req.SystemPrompt,
+		FirstMessage:   req.FirstMessage,
 		JudgeType:      domain.JudgeType(req.JudgeType),
 		JudgeCondition: req.JudgeCondition,
 		MaxTurns:       maxTurns,
@@ -146,6 +148,7 @@ func (h *AdminHandler) UpdateGame(c echo.Context) error {
 		Title          string `json:"title"`
 		Description    string `json:"description"`
 		SystemPrompt   string `json:"system_prompt"`
+		FirstMessage   string `json:"first_message"`
 		JudgeType      string `json:"judge_type"`
 		JudgeCondition string `json:"judge_condition"`
 		MaxTurns       string `json:"max_turns"`
@@ -172,6 +175,7 @@ func (h *AdminHandler) UpdateGame(c echo.Context) error {
 		Title:          &req.Title,
 		Description:    &req.Description,
 		SystemPrompt:   &req.SystemPrompt,
+		FirstMessage:   &req.FirstMessage,
 		JudgeType:      &judgeType,
 		JudgeCondition: &req.JudgeCondition,
 		MaxTurns:       &maxTurns,

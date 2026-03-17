@@ -24,7 +24,7 @@ secure:
     cookie:
       secure: true
       http_only: true
-      same_site: "Strict"
+      same_site: "Lax"
       domain: "ollm.everydaystudio.xyz"
 
 llm:
