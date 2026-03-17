@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"google.golang.org/api/idtoken"
+	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 
 	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
@@ -165,6 +167,58 @@ func (uc *authUseCase) RefreshToken(ctx context.Context, refreshToken string) (*
 	}
 
 	return response, nil
+}
+
+func (uc *authUseCase) GuestLogin(ctx context.Context) (*domain.LoginResponse, error) {
+	// Generate a unique identifier for the guest
+	guestID := ulid.Make().String()
+	email := fmt.Sprintf("guest_%s@ollm.xyz", guestID)
+
+	// Generate a random dummy password and hash it
+	dummyPassword := uuid.New().String()
+	hashedPassword, err := security.GeneratePasswordHash(dummyPassword, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate dummy password hash: %w", err)
+	}
+
+	// Generate random nickname
+	name, err := nickname.Generate()
+	if err != nil {
+		name = nickname.GenerateFallback()
+	}
+
+	user := &domain.User{
+		Name:     name,
+		Email:    email,
+		Password: hashedPassword,
+		Role:     domain.RoleUser,
+	}
+
+	// Retries for tag generation logic (similar to SignUpUser)
+	var savedUser *domain.User
+	for i := 0; i < 5; i++ {
+		generatedTag, err := tag.Generate()
+		if err != nil {
+			return nil, err
+		}
+		user.Tag = generatedTag
+
+		savedUser, err = uc.userRepo.Save(ctx, user)
+		if err == nil {
+			break
+		}
+
+		if errors.Is(err, domain.ErrConflict) && strings.Contains(err.Error(), "duplicate tag") {
+			continue
+		}
+		return nil, err
+	}
+
+	if savedUser == nil {
+		return nil, domain.ErrConflict
+	}
+
+	return uc.generateTokens(savedUser)
 }
 
 func (uc *authUseCase) generateTokens(user *domain.User) (*domain.LoginResponse, error) {
