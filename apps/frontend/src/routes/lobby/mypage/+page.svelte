@@ -11,8 +11,12 @@
 	import type { User } from '$lib/features/auth/types';
 	import { handleImageError, DEFAULT_USER_PROFILE } from '$lib/utils/imageFallback';
 
-	const theme = getContext<{ isDark: boolean; uiScale: 'small' | 'default' | 'large'; setUiScale: (s: 'small' | 'default' | 'large') => void }>('theme');
+	const theme = getContext<{ isDark: boolean; uiScale: 'small' | 'default' | 'large'; setUiScale: (s: 'small' | 'default' | 'large') => void; setDarkMode: (dark: boolean) => void }>('theme');
 	let isDarkMode = $derived(theme.isDark);
+
+	const scaleSteps = ['small', 'default', 'large'] as const;
+	const scaleLabels: Record<string, string> = { small: '작게', default: '보통', large: '크게' };
+	let scaleIndex = $derived(scaleSteps.indexOf(theme.uiScale));
 
 	// ----------------------------------------------------------------
 	// State
@@ -168,7 +172,7 @@
 	<main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
 		{#if isLoading}
 			<!-- Skeleton: Header -->
-			<div class="mb-10">
+			<div class="mb-10 max-w-2xl mx-auto">
 				<div
 					class={`h-10 w-40 rounded-lg skeleton mb-2 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
 				></div>
@@ -177,7 +181,7 @@
 				></div>
 			</div>
 			<!-- Skeleton: Profile card -->
-			<div class="max-w-2xl space-y-6">
+			<div class="max-w-2xl mx-auto space-y-6">
 				<div
 					class={`rounded-2xl border overflow-hidden shadow-lg ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
 				>
@@ -212,7 +216,7 @@
 			</div>
 		{:else if user}
 			<!-- Header -->
-			<div class="mb-10">
+			<div class="mb-10 max-w-2xl mx-auto">
 				<h1
 					class={`text-3xl md:text-4xl font-black mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}
 				>
@@ -223,7 +227,7 @@
 				</p>
 			</div>
 
-			<div class="max-w-2xl space-y-6">
+			<div class="max-w-2xl mx-auto space-y-6">
 				<!-- Profile Card -->
 				<div
 					class={`rounded-2xl border overflow-hidden shadow-lg transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
@@ -542,27 +546,51 @@
 							화면 표시 설정을 조정합니다
 						</p>
 					</div>
-					<div class="px-6 py-5 md:px-8 space-y-5">
-						<!-- Font size -->
+					<div class="px-6 py-5 md:px-8 space-y-6">
+						<!-- Dark mode toggle -->
+						<div class="flex items-center justify-between">
+							<div>
+								<span class={`text-sm font-medium block ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+									다크 모드
+								</span>
+								<span class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+									어두운 테마를 사용합니다
+								</span>
+							</div>
+							<button
+								onclick={() => theme.setDarkMode(!isDarkMode)}
+								class={`relative w-12 h-7 rounded-full transition-colors ${isDarkMode ? 'bg-[#FF4D00]' : 'bg-gray-300'}`}
+								role="switch"
+								aria-checked={isDarkMode}
+								aria-label="다크 모드 전환"
+							>
+								<span class={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${isDarkMode ? 'translate-x-5' : 'translate-x-0'}`}></span>
+							</button>
+						</div>
+
+						<!-- Font size slider -->
 						<div>
-							<span class={`text-sm font-medium block mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-								글씨 크기
-							</span>
-							<div class="flex gap-2">
-								{#each [{ value: 'small', label: '작게' }, { value: 'default', label: '보통' }, { value: 'large', label: '크게' }] as opt (opt.value)}
-									<button
-										onclick={() => theme.setUiScale(opt.value as 'small' | 'default' | 'large')}
-										class={`flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-											theme.uiScale === opt.value
-												? 'bg-[#FF4D00] text-white'
-												: isDarkMode
-													? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-													: 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-										}`}
-									>
-										{opt.label}
-									</button>
-								{/each}
+							<div class="flex items-center justify-between mb-3">
+								<span class={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+									글씨 크기
+								</span>
+								<span class={`text-xs font-semibold px-2 py-0.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+									{scaleLabels[theme.uiScale]}
+								</span>
+							</div>
+							<div class="flex items-center gap-3">
+								<span class={`text-xs shrink-0 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>A</span>
+								<input
+									type="range"
+									min="0"
+									max="2"
+									step="1"
+									value={scaleIndex}
+									oninput={(e) => theme.setUiScale(scaleSteps[Number((e.target as HTMLInputElement).value)])}
+									class="flex-1 h-2 rounded-full appearance-none cursor-pointer accent-[#FF4D00]"
+									style={isDarkMode ? 'background: #374151;' : 'background: #e5e7eb;'}
+								/>
+								<span class={`text-base font-bold shrink-0 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>A</span>
 							</div>
 						</div>
 					</div>

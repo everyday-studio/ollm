@@ -29,6 +29,10 @@
 		setUiScale(scale: 'small' | 'default' | 'large') {
 			uiScale = scale;
 			localStorage.setItem('ui-scale', scale);
+		},
+		setDarkMode(dark: boolean) {
+			isDarkMode = dark;
+			localStorage.setItem('theme', dark ? 'dark' : 'light');
 		}
 	});
 
