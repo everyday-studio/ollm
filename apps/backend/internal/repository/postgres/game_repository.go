@@ -28,8 +28,8 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 	game.ID = ulid.MustNew(ulid.Timestamp(time.Now()), ulid.Monotonic(rand.Reader, 0)).String()
 
 	const query = `
-		INSERT INTO games (id, title, description, author_id, status, is_public, system_prompt, judge_type, judge_condition, max_turns)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO games (id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING created_at, updated_at
 	`
 
@@ -43,6 +43,7 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 		game.Status,
 		game.IsPublic,
 		game.SystemPrompt,
+		game.FirstMessage,
 		game.JudgeType,
 		game.JudgeCondition,
 		game.MaxTurns,
@@ -58,7 +59,7 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 // GetByID retrieves a game by its ID
 func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, error) {
 	const query = `
-		SELECT id, title, description, author_id, status, is_public, system_prompt, judge_type, judge_condition, max_turns, created_at, updated_at
+		SELECT id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns, created_at, updated_at
 		FROM games
 		WHERE id = $1
 	`
@@ -72,6 +73,7 @@ func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 		&game.Status,
 		&game.IsPublic,
 		&game.SystemPrompt,
+		&game.FirstMessage,
 		&game.JudgeType,
 		&game.JudgeCondition,
 		&game.MaxTurns,
@@ -100,7 +102,7 @@ func (r *gameRepository) CountAll(ctx context.Context) (int, error) {
 func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int) ([]domain.Game, error) {
 	offset := (page - 1) * limit
 	const query = `
-		SELECT id, title, description, author_id, status, is_public, system_prompt, judge_type, judge_condition, max_turns, created_at, updated_at
+		SELECT id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns, created_at, updated_at
 		FROM games
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -123,6 +125,7 @@ func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int) ([]d
 			&game.Status,
 			&game.IsPublic,
 			&game.SystemPrompt,
+			&game.FirstMessage,
 			&game.JudgeType,
 			&game.JudgeCondition,
 			&game.MaxTurns,
@@ -146,8 +149,8 @@ func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int) ([]d
 func (r *gameRepository) Update(ctx context.Context, game *domain.Game) (*domain.Game, error) {
 	const query = `
 		UPDATE games
-		SET title = $1, description = $2, status = $3, is_public = $4, system_prompt = $5, judge_type = $6, judge_condition = $7, max_turns = $8
-		WHERE id = $9
+		SET title = $1, description = $2, status = $3, is_public = $4, system_prompt = $5, first_message = $6, judge_type = $7, judge_condition = $8, max_turns = $9
+		WHERE id = $10
 		RETURNING updated_at
 	`
 
@@ -159,6 +162,7 @@ func (r *gameRepository) Update(ctx context.Context, game *domain.Game) (*domain
 		game.Status,
 		game.IsPublic,
 		game.SystemPrompt,
+		game.FirstMessage,
 		game.JudgeType,
 		game.JudgeCondition,
 		game.MaxTurns,
