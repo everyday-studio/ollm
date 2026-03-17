@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"errors"
 	"encoding/base64"
 	"encoding/pem"
 	"testing"
@@ -350,6 +351,87 @@ func TestAuthUsecase_RefreshToken(t *testing.T) {
 				assert.NotEmpty(t, result.RefreshToken)
 				assert.Equal(t, user.ID, result.ID)
 				assert.Equal(t, user.Email, result.Email)
+			}
+
+			mockUserRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestAuthUsecase_GuestLogin(t *testing.T) {
+	privateKeyPEM, publicKeyPEM, err := generateTestRSAKeys()
+	if err != nil {
+		t.Fatalf("Failed to generate test RSA keys: %v", err)
+	}
+
+	cfg := &config.Config{
+		Secure: config.SecureConfig{
+			JWT: config.JWTConfig{
+				PrivateKey:           privateKeyPEM,
+				PublicKey:            publicKeyPEM,
+				AccessExpirationMin:  15,
+				RefreshExpirationDay: 7,
+				Cookie: config.CookieConfig{
+					Secure:   false,
+					HTTPOnly: true,
+					SameSite: "Lax",
+					Domain:   "localhost",
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name       string
+		mockReturn *domain.User
+		mockError  error
+		wantErr    error
+	}{
+		{
+			name: "Success",
+			mockReturn: &domain.User{
+				ID:    "GUEST_ID",
+				Email: "guest_GUEST_ID@ollm.xyz",
+				Name:  "GuestUser",
+				Tag:   "GUEST",
+				Role:  domain.RoleUser,
+			},
+			mockError: nil,
+			wantErr:   nil,
+		},
+		{
+			name:       "Save Failure",
+			mockReturn: nil,
+			mockError:  errors.New("db error"),
+			wantErr:    errors.New("db error"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockAuthRepo := new(mocks.AuthRepository)
+			mockUserRepo := new(mocks.UserRepository)
+
+			mockUserRepo.On("Save", mock.Anything, mock.AnythingOfType("*domain.User")).Return(tt.mockReturn, tt.mockError)
+
+			uc, err := NewAuthUseCase(mockAuthRepo, mockUserRepo, cfg)
+			if err != nil {
+				t.Fatalf("Failed to create auth usecase: %v", err)
+			}
+
+			ctx := context.Background()
+			result, err := uc.GuestLogin(ctx)
+
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr.Error())
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotEmpty(t, result.AccessToken)
+				assert.NotEmpty(t, result.RefreshToken)
+				assert.Equal(t, tt.mockReturn.ID, result.ID)
+				assert.Contains(t, result.Email, "@ollm.xyz")
 			}
 
 			mockUserRepo.AssertExpectations(t)

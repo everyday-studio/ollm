@@ -43,3 +43,7 @@ Content-Type: application/json
 {
     "id_token": "PASTE_YOUR_GOOGLE_ID_TOKEN_HERE"
 }
+
+### 게스트 로그인 테스트
+POST http://localhost:8080/api/auth/guest
+Content-Type: application/json

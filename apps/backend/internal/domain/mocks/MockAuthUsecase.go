@@ -22,6 +22,64 @@ func (_m *AuthUsecase) EXPECT() *AuthUsecase_Expecter {
 	return &AuthUsecase_Expecter{mock: &_m.Mock}
 }
 
+// GuestLogin provides a mock function with given fields: ctx
+func (_m *AuthUsecase) GuestLogin(ctx context.Context) (*domain.LoginResponse, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GuestLogin")
+	}
+
+	var r0 *domain.LoginResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*domain.LoginResponse, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *domain.LoginResponse); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.LoginResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AuthUsecase_GuestLogin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GuestLogin'
+type AuthUsecase_GuestLogin_Call struct {
+	*mock.Call
+}
+
+// GuestLogin is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *AuthUsecase_Expecter) GuestLogin(ctx interface{}) *AuthUsecase_GuestLogin_Call {
+	return &AuthUsecase_GuestLogin_Call{Call: _e.mock.On("GuestLogin", ctx)}
+}
+
+func (_c *AuthUsecase_GuestLogin_Call) Run(run func(ctx context.Context)) *AuthUsecase_GuestLogin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *AuthUsecase_GuestLogin_Call) Return(_a0 *domain.LoginResponse, _a1 error) *AuthUsecase_GuestLogin_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *AuthUsecase_GuestLogin_Call) RunAndReturn(run func(context.Context) (*domain.LoginResponse, error)) *AuthUsecase_GuestLogin_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Login provides a mock function with given fields: ctx, email, password
 func (_m *AuthUsecase) Login(ctx context.Context, email string, password string) (*domain.LoginResponse, error) {
 	ret := _m.Called(ctx, email, password)
