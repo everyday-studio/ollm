@@ -269,8 +269,9 @@
   };
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 text-gray-900 font-sans p-4">
+<div class="min-h-screen flex flex-col bg-gray-50 text-gray-900 font-sans">
   
+  <div class="flex-1 flex items-center justify-center p-4">
   <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative p-8 md:p-10">
       
       <div class="text-center mb-8">
@@ -389,8 +390,9 @@
         Google 계정으로 계속하기
       </button>
   </div>
+  </div>
   
-  <div class="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1.5 text-xs text-gray-400">
+  <div class="hidden sm:flex flex-col items-center gap-1.5 text-xs text-gray-400 py-4">
     <p>&copy; 2026 <a href="https://everydaystudio.xyz" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-blue-500 font-semibold transition-colors">everydaystudio</a> &middot; ollm</p>
     <a href="mailto:everydaystudio365@gmail.com" class="text-[10px] text-gray-400 hover:text-gray-600 transition-colors">everydaystudio365@gmail.com</a>
     <a
