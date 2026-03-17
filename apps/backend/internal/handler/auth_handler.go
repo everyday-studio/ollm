@@ -31,6 +31,7 @@ func NewAuthHandler(e *echo.Echo, authUseCase domain.AuthUsecase, config *config
 	publicGroup.POST("/login", handler.Login)
 	publicGroup.POST("/refresh", handler.RefreshToken)
 	publicGroup.POST("/google", handler.GoogleLogin)
+	publicGroup.POST("/guest", handler.GuestLogin)
 
 	userGroup := e.Group("/api/auth", middleware.AllowRoles(domain.RoleUser))
 	userGroup.POST("/logout", handler.Logout)
@@ -216,6 +217,20 @@ func (h *AuthHandler) GoogleLogin(c echo.Context) error {
 	}
 
 	// Set refresh token as secure HttpOnly cookie (same as regular login).
+	cookie := h.createRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiration)
+	c.SetCookie(cookie)
+
+	return c.JSON(http.StatusOK, loginResponse)
+}
+
+func (h *AuthHandler) GuestLogin(c echo.Context) error {
+	ctx := c.Request().Context()
+	loginResponse, err := h.authUseCase.GuestLogin(ctx)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrResponse(domain.ErrInternal))
+	}
+
+	// Set refresh token as secure HttpOnly cookie.
 	cookie := h.createRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiration)
 	c.SetCookie(cookie)
 
