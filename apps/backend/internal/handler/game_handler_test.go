@@ -39,7 +39,7 @@ func TestGameHandler_Create(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusCreated,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","first_message":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to create game due to invalid input",
@@ -108,7 +108,7 @@ func TestGameHandler_GetByID(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","first_message":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to find game",
@@ -186,7 +186,7 @@ func TestGameHandler_GetAll(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"data":[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"system_prompt":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"system_prompt":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}],"total":2,"page":1,"limit":10,"total_pages":1}`,
+			wantBody:   `{"data":[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"system_prompt":"","first_message":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"system_prompt":"","first_message":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}],"total":2,"page":1,"limit":10,"total_pages":1}`,
 		},
 		{
 			name:       "Fail to get games due to internal error",
@@ -245,7 +245,7 @@ func TestGameHandler_Update(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Updated Title","description":"Original description","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Updated Title","description":"Original description","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"system_prompt":"","first_message":"","judge_type":"","judge_condition":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to update non-existent game",

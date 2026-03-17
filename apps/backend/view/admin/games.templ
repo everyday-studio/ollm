@@ -154,6 +154,10 @@ templ GameTableRow(game domain.Game, adminPath string, bucketName string) {
                     <span class="text-gray-500 font-medium shrink-0">Prompt:</span> 
                     <span class="truncate">{ game.SystemPrompt }</span>
                 </div>
+                <div class="flex items-start gap-1" title={ game.FirstMessage }>
+                    <span class="text-gray-500 font-medium shrink-0">FirstMsg:</span> 
+                    <span class="truncate">{ game.FirstMessage }</span>
+                </div>
                 <div class="flex items-center gap-1">
                     <span class="text-gray-500 font-medium">Turns:</span> 
                     <span>{ fmt.Sprintf("%d", game.MaxTurns) }</span>

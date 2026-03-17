@@ -32,6 +32,7 @@ func (uc *gameUseCase) Create(ctx context.Context, req *domain.CreateGameRequest
 		Status:         domain.GameStatusActive,
 		IsPublic:       true,
 		SystemPrompt:   req.SystemPrompt,
+		FirstMessage:   req.FirstMessage,
 		JudgeType:      req.JudgeType,
 		JudgeCondition: req.JudgeCondition,
 		MaxTurns:       maxTurns,
@@ -112,6 +113,9 @@ func (uc *gameUseCase) Update(ctx context.Context, id string, req *domain.Update
 
 	if req.SystemPrompt != nil {
 		existingGame.SystemPrompt = *req.SystemPrompt
+	}
+	if req.FirstMessage != nil {
+		existingGame.FirstMessage = *req.FirstMessage
 	}
 
 	if req.JudgeType != nil {
