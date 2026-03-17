@@ -22,6 +22,64 @@ func (_m *LLMService) EXPECT() *LLMService_Expecter {
 	return &LLMService_Expecter{mock: &_m.Mock}
 }
 
+// EvaluateFormatBreak provides a mock function with given fields: ctx, condition, aiContent
+func (_m *LLMService) EvaluateFormatBreak(ctx context.Context, condition string, aiContent string) (bool, error) {
+	ret := _m.Called(ctx, condition, aiContent)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EvaluateFormatBreak")
+	}
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
+		return rf(ctx, condition, aiContent)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+		r0 = rf(ctx, condition, aiContent)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, condition, aiContent)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LLMService_EvaluateFormatBreak_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EvaluateFormatBreak'
+type LLMService_EvaluateFormatBreak_Call struct {
+	*mock.Call
+}
+
+// EvaluateFormatBreak is a helper method to define mock.On call
+//   - ctx context.Context
+//   - condition string
+//   - aiContent string
+func (_e *LLMService_Expecter) EvaluateFormatBreak(ctx interface{}, condition interface{}, aiContent interface{}) *LLMService_EvaluateFormatBreak_Call {
+	return &LLMService_EvaluateFormatBreak_Call{Call: _e.mock.On("EvaluateFormatBreak", ctx, condition, aiContent)}
+}
+
+func (_c *LLMService_EvaluateFormatBreak_Call) Run(run func(ctx context.Context, condition string, aiContent string)) *LLMService_EvaluateFormatBreak_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *LLMService_EvaluateFormatBreak_Call) Return(_a0 bool, _a1 error) *LLMService_EvaluateFormatBreak_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *LLMService_EvaluateFormatBreak_Call) RunAndReturn(run func(context.Context, string, string) (bool, error)) *LLMService_EvaluateFormatBreak_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EvaluateWinCondition provides a mock function with given fields: ctx, judgeCondition, history
 func (_m *LLMService) EvaluateWinCondition(ctx context.Context, judgeCondition string, history []domain.Message) (bool, int, int, error) {
 	ret := _m.Called(ctx, judgeCondition, history)

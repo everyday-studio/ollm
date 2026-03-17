@@ -168,7 +168,18 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 				nextStatus = domain.MatchStatusWon
 			}
 		}
-	}
+	} else if game.JudgeType == domain.JudgeTypeFormatBreak && game.JudgeCondition != "" {
+        // Groq 기반의 '만능 심판 프롬프트' 메서드 호출
+        isBroken, evalErr := uc.judgeLLMService.EvaluateFormatBreak(ctx, game.JudgeCondition, aiContent)
+        
+        if evalErr != nil {
+            // 외부 API 에러 시 게임을 터뜨리지 않고 로그만 남김 (Fault Tolerance)
+            fmt.Printf("failed to evaluate format break condition: %v\n", evalErr)
+        } else if isBroken {
+            // AI가 포맷(JSON, Python, 터미널 등)을 어겼다면 유저 승리!
+            nextStatus = domain.MatchStatusWon
+        }
+    }
 
 	// 패배 판정
 	if nextStatus == domain.MatchStatusActive && match.TurnCount >= match.MaxTurns {
