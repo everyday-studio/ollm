@@ -23,3 +23,4 @@ export interface AuthResponse {
 // API 요청 타입
 export interface LoginRequest { email: string; password: string; }
 export interface SignupRequest { email: string; password: string; }
+export interface GoogleLoginRequest { id_token: string; }

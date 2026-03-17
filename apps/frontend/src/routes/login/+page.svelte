@@ -209,9 +209,58 @@
     }
   };
 
-  // 구글 로그인 (Mock)
+  // 구글 로그인
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
   const handleGoogleLogin = () => {
-    toast.error("아직 지원하지 않는 기능입니다.", { position: 'top-center' });
+    if (!GOOGLE_CLIENT_ID) {
+      toast.error('Google 로그인이 설정되지 않았습니다.', { position: 'top-center' });
+      return;
+    }
+
+    if (isLoading) return;
+
+    const google = (window as unknown as { google?: { accounts: { id: { initialize: (config: { client_id: string; callback: (response: { credential: string }) => void; }) => void; prompt: () => void; } } } }).google;
+
+    if (!google) {
+      toast.error('Google 로그인 스크립트를 불러오는 중입니다. 잠시 후 다시 시도해주세요.', { position: 'top-center' });
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: async (response: { credential: string }) => {
+        isLoading = true;
+        errorMessage = '';
+
+        try {
+          const res = await authApi.googleLogin({ id_token: response.credential });
+          const { access_token, id, name, tag, email } = res.data as AuthResponse;
+          authStore.loginSuccess(access_token, { id, name, tag, email, role: '', created_at: '', updated_at: '' });
+
+          toast.success('Google 로그인 성공!', {
+            duration: 3000,
+            position: 'top-center',
+            icon: '✅',
+          });
+
+          // eslint-disable-next-line svelte/no-navigation-without-resolve
+          await goto('/lobby');
+        } catch (err: unknown) {
+          const axiosErr = err as { response?: { status?: number } };
+          if (axiosErr.response?.status === 401) {
+            errorMessage = 'Google 인증에 실패했습니다. 다시 시도해주세요.';
+          } else {
+            errorMessage = '서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+          }
+          toast.error(errorMessage, { position: 'top-center' });
+        } finally {
+          isLoading = false;
+        }
+      },
+    });
+
+    google.accounts.id.prompt();
   };
 </script>
 
