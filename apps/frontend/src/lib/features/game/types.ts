@@ -9,6 +9,7 @@ export interface GameDTO {
   status: 'active' | 'inactive';
   is_public: boolean;
   system_prompt: string;
+  first_message?: string;
   judge_type: 'target_word' | 'llm_judge' | 'format_break';
   judge_condition: string;
   max_turns: number;

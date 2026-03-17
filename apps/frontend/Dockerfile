@@ -7,7 +7,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
-# 소스코드 복사 및 프로덕션 빌드 (이 과정에서 .env.production이 사용됨)
+# 소스코드 복사 (.env.production 포함)
+# .env.production은 git에 없으므로 프로덕션 서버에 직접 파일을 두어야 함
+# vite build는 기본 mode가 production이므로 .env.production을 자동으로 읽음
 COPY . .
 RUN npm run build
 

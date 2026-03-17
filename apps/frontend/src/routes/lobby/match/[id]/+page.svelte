@@ -40,7 +40,24 @@
 	let latestLoadToken = 0;
 
 	// Derived helpers
-	let visibleMessages = $derived(messages.filter((m) => m.is_visible));
+	let initialMessage = $derived(
+		game?.first_message
+			? ({
+					id: `initial-${game.id}`,
+					match_id: match?.id ?? matchId ?? '',
+					role: 'assistant' as const,
+					content: game.first_message,
+					is_visible: true,
+					turn_count: 0,
+					token_count: 0,
+					created_at: match?.created_at ?? new Date().toISOString()
+				} satisfies MessageDTO)
+			: null
+	);
+	let visibleMessages = $derived([
+		...(initialMessage ? [initialMessage] : []),
+		...messages.filter((m) => m.is_visible)
+	]);
 	let isMatchActive = $derived(match?.status === 'active');
 	let isGenerating = $derived(match?.status === 'generating');
 	let isSending = $derived(sendingMatchId === matchId);
@@ -794,11 +811,13 @@
 																</p>
 															</div>
 															<div class="mt-1 pl-1">
-																<span
-																	class={`text-[10px] tabular-nums ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
-																>
-																	턴 {msg.turn_count}
-																</span>
+																{#if msg.turn_count > 0}
+																	<span
+																		class={`text-[10px] tabular-nums ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
+																	>
+																		턴 {msg.turn_count}
+																	</span>
+																{/if}
 															</div>
 														</div>
 													</div>
