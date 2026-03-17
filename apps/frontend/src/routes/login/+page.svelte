@@ -374,7 +374,7 @@
       </div>
 
       <!-- GIS renderButton() 숨겨진 컨테이너 (팝업 트리거용) -->
-      <div bind:this={googleBtnContainer} class="absolute w-px h-px overflow-hidden opacity-0" aria-hidden="true"></div>
+      <div bind:this={googleBtnContainer} aria-hidden="true" style="position: fixed; left: -9999px; top: -9999px; width: 250px; height: 50px;"></div>
 
       <button 
         on:click={handleGoogleLogin}
