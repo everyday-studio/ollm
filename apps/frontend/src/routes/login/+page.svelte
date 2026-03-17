@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade, scale } from 'svelte/transition';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { goto } from '$app/navigation';
   import { toast } from 'svelte-french-toast';
 
@@ -64,7 +64,7 @@
   }
 
   // Open guide automatically on client mount (only once per browser via localStorage)
-  onMount(() => {
+  onMount(async () => {
     const key = 'ollm_guide_shown_v1';
     try {
       const shown = localStorage.getItem(key);
@@ -79,6 +79,8 @@
       guideStep = 0;
     }
 
+    // DOM이 완전히 업데이트된 후 Google 버튼 초기화
+    await tick();
     initGoogleButton();
   });
 
@@ -109,19 +111,42 @@
   function initGoogleButton() {
     if (!GOOGLE_CLIENT_ID) return;
 
+    let attempts = 0;
+    const MAX_ATTEMPTS = 20; // 최대 4초 (200ms * 20)
+
     const tryInit = () => {
+      if (attempts++ >= MAX_ATTEMPTS) return;
+
       type GIS = { accounts: { id: { initialize: (c: object) => void; renderButton: (el: HTMLElement, o: object) => void; } } };
       const g = (window as unknown as { google?: GIS }).google;
+
+      // 1단계: Google 라이브러리 로드 대기
       if (!g?.accounts?.id) {
         setTimeout(tryInit, 200);
         return;
       }
+
+      // 2단계: 컨테이너가 실제로 DOM에 존재하는지 확인
+      if (!googleBtnContainer || !document.contains(googleBtnContainer)) {
+        setTimeout(tryInit, 200);
+        return;
+      }
+
       g.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCallback,
       });
       g.accounts.id.renderButton(googleBtnContainer, { type: 'standard', size: 'large', width: 1 });
+
+      // 3단계: 버튼이 실제로 렌더링됐는지 검증 후 실패 시 재시도
+      setTimeout(() => {
+        if (!googleBtnContainer?.querySelector('div[role="button"]')) {
+          attempts = 0; // 리셋 후 재시도
+          tryInit();
+        }
+      }, 300);
     };
+
     tryInit();
   }
 
