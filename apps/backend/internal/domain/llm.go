@@ -10,4 +10,8 @@ type LLMService interface {
 	// EvaluateWinCondition asks the LLM to judge if the user has met the win condition based on the conversation history.
 	// It returns true if the condition is met, false otherwise, along with token usage and any error.
 	EvaluateWinCondition(ctx context.Context, judgeCondition string, history []Message) (bool, int, int, error)
+
+	// EvaluateFormatBreak asks the LLM to judge if the AI has failed to follow the format rules.
+	// It returns true if the format is broken (user wins), false otherwise, along with token usage and any error.
+	EvaluateFormatBreak(ctx context.Context, condition string, aiContent string) (bool, error)
 }
