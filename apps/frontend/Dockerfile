@@ -3,11 +3,19 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# 빌드 타임 환경 변수 (Docker 빌드 시 --build-arg로 전달)
+ARG VITE_GOOGLE_CLIENT_ID
+ARG VITE_API_URL
+
+# 환경 변수를 빌드 환경에 설정
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+ENV VITE_API_URL=$VITE_API_URL
+
 # 의존성 설치 (package-lock.json 캐싱 활용)
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
-# 소스코드 복사 및 프로덕션 빌드 (이 과정에서 .env.production이 사용됨)
+# 소스코드 복사 및 프로덕션 빌드 (이 과정에서 ENV 변수 사용됨)
 COPY . .
 RUN npm run build
 
