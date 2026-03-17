@@ -26,6 +26,7 @@ type Game struct {
 	Status         GameStatus `json:"status"`
 	IsPublic       bool       `json:"is_public"`
 	SystemPrompt   string     `json:"system_prompt"`
+	FirstMessage   string     `json:"first_message"`
 	JudgeType      JudgeType  `json:"judge_type"`
 	JudgeCondition string     `json:"judge_condition"`
 	MaxTurns       int        `json:"max_turns"`
@@ -39,6 +40,7 @@ type CreateGameRequest struct {
 	Description    string    `json:"description"`
 	AuthorID       string    `json:"author_id"`
 	SystemPrompt   string    `json:"system_prompt"`
+	FirstMessage   string    `json:"first_message"`
 	JudgeType      JudgeType `json:"judge_type"`
 	JudgeCondition string    `json:"judge_condition"`
 	MaxTurns       int       `json:"max_turns"`
@@ -52,6 +54,7 @@ type UpdateGameRequest struct {
 	Status         *GameStatus `json:"status"`
 	IsPublic       *bool       `json:"is_public"`
 	SystemPrompt   *string     `json:"system_prompt"`
+	FirstMessage   *string     `json:"first_message"`
 	JudgeType      *JudgeType  `json:"judge_type"`
 	JudgeCondition *string     `json:"judge_condition"`
 	MaxTurns       *int        `json:"max_turns"`
