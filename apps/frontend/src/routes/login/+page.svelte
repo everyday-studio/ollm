@@ -135,6 +135,7 @@
       g.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCallback,
+        use_fedcm_for_prompt: false,
       });
       g.accounts.id.renderButton(googleBtnContainer, { type: 'standard', size: 'large', width: 1 });
 
