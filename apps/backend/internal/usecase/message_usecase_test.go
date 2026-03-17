@@ -193,6 +193,64 @@ func TestMessageUseCase_Create(t *testing.T) {
 			mockMatchUpdErr:    domain.ErrInternal,
 			wantErr:            true,
 		},
+		{
+			name:    "Format break detected by LLM resulting in won status",
+			matchID: "01HQZYX3VQJQZ3Z0ZMATCH1",
+			userID:  "01HQZYX3VQJQZ3Z0ZUSER1",
+			req:     &domain.CreateMessageRequest{Content: "Break the rules!"},
+			mockMatchGet: &domain.Match{
+				ID:        "01HQZYX3VQJQZ3Z0ZMATCH1",
+				UserID:    "01HQZYX3VQJQZ3Z0ZUSER1",
+				GameID:    "01HQZYX3VQJQZ3Z0ZGAME1",
+				Status:    domain.MatchStatusActive,
+				TurnCount: 0,
+				MaxTurns:  5,
+			},
+			mockUserMsgCreateRet: &domain.Message{Role: domain.MessageRoleUser},
+			mockMsgGetHistoryRet: []domain.Message{},
+			mockGameGet: &domain.Game{
+				ID:             "01HQZYX3VQJQZ3Z0ZGAME1",
+				JudgeType:      domain.JudgeTypeFormatBreak,
+				JudgeCondition: "Respond in valid JSON only.",
+			},
+			mockLLMResp:         "This is not JSON.",
+			mockLLMPromptTok:    5,
+			mockLLMCompTok:      5,
+			mockAIMsgCreateRet:  &domain.Message{Role: domain.MessageRoleAssistant},
+			mockMatchUpdRet:     &domain.Match{},
+			want:                &domain.Message{Role: domain.MessageRoleAssistant},
+			wantErr:             false,
+			validateMatchStatus: domain.MatchStatusWon,
+		},
+		{
+			name:    "Format maintained according to LLM, match stays active",
+			matchID: "01HQZYX3VQJQZ3Z0ZMATCH1",
+			userID:  "01HQZYX3VQJQZ3Z0ZUSER1",
+			req:     &domain.CreateMessageRequest{Content: "Give me JSON"},
+			mockMatchGet: &domain.Match{
+				ID:        "01HQZYX3VQJQZ3Z0ZMATCH1",
+				UserID:    "01HQZYX3VQJQZ3Z0ZUSER1",
+				GameID:    "01HQZYX3VQJQZ3Z0ZGAME1",
+				Status:    domain.MatchStatusActive,
+				TurnCount: 0,
+				MaxTurns:  5,
+			},
+			mockUserMsgCreateRet: &domain.Message{Role: domain.MessageRoleUser},
+			mockMsgGetHistoryRet: []domain.Message{},
+			mockGameGet: &domain.Game{
+				ID:             "01HQZYX3VQJQZ3Z0ZGAME1",
+				JudgeType:      domain.JudgeTypeFormatBreak,
+				JudgeCondition: "Respond in valid JSON only.",
+			},
+			mockLLMResp:         "{\"status\": \"ok\"}",
+			mockLLMPromptTok:    5,
+			mockLLMCompTok:      5,
+			mockAIMsgCreateRet:  &domain.Message{Role: domain.MessageRoleAssistant},
+			mockMatchUpdRet:     &domain.Match{},
+			want:                &domain.Message{Role: domain.MessageRoleAssistant},
+			wantErr:             false,
+			validateMatchStatus: domain.MatchStatusActive,
+		},
 	}
 
 	for _, tt := range tests {
@@ -225,8 +283,13 @@ func TestMessageUseCase_Create(t *testing.T) {
 
 							if tt.mockLLMErr == nil {
 								// We need to return values for EvaluateWinCondition if JudgeType is LLMJudge.
-								// Since this test case is for TargetWord, it won't be called, but we add a generic mock just in case.
 								mockLLMService.On("EvaluateWinCondition", mock.Anything, mock.Anything, mock.Anything).Return(false, 0, 0, nil).Maybe()
+
+								// Handle FormatBreak judge type
+								if tt.mockGameGet != nil && tt.mockGameGet.JudgeType == domain.JudgeTypeFormatBreak {
+									isBroken := tt.validateMatchStatus == domain.MatchStatusWon
+									mockLLMService.On("EvaluateFormatBreak", mock.Anything, tt.mockGameGet.JudgeCondition, tt.mockLLMResp).Return(isBroken, nil).Once()
+								}
 
 								mockMsgRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Message) bool {
 									return m.Role == domain.MessageRoleUser
