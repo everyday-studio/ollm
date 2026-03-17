@@ -31,9 +31,10 @@ func TestGameRepository_Create(t *testing.T) {
 		game := &domain.Game{
 			Title:       "Adventure Quest",
 			Description: "A text-based adventure game",
-			AuthorID:    author.ID,
-			Status:      domain.GameStatusActive,
-			IsPublic:    false,
+			AuthorID:     author.ID,
+			Status:       domain.GameStatusActive,
+			IsPublic:     false,
+			FirstMessage: "Welcome to the adventure!",
 		}
 
 		createdGame, err := repo.Create(ctx, game)
@@ -43,6 +44,7 @@ func TestGameRepository_Create(t *testing.T) {
 		assert.Equal(t, "Adventure Quest", createdGame.Title)
 		assert.Equal(t, "A text-based adventure game", createdGame.Description)
 		assert.Equal(t, author.ID, createdGame.AuthorID)
+		assert.Equal(t, "Welcome to the adventure!", createdGame.FirstMessage)
 		assert.Equal(t, domain.GameStatusActive, createdGame.Status) // default status
 		assert.False(t, createdGame.IsPublic)                        // default is false from Go zero value
 		assert.NotZero(t, createdGame.CreatedAt)
@@ -182,6 +184,7 @@ func TestGameRepository_Update(t *testing.T) {
 		// Modify fields
 		createdGame.Title = "Updated Title"
 		createdGame.Description = "Updated description"
+		createdGame.FirstMessage = "New greeting!"
 		createdGame.IsPublic = true
 
 		updatedGame, err := repo.Update(ctx, createdGame)
@@ -189,6 +192,7 @@ func TestGameRepository_Update(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "Updated Title", updatedGame.Title)
 		assert.Equal(t, "Updated description", updatedGame.Description)
+		assert.Equal(t, "New greeting!", updatedGame.FirstMessage)
 		assert.True(t, updatedGame.IsPublic)
 	})
 
