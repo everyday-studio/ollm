@@ -49,4 +49,6 @@ type AuthUsecase interface {
 	// LoginWithGoogle verifies a Google ID token and upserts the user,
 	// returning a LoginResponse with JWT tokens on success.
 	LoginWithGoogle(ctx context.Context, idToken string) (*LoginResponse, error)
+	// GuestLogin creates a temporary guest user and returns JWT tokens.
+	GuestLogin(ctx context.Context) (*LoginResponse, error)
 }
