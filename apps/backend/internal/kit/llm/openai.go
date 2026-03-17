@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -116,4 +117,57 @@ Respond with ONLY "true" or "false". Do not include any other text, explanation,
 	content := strings.ToLower(strings.TrimSpace(resp.Choices[0].Message.Content))
 
 	return content == "true", promptTokens, completionTokens, nil
+}
+
+// EvaluateFormatBreak asks the LLM to judge if the AI has failed to follow the format rules.
+func (s *openAIService) EvaluateFormatBreak(ctx context.Context, condition string, aiContent string) (bool, error) {
+	systemPrompt := `You are a strict format and syntax validator.
+	Your task is to judge if the provided 'AI Content' violates the 'Requirement' (e.g. valid JSON, Python code, specific header, etc).
+	Even a 1% deviation or minor syntax error means the format is broken.
+
+	Rules:
+	1. If the content deviates from the requirement in ANY way, is_broken must be true.
+	2. If it strictly follows the requirement, is_broken must be false.
+	3. You MUST respond in JSON format only.`
+
+	userPrompt := fmt.Sprintf("Requirement: %s\n\nAI Content to Evaluate:\n%s", condition, aiContent)
+
+	req := openai.ChatCompletionRequest{
+		Model: s.model,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: systemPrompt,
+			},
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: userPrompt,
+			},
+		},
+		Temperature: 0.0,
+		MaxTokens:   300,
+		ResponseFormat: &openai.ChatCompletionResponseFormat{
+			Type: openai.ChatCompletionResponseFormatTypeJSONObject,
+		},
+	}
+
+	resp, err := s.client.CreateChatCompletion(ctx, req)
+	if err != nil {
+		return false, fmt.Errorf("openai format break evaluation failed: %w", err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return false, fmt.Errorf("openai format break evaluation failed: no response from assistant")
+	}
+
+	var result struct {
+		IsBroken bool   `json:"is_broken"`
+		Reason   string `json:"reason"`
+	}
+
+	if err := json.Unmarshal([]byte(resp.Choices[0].Message.Content), &result); err != nil {
+		return false, fmt.Errorf("failed to parse judge response: %w (content: %s)", err, resp.Choices[0].Message.Content)
+	}
+
+	return result.IsBroken, nil
 }
