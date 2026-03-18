@@ -65,6 +65,12 @@
 
   // Open guide automatically on client mount (only once per browser via localStorage)
   onMount(async () => {
+    // 이미 로그인된 경우 로비로 리다이렉트
+    if ($authStore.isAuthenticated) {
+      goto('/lobby');
+      return;
+    }
+
     const key = 'ollm_guide_shown_v1';
     try {
       const shown = localStorage.getItem(key);
@@ -293,6 +299,27 @@
     // 숨겨진 Google 공식 버튼을 programmatic 클릭 → 팝업 다이얼로그 오픈
     googleBtnContainer?.querySelector<HTMLElement>('div[role="button"]')?.click();
   };
+
+  const handleGuestLogin = async () => {
+    if (isLoading) return;
+    isLoading = true;
+    errorMessage = '';
+    let loggedIn = false;
+    try {
+      const res = await authApi.guestLogin();
+      const { access_token, id, name, tag, email } = res.data as AuthResponse;
+      authStore.loginSuccess(access_token, { id, name, tag, email, role: '', created_at: '', updated_at: '' });
+      toast.success('게스트로 입장합니다!', { duration: 3000, position: 'top-center', icon: '👤' });
+      loggedIn = true;
+    } catch {
+      errorMessage = '게스트 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.';
+      toast.error(errorMessage, { position: 'top-center' });
+    } finally {
+      isLoading = false;
+    }
+    // eslint-disable-next-line svelte/no-navigation-without-resolve
+    if (loggedIn) await goto('/lobby');
+  };
 </script>
 
 <div class="min-h-screen flex flex-col bg-gray-50 text-gray-900 font-sans">
@@ -321,7 +348,7 @@
         </div>
       </div>
 
-      <form on:submit|preventDefault={handleLogin} class="space-y-5">
+      <form on:submit|preventDefault={handleLogin} class="space-y-3">
         <div class="space-y-1.5">
             <label for="login-email" class="block text-sm font-medium text-gray-700">이메일</label>
             <input 
@@ -401,6 +428,20 @@
 
       <!-- GIS renderButton() 숨겨진 컨테이너 (팝업 트리거용) -->
       <div bind:this={googleBtnContainer} aria-hidden="true" style="position: fixed; left: -9999px; top: -9999px; width: 250px; height: 50px;"></div>
+
+      <!-- 게스트 로그인 버튼 -->
+      <button
+        type="button"
+        on:click={handleGuestLogin}
+        disabled={isLoading}
+        class="w-full flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 font-semibold py-3 rounded-lg transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mb-3"
+      >
+        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        게스트로 시작하기
+      </button>
 
       <!-- Google 로그인 버튼: 시각적 레이어 위에 실제 Google 버튼 오버레이 -->
       <div class="relative w-full">
