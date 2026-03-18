@@ -47,3 +47,11 @@ Content-Type: application/json
 ### 게스트 로그인 테스트
 POST http://localhost:8080/api/auth/guest
 Content-Type: application/json
+
+### 리프레시 토큰 테스트 (JSON 바디 활용 - 게스트용)
+POST http://localhost:8080/api/auth/refresh
+Content-Type: application/json
+
+{
+    "refresh_token": "..."
+}
