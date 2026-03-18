@@ -164,15 +164,29 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 }
 
 func (h *AuthHandler) RefreshToken(c echo.Context) error {
-	// Get refresh token from cookie
-	cookie, err := c.Cookie(refreshTokenCookieName)
-	if err != nil {
+	var refreshToken string
+
+	// Try to get refresh token from cookie
+	cookie, err := (c.Cookie(refreshTokenCookieName))
+	if err == nil {
+		refreshToken = cookie.Value
+	} else {
+		// Fallback to reading from JSON body (e.g. for guest users using localStorage)
+		var req struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		if err := c.Bind(&req); err == nil && req.RefreshToken != "" {
+			refreshToken = req.RefreshToken
+		}
+	}
+
+	if refreshToken == "" {
 		return c.JSON(http.StatusUnauthorized, ErrResponse(errors.New("refresh token not found")))
 	}
 
 	ctx := c.Request().Context()
 	// Call usecase to refresh token
-	loginResponse, err := h.authUseCase.RefreshToken(ctx, cookie.Value)
+	loginResponse, err := h.authUseCase.RefreshToken(ctx, refreshToken)
 	if err != nil {
 		switch {
 		case errors.Is(err, security.ErrInvalidToken), errors.Is(err, security.ErrExpiredToken):
@@ -234,5 +248,15 @@ func (h *AuthHandler) GuestLogin(c echo.Context) error {
 	cookie := h.createRefreshTokenCookie(loginResponse.RefreshToken, loginResponse.RefreshTokenExpiration)
 	c.SetCookie(cookie)
 
-	return c.JSON(http.StatusOK, loginResponse)
+	// For guest login, we also expose the refresh_token in the response body
+	// so that the frontend can store it in localStorage if they want to persist
+	// the session even after logout/cookie deletion.
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"id":            loginResponse.ID,
+		"name":          loginResponse.Name,
+		"tag":           loginResponse.Tag,
+		"email":         loginResponse.Email,
+		"access_token":  loginResponse.AccessToken,
+		"refresh_token": loginResponse.RefreshToken,
+	})
 }
