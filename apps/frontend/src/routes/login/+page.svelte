@@ -6,6 +6,7 @@
 
   import { authApi } from '$lib/features/auth/api';
   import { authStore } from '$lib/features/auth/model';
+  import { ensureSession, resetSession } from '$lib/features/auth/session';
   import type { AuthResponse } from '$lib/features/auth/types';
 
   // 상태 변수들
@@ -300,17 +301,59 @@
     googleBtnContainer?.querySelector<HTMLElement>('div[role="button"]')?.click();
   };
 
+  const GUEST_TOKEN_KEY = 'guest_refresh_token';
+
+  function getStoredGuestToken(): string | null {
+    try { return localStorage.getItem(GUEST_TOKEN_KEY); } catch { return null; }
+  }
+  function saveGuestToken(token: string) {
+    try { localStorage.setItem(GUEST_TOKEN_KEY, token); } catch {}
+  }
+  function clearGuestToken() {
+    try { localStorage.removeItem(GUEST_TOKEN_KEY); } catch {}
+  }
+
   const handleGuestLogin = async () => {
     if (isLoading) return;
     isLoading = true;
     errorMessage = '';
     let loggedIn = false;
     try {
-      const res = await authApi.guestLogin();
-      const { access_token, id, name, tag, email } = res.data as AuthResponse;
-      authStore.loginSuccess(access_token, { id, name, tag, email, role: '', created_at: '', updated_at: '' });
-      toast.success('게스트로 입장합니다!', { duration: 3000, position: 'top-center', icon: '👤' });
-      loggedIn = true;
+      // 1단계: 쿠키에 refresh token이 있으면 기존 세션 복원
+      resetSession();
+      const hasSession = await ensureSession();
+      if (hasSession) {
+        toast.success('이전 게스트 계정으로 복귀합니다!', { duration: 3000, position: 'top-center', icon: '👤' });
+        loggedIn = true;
+      } else {
+        resetSession();
+        // 2단계: 쿠키 없으면 localStorage의 refresh token으로 복원 시도
+        const storedToken = getStoredGuestToken();
+        if (storedToken) {
+          try {
+            const res = await authApi.refreshWithToken(storedToken);
+            if (res?.data?.access_token) {
+              const { access_token, id, name, tag, email } = res.data;
+              authStore.loginSuccess(access_token, { id, name, tag, email, role: '', created_at: '', updated_at: '' });
+              toast.success('이전 게스트 계정으로 복귀합니다!', { duration: 3000, position: 'top-center', icon: '👤' });
+              loggedIn = true;
+            }
+          } catch {
+            // 저장된 토큰 만료 — 제거 후 새 게스트 생성
+            clearGuestToken();
+          }
+        }
+
+        // 3단계: 저장된 세션 없으면 새 게스트 계정 생성
+        if (!loggedIn) {
+          const res = await authApi.guestLogin();
+          const { access_token, id, name, tag, email, refresh_token } = res.data as AuthResponse;
+          authStore.loginSuccess(access_token, { id, name, tag, email, role: '', created_at: '', updated_at: '' });
+          if (refresh_token) saveGuestToken(refresh_token);
+          toast.success('게스트로 입장합니다!', { duration: 3000, position: 'top-center', icon: '👤' });
+          loggedIn = true;
+        }
+      }
     } catch {
       errorMessage = '게스트 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.';
       toast.error(errorMessage, { position: 'top-center' });
@@ -326,6 +369,15 @@
   
   <div class="flex-1 flex items-center justify-center p-4">
   <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative p-8 md:p-10">
+      
+      {#if isLoading}
+        <div class="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
+          <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+      {/if}
       
       <div class="text-center mb-8">
         <img 
@@ -412,7 +464,8 @@
       <button 
         type="button"
         on:click={openModal}
-        class="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 rounded-lg transition-all transform active:scale-[0.98] cursor-pointer"
+        disabled={isLoading}
+        class="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 rounded-lg transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         새 계정 만들기
       </button>

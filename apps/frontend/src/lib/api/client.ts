@@ -33,12 +33,13 @@ client.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // 401 에러이고, 아직 재시도를 안 했다면? (단, 로그인이나 회원가입 시 발생한 401은 무시)
+    // 401 에러이고, 아직 재시도를 안 했다면? (단, 로그인/회원가입/리프레시 경로 제외)
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/api/auth/login') &&
-      !originalRequest.url?.includes('/api/auth/signup')
+      !originalRequest.url?.includes('/api/auth/signup') &&
+      !originalRequest.url?.includes('/api/auth/refresh') // refresh 자체가 401 → 무한루프/리다이렉트 방지
     ) {
       originalRequest._retry = true;
 

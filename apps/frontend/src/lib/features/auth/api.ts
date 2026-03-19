@@ -8,5 +8,7 @@ export const authApi = {
     googleLogin: (data: GoogleLoginRequest) => client.post<AuthResponse>('/api/auth/google', data),
     guestLogin: () => client.post<AuthResponse>('/api/auth/guest'),
     logout: () => client.post('/api/auth/logout'),
-    refresh: () => client.post<AuthResponse>('/api/auth/refresh')
+    refresh: () => client.post<AuthResponse>('/api/auth/refresh'),
+    // 게스트 전용: 쿠키 없이 localStorage에 저장된 refresh token을 body로 전송
+    refreshWithToken: (token: string) => client.post<AuthResponse>('/api/auth/refresh', { refresh_token: token }),
 };
