@@ -18,6 +18,7 @@ export interface AuthResponse {
   tag: string;
   email: string;
   access_token: string;
+  refresh_token?: string; // 게스트 로그인 응답에만 포함됨 (localStorage 저장용)
 }
 
 // API 요청 타입

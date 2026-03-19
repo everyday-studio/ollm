@@ -6,6 +6,7 @@
 
 	import { gameApi } from '$lib/features/game/api';
 	import { ensureSession } from '$lib/features/auth/session';
+	import { disassemble } from 'es-hangul';
 	import { getCachedGames, getCachedMyMatches, invalidateMatchesCache } from '$lib/cache/gameCache';
 	import { toGameUI, toMatchUI } from './adapter';
 	import type { GameUI, MatchUI } from '$lib/features/game/types';
@@ -29,6 +30,16 @@
 	let isLoading = $state(true);
 	let activeSection = $state<'games' | 'matches'>('games');
 	let judgeFilter = $state<'all' | 'target_word' | 'llm_judge' | 'format_break'>('all');
+	let searchQuery = $state('');
+	let showJudgeDropdown = $state(false);
+
+	function matchesQuery(title: string, query: string): boolean {
+		const q = query.trim();
+		if (!q) return true;
+		if (title.toLowerCase().includes(q.toLowerCase())) return true;
+		if (disassemble(title).includes(disassemble(q))) return true;
+		return false;
+	}
 
 	const judgeFilters = [
 		{ id: 'all' as const, label: '전체' },
@@ -37,9 +48,16 @@
 		{ id: 'format_break' as const, label: 'Format Break' }
 	];
 
-	let filteredGames = $derived(
-		judgeFilter === 'all' ? games : games.filter((g) => g.judge_type === judgeFilter)
+	let selectedJudgeLabel = $derived(
+		judgeFilters.find((f) => f.id === judgeFilter)?.label ?? '전체'
 	);
+
+	let filteredGames = $derived.by(() => {
+		let result = games;
+		if (judgeFilter !== 'all') result = result.filter((g) => g.judge_type === judgeFilter);
+		if (searchQuery.trim()) result = result.filter((g) => matchesQuery(g.title, searchQuery));
+		return result;
+	});
 
 	let modalJudgeBadge = $derived(
 		selectedGame ? getJudgeBadgeStyle(selectedGame.judge_type) : getJudgeBadgeStyle('unknown')
@@ -137,12 +155,28 @@
 	});
 
 	let filteredMatchGroups = $derived.by(() => {
-		if (judgeFilter === 'all') return matchGroups ?? [];
-		return (matchGroups ?? []).filter((group) => {
-			const gameUI = allGames?.find((g) => g.id === group.gameId);
-			return gameUI?.judge_type === judgeFilter;
-		});
+		let result = matchGroups ?? [];
+		if (judgeFilter !== 'all') {
+			result = result.filter((group) => {
+				const gameUI = allGames?.find((g) => g.id === group.gameId);
+				return gameUI?.judge_type === judgeFilter;
+			});
+		}
+		if (searchQuery.trim()) result = result.filter((group) => matchesQuery(group.gameTitle, searchQuery));
+		return result;
 	});
+
+	function selectJudgeFilter(id: typeof judgeFilter) {
+		judgeFilter = id;
+		showJudgeDropdown = false;
+	}
+
+	function handleClickOutsideDropdown(e: MouseEvent) {
+		const target = e.target as HTMLElement;
+		if (!target.closest('.judge-dropdown')) {
+			showJudgeDropdown = false;
+		}
+	}
 
 	// ----------------------------------------------------------------
 	// Lifecycle & Logic
@@ -228,6 +262,8 @@
 		goto(`/lobby/match/${matchId}`);
 	}
 </script>
+
+<svelte:window onclick={handleClickOutsideDropdown} />
 
 <div
 	class={`h-[calc(100vh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}
@@ -421,26 +457,46 @@
 			<!-- Games Section -->
 			{#if activeSection === 'games'}
 				<div in:fly={{ y: 20, duration: 300 }}>
-					<!-- Judge Type Filter -->
-					<div class="flex gap-2 mb-4 overflow-x-auto pb-1">
-						{#each judgeFilters as jf (jf.id)}
+					<!-- Search + Filter Bar -->
+					<div class="flex gap-2 mb-4 items-center">
+						<div class="relative w-48 sm:w-60">
+							<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 {isDarkMode ? 'text-gray-500' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+							<input
+								type="text"
+								bind:value={searchQuery}
+								placeholder="게임 이름으로 검색..."
+								class="w-full pl-9 pr-3 py-2 rounded-lg text-sm border transition-colors {isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-200 placeholder:text-gray-600 focus:border-gray-600' : 'bg-white border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-gray-400'} outline-none"
+							/>
+						</div>
+						<div class="relative judge-dropdown">
 							<button
-								onclick={() => (judgeFilter = jf.id)}
-								class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {judgeFilter === jf.id
-									? jf.id === 'target_word'
-										? 'bg-purple-500 text-white shadow'
-										: jf.id === 'llm_judge'
-											? 'bg-blue-500 text-white shadow'
-											: jf.id === 'format_break'
-												? 'bg-orange-500 text-white shadow'
-												: 'bg-[#FF4D00] text-white shadow'
-									: isDarkMode
-										? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800'
-										: 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'}"
+								onclick={() => (showJudgeDropdown = !showJudgeDropdown)}
+								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors {judgeFilter !== 'all'
+									? judgeFilter === 'target_word' ? 'bg-purple-500 text-white border-purple-500'
+										: judgeFilter === 'llm_judge' ? 'bg-blue-500 text-white border-blue-500'
+										: 'bg-orange-500 text-white border-orange-500'
+									: isDarkMode ? 'bg-gray-900 text-gray-400 border-gray-800 hover:bg-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}"
 							>
-								{jf.label}
+								{selectedJudgeLabel}
+								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
 							</button>
-						{/each}
+							{#if showJudgeDropdown}
+								<div class="absolute right-0 top-full mt-1 w-40 rounded-lg border shadow-xl z-20 py-1 {isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}" transition:fade={{ duration: 100 }}>
+									{#each judgeFilters as jf (jf.id)}
+										<button
+											onclick={() => selectJudgeFilter(jf.id)}
+											class="w-full text-left px-3 py-2 text-xs font-semibold transition-colors {judgeFilter === jf.id
+												? isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
+												: isDarkMode ? 'text-gray-400 hover:bg-gray-900 hover:text-gray-200' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+										>
+											{jf.label}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
 					</div>
 					<!-- Games Grid -->
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
@@ -450,33 +506,53 @@
 					</div>
 					{#if filteredGames.length === 0}
 						<div class={`text-center py-12 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-							<p class="text-sm">해당 유형의 게임이 없습니다.</p>
+							<p class="text-sm">검색 결과가 없습니다.</p>
 						</div>
 					{/if}
 				</div>
 			{:else if activeSection === 'matches'}
 				<!-- Matches Section: Game cards with match stats -->
 				<div in:fly={{ y: 20, duration: 300 }}>
-					<!-- Judge Type Filter (for matches too) -->
-					<div class="flex gap-2 mb-4 overflow-x-auto pb-1">
-						{#each judgeFilters as jf (jf.id)}
+					<!-- Search + Filter Bar (matches) -->
+					<div class="flex gap-2 mb-4 items-center">
+						<div class="relative w-48 sm:w-60">
+							<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 {isDarkMode ? 'text-gray-500' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+							<input
+								type="text"
+								bind:value={searchQuery}
+								placeholder="게임 이름으로 검색..."
+								class="w-full pl-9 pr-3 py-2 rounded-lg text-sm border transition-colors {isDarkMode ? 'bg-gray-900 border-gray-800 text-gray-200 placeholder:text-gray-600 focus:border-gray-600' : 'bg-white border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-gray-400'} outline-none"
+							/>
+						</div>
+						<div class="relative judge-dropdown">
 							<button
-								onclick={() => (judgeFilter = jf.id)}
-								class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {judgeFilter === jf.id
-									? jf.id === 'target_word'
-										? 'bg-purple-500 text-white shadow'
-										: jf.id === 'llm_judge'
-											? 'bg-blue-500 text-white shadow'
-											: jf.id === 'format_break'
-												? 'bg-orange-500 text-white shadow'
-												: 'bg-[#FF4D00] text-white shadow'
-									: isDarkMode
-										? 'bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800'
-										: 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'}"
+								onclick={() => (showJudgeDropdown = !showJudgeDropdown)}
+								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors {judgeFilter !== 'all'
+									? judgeFilter === 'target_word' ? 'bg-purple-500 text-white border-purple-500'
+										: judgeFilter === 'llm_judge' ? 'bg-blue-500 text-white border-blue-500'
+										: 'bg-orange-500 text-white border-orange-500'
+									: isDarkMode ? 'bg-gray-900 text-gray-400 border-gray-800 hover:bg-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}"
 							>
-								{jf.label}
+								{selectedJudgeLabel}
+								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
 							</button>
-						{/each}
+							{#if showJudgeDropdown}
+								<div class="absolute right-0 top-full mt-1 w-40 rounded-lg border shadow-xl z-20 py-1 {isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}" transition:fade={{ duration: 100 }}>
+									{#each judgeFilters as jf (jf.id)}
+										<button
+											onclick={() => selectJudgeFilter(jf.id)}
+											class="w-full text-left px-3 py-2 text-xs font-semibold transition-colors {judgeFilter === jf.id
+												? isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
+												: isDarkMode ? 'text-gray-400 hover:bg-gray-900 hover:text-gray-200' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+										>
+											{jf.label}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
 					</div>
 					{#if matches.length === 0}
 						<div
@@ -495,7 +571,7 @@
 					{:else}
 						{#if filteredMatchGroups.length === 0}
 							<div class={`text-center py-12 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-								<p class="text-sm">해당 유형의 매치가 없습니다.</p>
+								<p class="text-sm">검색 결과가 없습니다.</p>
 							</div>
 						{:else}
 							<div

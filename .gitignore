@@ -12,3 +12,7 @@ AGENT_RULES.md
 
 #dummydata
 apps/frontend/static/data/games.json
+
+# Internal docs
+GOOGLE_LOGIN_FIX.md
+TOKEN_AUTH_FLOW.md
