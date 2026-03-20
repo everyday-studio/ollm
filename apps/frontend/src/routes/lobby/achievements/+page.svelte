@@ -60,7 +60,7 @@
 </script>
 
 <div
-	class={`min-h-screen transition-colors ${isDarkMode ? 'bg-black text-gray-100' : 'bg-gray-50 text-gray-900'}`}
+	class={`h-[calc(100vh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-black text-gray-100' : 'bg-gray-50 text-gray-900'}`}
 >
 	<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 		<!-- Header -->

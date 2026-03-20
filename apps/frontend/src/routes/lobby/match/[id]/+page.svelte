@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, fly, scale } from 'svelte/transition';
-	import { onMount, getContext, untrack } from 'svelte';
+	import { onMount, getContext, untrack, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
@@ -36,6 +36,7 @@
 	let showResignModal = $state(false);
 	let showSidebar = $state(false);
 	let showGameInfo = $state(false);
+	let chatInputEl = $state<HTMLTextAreaElement | null>(null);
 	let sessionRestored = $state(false);
 	let latestLoadToken = 0;
 
@@ -155,6 +156,8 @@
 			}
 
 			scrollToBottom();
+			// Auto-focus chat input after match data loads
+			requestAnimationFrame(() => chatInputEl?.focus());
 		} catch (e: unknown) {
 			if (loadToken !== latestLoadToken || id !== matchId) {
 				return;
@@ -270,6 +273,9 @@
 		} finally {
 			if (sendingMatchId === currentMatchId) {
 				sendingMatchId = null;
+				// Focus after textarea is re-enabled
+				await tick();
+				chatInputEl?.focus();
 			}
 		}
 	}
@@ -502,10 +508,7 @@
 						</button>
 					</div>
 
-					<!-- Center: Game title (absolute center) -->
-					<span class={`absolute left-1/2 -translate-x-1/2 font-semibold text-sm truncate max-w-[40%] pointer-events-none ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-						{gameTitle}
-					</span>
+<!-- Center: Game title removed -->
 
 					<!-- Right: Game info toggle (small screens) + Resign -->
 					<div class="flex items-center gap-1">
@@ -770,7 +773,7 @@
 																class="bg-[#FF4D00] text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm shadow-orange-500/10"
 															>
 																<p
-																	class="text-[15px] leading-relaxed whitespace-normal break-words"
+																	class="text-[15px] leading-relaxed whitespace-pre-wrap break-words"
 																>
 																	{msg.content}
 																</p>
@@ -805,7 +808,7 @@
 																}`}
 															>
 																<p
-																	class="text-[15px] leading-relaxed whitespace-normal break-words"
+																	class="text-[15px] leading-relaxed whitespace-pre-wrap break-words"
 																>
 																	{msg.content}
 																</p>
@@ -995,18 +998,9 @@
 											더 이상 서비스되지 않는 게임입니다. 과거 기록만 열람 가능합니다.
 										</div>
 									{/if}
-									<div
-										class={`flex items-end gap-2 rounded-2xl px-2 py-1.5 transition-colors ${
-											isMatchActive && isGamePlayable
-												? isDarkMode
-													? 'bg-gray-800/50 ring-1 ring-gray-700/60 focus-within:ring-[#FF4D00]/40'
-													: 'bg-gray-100 ring-1 ring-gray-200 focus-within:ring-[#FF4D00]/30'
-												: isDarkMode
-													? 'bg-gray-800/30'
-													: 'bg-gray-100'
-										}`}
-									>
+									<div class="flex items-end gap-2">
 										<textarea
+											bind:this={chatInputEl}
 											bind:value={inputText}
 											onkeydown={handleKeydown}
 											placeholder={!isGamePlayable
