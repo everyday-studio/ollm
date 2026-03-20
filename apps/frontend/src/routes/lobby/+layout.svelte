@@ -45,7 +45,10 @@
 		}
 	});
 
-	let currentUserEmail = $derived($authStore?.user?.email ?? 'Guest');
+	const isGuestEmail = (email?: string) => !!email?.startsWith('guest_');
+	let currentUserEmail = $derived(
+		isGuestEmail($authStore?.user?.email) ? 'Guest' : ($authStore?.user?.email ?? 'Guest')
+	);
 	let currentPath = $derived($page.url.pathname);
 
 	onMount(async () => {
@@ -147,18 +150,9 @@
 	class={`fixed top-0 left-0 right-0 border-b z-50 h-16 shadow-lg transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}
 >
 	<div class="w-full px-6 h-full flex items-center justify-between">
+		<!-- Left: Hamburger (mobile) + Logo (desktop) + Nav (desktop) -->
 		<div class="flex items-center gap-6">
-			<a href="/lobby" class="flex items-center hover:opacity-80 transition">
-				<img
-					src="/logo.png"
-					alt="Ollm Logo"
-					width="80"
-					height="32"
-					class="h-8 w-auto object-contain"
-				/>
-			</a>
-
-			<!-- Mobile hamburger button -->
+			<!-- Mobile hamburger button (leftmost on mobile) -->
 			<button
 				onclick={() => (showMobileMenu = !showMobileMenu)}
 				class="md:hidden p-2 rounded-lg transition-colors {isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-900' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}"
@@ -172,6 +166,17 @@
 					{/if}
 				</svg>
 			</button>
+
+			<!-- Logo (hidden on mobile — shown centered instead) -->
+			<a href="/lobby" class="hidden md:flex items-center hover:opacity-80 transition">
+				<img
+					src="/logo.png"
+					alt="Ollm Logo"
+					width="80"
+					height="32"
+					class="h-8 w-auto object-contain"
+				/>
+			</a>
 
 			<!-- Desktop nav -->
 			<nav class="hidden md:flex items-stretch gap-0 text-sm font-semibold h-16">
@@ -212,12 +217,23 @@
 			</nav>
 		</div>
 
+		<!-- Mobile center logo -->
+		<a href="/lobby" class="md:hidden absolute left-1/2 -translate-x-1/2 flex items-center hover:opacity-80 transition">
+			<img
+				src="/logo.png"
+				alt="Ollm Logo"
+				width="80"
+				height="32"
+				class="h-8 w-auto object-contain"
+			/>
+		</a>
+
 		<div class="flex items-center gap-3">
-			<!-- Theme Toggle Button -->
+			<!-- Theme Toggle Button (hidden on mobile) -->
 			<button
 				type="button"
 				onclick={toggleTheme}
-				class={`p-2 rounded-lg transition-colors ${isDarkMode ? 'text-gray-400 hover:text-yellow-400 hover:bg-gray-900' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100'}`}
+				class={`hidden md:inline-flex p-2 rounded-lg transition-colors ${isDarkMode ? 'text-gray-400 hover:text-yellow-400 hover:bg-gray-900' : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100'}`}
 				title={isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'}
 				aria-label="테마 전환"
 			>
@@ -258,7 +274,7 @@
 						onerror={handleImageError(DEFAULT_USER_PROFILE)}
 					/>
 
-					<div class="flex flex-col">
+					<div class="hidden md:flex flex-col">
 						<span
 							class={`text-xs font-semibold leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
 						>
@@ -319,7 +335,7 @@
 			<button
 				type="button"
 				onclick={() => (showLogoutConfirm = true)}
-				class={`p-2 rounded-lg transition-colors cursor-pointer ${isDarkMode ? 'text-gray-400 hover:text-red-400 hover:bg-gray-900' : 'text-gray-600 hover:text-red-600 hover:bg-gray-100'}`}
+				class={`hidden md:inline-flex p-2 rounded-lg transition-colors cursor-pointer ${isDarkMode ? 'text-gray-400 hover:text-red-400 hover:bg-gray-900' : 'text-gray-600 hover:text-red-600 hover:bg-gray-100'}`}
 				title="로그아웃"
 				aria-label="로그아웃"
 			>
