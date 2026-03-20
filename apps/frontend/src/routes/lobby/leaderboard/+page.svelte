@@ -6,6 +6,16 @@
   import { loadMockGames } from '$lib/features/game/mockData';
   import { ensureSession } from '$lib/features/auth/session';
   import { getCachedGames } from '$lib/cache/gameCache';
+  import { DEFAULT_USER_PROFILE } from '$lib/utils/imageFallback';
+
+  function profileFallback(img: HTMLImageElement) {
+    const handler = () => {
+      img.onerror = null;
+      img.src = DEFAULT_USER_PROFILE;
+    };
+    img.addEventListener('error', handler);
+    return { destroy() { img.removeEventListener('error', handler); } };
+  }
   import type { GameDTO, LeaderboardEntry } from '$lib/features/game/types';
   import { disassemble } from 'es-hangul';
 
@@ -30,6 +40,7 @@
   let entries = $state<LeaderboardEntry[]>([]);
   let isLoading = $state(true);
   let isTableLoading = $state(false);
+
 
   // Combobox state
   let searchQuery = $state('');
@@ -280,7 +291,17 @@
                     {/if}
                   </td>
                   <td class={`px-5 py-3.5 font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {entry.username}
+                    <div class="flex items-center gap-3">
+                      <div class="relative w-8 h-8 shrink-0 bg-gray-700 rounded-full flex items-center justify-center text-xs font-bold text-gray-300">
+                        <img
+                          src={`https://storage.googleapis.com/ollm-assets-prod/user/${entry.user_id}.png`}
+                          alt={entry.username}
+                          class="w-8 h-8 rounded-full object-cover"
+                          use:profileFallback
+                        />
+                      </div>
+                      <span>{entry.username}</span>
+                    </div>
                   </td>
                   <td class={`px-5 py-3.5 text-right tabular-nums font-mono text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     {entry.turn_count}

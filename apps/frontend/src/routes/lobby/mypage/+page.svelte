@@ -14,6 +14,8 @@
 	const theme = getContext<{ isDark: boolean; uiScale: 'small' | 'default' | 'large'; setUiScale: (s: 'small' | 'default' | 'large') => void; setDarkMode: (dark: boolean) => void }>('theme');
 	let isDarkMode = $derived(theme.isDark);
 
+	const displayEmail = (email: string) => email.startsWith('guest_') ? 'Guest' : email;
+
 	const scaleSteps = ['small', 'default', 'large'] as const;
 	const scaleLabels: Record<string, string> = { small: '작게', default: '보통', large: '크게' };
 	let scaleIndex = $derived(scaleSteps.indexOf(theme.uiScale));
@@ -369,7 +371,7 @@
 									</button>
 								</div>
 								<p class={`text-sm mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-									{user.email}
+								{displayEmail(user.email)}
 								</p>
 							{/if}
 						</div>
@@ -382,7 +384,7 @@
 								>이메일</span
 							>
 							<span class={`text-sm font-mono ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-								>{user.email}</span
+								>{displayEmail(user.email)}</span
 							>
 						</div>
 						<div class="flex items-center justify-between px-6 py-4 md:px-8">
