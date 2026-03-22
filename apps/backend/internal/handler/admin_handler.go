@@ -293,7 +293,7 @@ func (h *AdminHandler) Dashboard(c echo.Context) error {
 	}
 
 	// Get total games
-	if total, err := h.gameUseCase.CountAll(ctx); err == nil {
+	if total, err := h.gameUseCase.CountAll(ctx, nil); err == nil {
 		totalGames = total
 	}
 
@@ -350,7 +350,7 @@ func (h *AdminHandler) Games(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	data, err := h.gameUseCase.GetPaginated(ctx, page, limit)
+	data, err := h.gameUseCase.GetPaginated(ctx, page, limit, nil)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Failed to load games")
 	}
