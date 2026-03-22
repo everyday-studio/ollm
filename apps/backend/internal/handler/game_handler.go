@@ -100,7 +100,12 @@ func (h *GameHandler) GetAll(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	paginatedData, err := h.gameUseCase.GetPaginated(ctx, page, limit)
+	isPublic := true
+	filter := &domain.GameFilter{
+		IsPublic: &isPublic,
+	}
+
+	paginatedData, err := h.gameUseCase.GetPaginated(ctx, page, limit, filter)
 	if err == nil {
 		return c.JSON(http.StatusOK, paginatedData)
 	}

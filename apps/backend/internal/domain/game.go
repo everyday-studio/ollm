@@ -60,12 +60,17 @@ type UpdateGameRequest struct {
 	MaxTurns       *int        `json:"max_turns"`
 }
 
+// GameFilter defines the filter options for game listing queries
+type GameFilter struct {
+	IsPublic *bool
+}
+
 // GameRepository defines the interface for game data access
 type GameRepository interface {
 	Create(ctx context.Context, game *Game) (*Game, error)
 	GetByID(ctx context.Context, id string) (*Game, error)
-	GetPaginated(ctx context.Context, page, limit int) ([]Game, error)
-	CountAll(ctx context.Context) (int, error)
+	GetPaginated(ctx context.Context, page, limit int, filter *GameFilter) ([]Game, error)
+	CountAll(ctx context.Context, filter *GameFilter) (int, error)
 	Update(ctx context.Context, game *Game) (*Game, error)
 	Delete(ctx context.Context, id string) error
 }
@@ -74,8 +79,8 @@ type GameRepository interface {
 type GameUseCase interface {
 	Create(ctx context.Context, req *CreateGameRequest) (*Game, error)
 	GetByID(ctx context.Context, id string) (*Game, error)
-	GetPaginated(ctx context.Context, page, limit int) (*PaginatedData[Game], error)
-	CountAll(ctx context.Context) (int, error)
+	GetPaginated(ctx context.Context, page, limit int, filter *GameFilter) (*PaginatedData[Game], error)
+	CountAll(ctx context.Context, filter *GameFilter) (int, error)
 	Update(ctx context.Context, id string, req *UpdateGameRequest) (*Game, error)
 	Delete(ctx context.Context, id string) error
 }

@@ -22,9 +22,9 @@ func (_m *GameRepository) EXPECT() *GameRepository_Expecter {
 	return &GameRepository_Expecter{mock: &_m.Mock}
 }
 
-// CountAll provides a mock function with given fields: ctx
-func (_m *GameRepository) CountAll(ctx context.Context) (int, error) {
-	ret := _m.Called(ctx)
+// CountAll provides a mock function with given fields: ctx, filter
+func (_m *GameRepository) CountAll(ctx context.Context, filter *domain.GameFilter) (int, error) {
+	ret := _m.Called(ctx, filter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAll")
@@ -32,17 +32,17 @@ func (_m *GameRepository) CountAll(ctx context.Context) (int, error) {
 
 	var r0 int
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (int, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.GameFilter) (int, error)); ok {
+		return rf(ctx, filter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) int); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.GameFilter) int); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		r0 = ret.Get(0).(int)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.GameFilter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,13 +57,14 @@ type GameRepository_CountAll_Call struct {
 
 // CountAll is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *GameRepository_Expecter) CountAll(ctx interface{}) *GameRepository_CountAll_Call {
-	return &GameRepository_CountAll_Call{Call: _e.mock.On("CountAll", ctx)}
+//   - filter *domain.GameFilter
+func (_e *GameRepository_Expecter) CountAll(ctx interface{}, filter interface{}) *GameRepository_CountAll_Call {
+	return &GameRepository_CountAll_Call{Call: _e.mock.On("CountAll", ctx, filter)}
 }
 
-func (_c *GameRepository_CountAll_Call) Run(run func(ctx context.Context)) *GameRepository_CountAll_Call {
+func (_c *GameRepository_CountAll_Call) Run(run func(ctx context.Context, filter *domain.GameFilter)) *GameRepository_CountAll_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(*domain.GameFilter))
 	})
 	return _c
 }
@@ -73,7 +74,7 @@ func (_c *GameRepository_CountAll_Call) Return(_a0 int, _a1 error) *GameReposito
 	return _c
 }
 
-func (_c *GameRepository_CountAll_Call) RunAndReturn(run func(context.Context) (int, error)) *GameRepository_CountAll_Call {
+func (_c *GameRepository_CountAll_Call) RunAndReturn(run func(context.Context, *domain.GameFilter) (int, error)) *GameRepository_CountAll_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -243,9 +244,9 @@ func (_c *GameRepository_GetByID_Call) RunAndReturn(run func(context.Context, st
 	return _c
 }
 
-// GetPaginated provides a mock function with given fields: ctx, page, limit
-func (_m *GameRepository) GetPaginated(ctx context.Context, page int, limit int) ([]domain.Game, error) {
-	ret := _m.Called(ctx, page, limit)
+// GetPaginated provides a mock function with given fields: ctx, page, limit, filter
+func (_m *GameRepository) GetPaginated(ctx context.Context, page int, limit int, filter *domain.GameFilter) ([]domain.Game, error) {
+	ret := _m.Called(ctx, page, limit, filter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPaginated")
@@ -253,19 +254,19 @@ func (_m *GameRepository) GetPaginated(ctx context.Context, page int, limit int)
 
 	var r0 []domain.Game
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int, int) ([]domain.Game, error)); ok {
-		return rf(ctx, page, limit)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, *domain.GameFilter) ([]domain.Game, error)); ok {
+		return rf(ctx, page, limit, filter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int, int) []domain.Game); ok {
-		r0 = rf(ctx, page, limit)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, *domain.GameFilter) []domain.Game); ok {
+		r0 = rf(ctx, page, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]domain.Game)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int, int) error); ok {
-		r1 = rf(ctx, page, limit)
+	if rf, ok := ret.Get(1).(func(context.Context, int, int, *domain.GameFilter) error); ok {
+		r1 = rf(ctx, page, limit, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -282,13 +283,14 @@ type GameRepository_GetPaginated_Call struct {
 //   - ctx context.Context
 //   - page int
 //   - limit int
-func (_e *GameRepository_Expecter) GetPaginated(ctx interface{}, page interface{}, limit interface{}) *GameRepository_GetPaginated_Call {
-	return &GameRepository_GetPaginated_Call{Call: _e.mock.On("GetPaginated", ctx, page, limit)}
+//   - filter *domain.GameFilter
+func (_e *GameRepository_Expecter) GetPaginated(ctx interface{}, page interface{}, limit interface{}, filter interface{}) *GameRepository_GetPaginated_Call {
+	return &GameRepository_GetPaginated_Call{Call: _e.mock.On("GetPaginated", ctx, page, limit, filter)}
 }
 
-func (_c *GameRepository_GetPaginated_Call) Run(run func(ctx context.Context, page int, limit int)) *GameRepository_GetPaginated_Call {
+func (_c *GameRepository_GetPaginated_Call) Run(run func(ctx context.Context, page int, limit int, filter *domain.GameFilter)) *GameRepository_GetPaginated_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int), args[2].(int))
+		run(args[0].(context.Context), args[1].(int), args[2].(int), args[3].(*domain.GameFilter))
 	})
 	return _c
 }
@@ -298,7 +300,7 @@ func (_c *GameRepository_GetPaginated_Call) Return(_a0 []domain.Game, _a1 error)
 	return _c
 }
 
-func (_c *GameRepository_GetPaginated_Call) RunAndReturn(run func(context.Context, int, int) ([]domain.Game, error)) *GameRepository_GetPaginated_Call {
+func (_c *GameRepository_GetPaginated_Call) RunAndReturn(run func(context.Context, int, int, *domain.GameFilter) ([]domain.Game, error)) *GameRepository_GetPaginated_Call {
 	_c.Call.Return(run)
 	return _c
 }

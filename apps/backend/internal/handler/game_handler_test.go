@@ -206,7 +206,10 @@ func TestGameHandler_GetAll(t *testing.T) {
 			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 
 			mockUseCase := new(mocks.GameUseCase)
-			mockUseCase.On("GetPaginated", mock.Anything, 1, 10).Return(tt.mockReturn, tt.mockError)
+			// In GetAll, we now pass a filter with IsPublic: true
+			mockUseCase.On("GetPaginated", mock.Anything, 1, 10, mock.MatchedBy(func(f *domain.GameFilter) bool {
+				return f != nil && f.IsPublic != nil && *f.IsPublic == true
+			})).Return(tt.mockReturn, tt.mockError)
 			handler := NewGameHandler(e, mockUseCase)
 
 			err := handler.GetAll(c)
