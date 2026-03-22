@@ -30,5 +30,6 @@ jobs:
           gcloud compute ssh ${{ secrets.GCP_SSH_USER }}@${{ secrets.GCP_INSTANCE_NAME }} \
             --project=${{ secrets.GCP_PROJECT_ID }} \
             --zone=${{ secrets.GCP_INSTANCE_ZONE }} \
+            --tunnel-through-iap \
             --quiet \
             --command="cd ${{ secrets.APP_WORKDIR }} && git pull origin main && docker compose up -d --build"
