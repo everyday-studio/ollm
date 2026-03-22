@@ -3,8 +3,8 @@ import client from '$lib/api/client';
 import type { GameDTO, MatchDTO, LeaderboardEntry, PaginatedResponse } from './types';
 
 export const gameApi = {
-  // GET /games - Fetch paginated games
-  getGames: () => client.get<PaginatedResponse<GameDTO>>('/api/games'),
+  // GET /games - Fetch all games (large limit to bypass default pagination)
+  getGames: () => client.get<PaginatedResponse<GameDTO>>('/api/games?limit=100'),
 
   // GET /games/:id - Fetch a single game by ID
   getGameById: (id: string) => client.get<GameDTO>(`/api/games/${id}`),
