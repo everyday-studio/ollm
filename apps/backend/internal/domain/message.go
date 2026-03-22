@@ -21,8 +21,9 @@ type Message struct {
 	Content    string      `json:"content"`
 	IsVisible  bool        `json:"is_visible"`
 	TurnCount  int         `json:"turn_count"`
-	TokenCount int         `json:"token_count"`
-	CreatedAt  time.Time   `json:"created_at"`
+	TokenCount   int         `json:"token_count"`
+	PromptAdvice *string     `json:"prompt_advice,omitempty"`
+	CreatedAt    time.Time   `json:"created_at"`
 }
 
 // CreateMessageRequest is the DTO for creating a new message
