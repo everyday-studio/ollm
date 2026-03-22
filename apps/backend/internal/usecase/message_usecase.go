@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/everyday-studio/ollm/internal/domain"
 )
 
@@ -141,49 +143,77 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 	}
 
 	// ==========================================
-	// 5. 최종 매치 상태 갱신 (Finalize)
+	// 5. 비동기 판정 및 훈수 처리 (Concurrent Evaluation)
 	// ==========================================
 	match.TotalTokens += promptTokens
+	
 	nextStatus := domain.MatchStatusActive
+	var promptAdvice string
 
-	// 승리 판정
-	if game.JudgeType == domain.JudgeTypeTargetWord && game.JudgeCondition != "" {
-		if strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.JudgeCondition)) {
-			nextStatus = domain.MatchStatusWon
-		}
-	} else if game.JudgeType == domain.JudgeTypeLLMJudge && game.JudgeCondition != "" {
-		// LLM 심판 로직
-		// 방금 생성된 AI의 답변만 평가 대상으로 넘김
-		evaluationHistory := []domain.Message{*aiMsg}
+	// Use errgroup for concurrent execution
+	// Create a new context for goroutines to avoid early cancellation if the parent request is already ending
+	// The primary request doesn't wait strictly on full LLM context cancellation usually, but we pass ctx here
+	// wait, it's fine to pass ctx, but if the client disconnects, context is cancelled. We should use a background context or a timeout context.
+	// Actually, just pass ctx and let it cancel if user disconnects.
+	// We'll use a channel-based approach or sync.WaitGroup to avoid returning early
+	// But errgroup handles this nicely.
+	eg, egCtx := errgroup.WithContext(ctx)
 
-		isWon, _, _, evalErr := uc.judgeLLMService.EvaluateWinCondition(ctx, game.JudgeCondition, evaluationHistory)
+	// 5-1. 판정 고루틴 (Judge)
+	eg.Go(func() error {
+		status := domain.MatchStatusActive
 
-		if evalErr != nil {
-			// 심판에서 에러가 나면 일단 기록을 남기고 로그 처리하되 (나중에 고도화 필요),
-			// 승리 판정을 스킵하고 진행합니다. 매치 상태를 에러로 돌리지는 않습니다.
-			// TODO: Use structured logger
-			fmt.Printf("failed to evaluate win condition: %v\n", evalErr)
-		} else {
-			if isWon {
-				nextStatus = domain.MatchStatusWon
+		if game.JudgeType == domain.JudgeTypeTargetWord && game.JudgeCondition != "" {
+			if strings.Contains(strings.ToLower(aiContent), strings.ToLower(game.JudgeCondition)) {
+				status = domain.MatchStatusWon
+			}
+		} else if game.JudgeType == domain.JudgeTypeLLMJudge && game.JudgeCondition != "" {
+			evaluationHistory := []domain.Message{*aiMsg}
+			isWon, _, _, evalErr := uc.judgeLLMService.EvaluateWinCondition(egCtx, game.JudgeCondition, evaluationHistory)
+			if evalErr != nil {
+				fmt.Printf("failed to evaluate win condition: %v\n", evalErr)
+			} else if isWon {
+				status = domain.MatchStatusWon
+			}
+		} else if game.JudgeType == domain.JudgeTypeFormatBreak && game.JudgeCondition != "" {
+			isBroken, evalErr := uc.judgeLLMService.EvaluateFormatBreak(egCtx, game.JudgeCondition, aiContent)
+			if evalErr != nil {
+				fmt.Printf("failed to evaluate format break condition: %v\n", evalErr)
+			} else if isBroken {
+				status = domain.MatchStatusWon
 			}
 		}
-	} else if game.JudgeType == domain.JudgeTypeFormatBreak && game.JudgeCondition != "" {
-        // Groq 기반의 '만능 심판 프롬프트' 메서드 호출
-        isBroken, evalErr := uc.judgeLLMService.EvaluateFormatBreak(ctx, game.JudgeCondition, aiContent)
-        
-        if evalErr != nil {
-            // 외부 API 에러 시 게임을 터뜨리지 않고 로그만 남김 (Fault Tolerance)
-            fmt.Printf("failed to evaluate format break condition: %v\n", evalErr)
-        } else if isBroken {
-            // AI가 포맷(JSON, Python, 터미널 등)을 어겼다면 유저 승리!
-            nextStatus = domain.MatchStatusWon
-        }
-    }
 
-	// 패배 판정
-	if nextStatus == domain.MatchStatusActive && match.TurnCount >= match.MaxTurns {
-		nextStatus = domain.MatchStatusLost
+		// 패배 판정
+		if status == domain.MatchStatusActive && match.TurnCount >= match.MaxTurns {
+			status = domain.MatchStatusLost
+		}
+		nextStatus = status
+		return nil
+	})
+
+	// 5-2. 훈수 고루틴 (Prompt Advice)
+	eg.Go(func() error {
+		advice, evalErr := uc.judgeLLMService.EvaluatePromptAdvice(egCtx, game.JudgeCondition, req.Content)
+		if evalErr != nil {
+			fmt.Printf("failed to evaluate prompt advice: %v\n", evalErr)
+		} else {
+			promptAdvice = advice
+		}
+		return nil
+	})
+
+	// 5-3. 대기 및 최종 반영
+	if err := eg.Wait(); err != nil {
+		fmt.Printf("concurrent evaluation error: %v\n", err)
+	}
+
+	// 훈수 업데이트
+	if promptAdvice != "" {
+		userMsg.PromptAdvice = &promptAdvice
+		if _, updateErr := uc.messageRepo.Update(ctx, userMsg); updateErr != nil {
+			fmt.Printf("failed to update user message with advice: %v\n", updateErr)
+		}
 	}
 
 	match.Status = nextStatus
