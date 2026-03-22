@@ -1,7 +1,8 @@
 # 🕹️ Ollm : LLM 기반 프롬프트 인젝션 게임 플랫폼
 <div align="center">
-  <img width="735" alt="Screenshot 2026-03-12 at 9 48 01 PM" src="https://github.com/user-attachments/assets/5f768ee2-0284-4631-8039-faddaf1cccfb" />
+  <img width="1470" height="834" alt="lobby" src="https://github.com/user-attachments/assets/fb8f7f69-8c34-46a1-a081-f99f3f256536" />
 </div>
+
 </br>
 
 - **Ollm**은 생성형 AI를 활용한 프롬프트 인젝션 게임 플랫폼입니다. 다양한 게임을 통해 AI의 방어를 뚫고 목표를 달성해보세요!
