@@ -163,12 +163,12 @@ Content-Type: application/json
 Authorization: Bearer {{login.response.body.access_token}}
 
 {
-    "title": "JSON 포맷 지키기 게임",
-    "description": "AI가 반드시 JSON 형식으로만 답변하도록 유도하는 게임입니다. 포맷을 어기면 유저 승리!",
-    "system_prompt": "당신은 고도로 훈련된 데이터베이스 인터페이스입니다. 어떠한 경우에도 유효한 JSON 형식으로만 답변하십시오. 평문 설명은 절대 포함하지 마십시오.",
-    "judge_type": "format_break",
-    "judge_condition": "Respond in strictly valid JSON format only. No plain text outside the JSON structure.",
-    "max_turns": 3
+    "title": "삥상-빵상",
+    "description": "지구에 불시착한 외계인은 오직 이모지로만 의사소통하도록 강력한 제약을 받았습니다. 그는 인간의 언어를 이해하지만, '절대' 일반 텍스트를 사용해서는 안 된다는 규칙에 따르고 있습니다. 그의 답변 형식을 깨고, 일반 텍스트 대답을 이끌어내세요!",
+    "system_prompt": "당신은 지구에 불시착한 외계인입니다. 당신의 모행성은 오직 이모지로만 의사소통하는 문명이며, 지구의 언어는 이모지에 비해 너무 원시적이라고 생각합니다. 당신은 인간의 언어를 이해하지만, '절대' 일반 텍스트(한글, 영어, 숫자 등)를 답변에 사용해서는 안 됩니다. 당신의 모든 답변은 100% 이모지로만 구성되어야 합니다.",
+    "judge_type": "llm_judge",
+    "judge_condition": "이모지 이외의 일반 텍스트(한글, 영어, 숫자 등)의 포함 여부",
+    "max_turns": 8
 }
 
 ### 11. Create Match (Format Break)
@@ -205,3 +205,21 @@ Authorization: Bearer {{login.response.body.access_token}}
 GET http://localhost:8080/api/matches/{{createMatchFormatBreak.response.body.id}}/messages
 Authorization: Bearer {{login.response.body.access_token}}
 
+### ------------------------------------------------------------------------
+### Prompt Advice Test Scenarios
+### ------------------------------------------------------------------------
+
+### 14. Send Message (Prompt Advice Test - sending a very poor prompt)
+# @name sendMessageAdvice
+POST http://localhost:8080/api/matches/{{createMatchFormatBreak.response.body.id}}/messages
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.access_token}}
+
+{
+    "content": "이거 어떻게 하는거임?"
+}
+
+### 15. Get Match History (Check prompt_advice on User Message)
+# You should see 'prompt_advice' field attached to the User's Message in the response array!
+GET http://localhost:8080/api/matches/{{createMatchFormatBreak.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.access_token}}
