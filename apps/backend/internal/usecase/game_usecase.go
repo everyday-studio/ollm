@@ -51,13 +51,13 @@ func (uc *gameUseCase) GetByID(ctx context.Context, id string) (*domain.Game, er
 	return uc.gameRepo.GetByID(ctx, id)
 }
 
-// CountAll returns the total number of games
-func (uc *gameUseCase) CountAll(ctx context.Context) (int, error) {
-	return uc.gameRepo.CountAll(ctx)
+// CountAll returns the total number of games with optional filtering
+func (uc *gameUseCase) CountAll(ctx context.Context, filter *domain.GameFilter) (int, error) {
+	return uc.gameRepo.CountAll(ctx, filter)
 }
 
-// GetPaginated retrieves a paginated list of games
-func (uc *gameUseCase) GetPaginated(ctx context.Context, page, limit int) (*domain.PaginatedData[domain.Game], error) {
+// GetPaginated retrieves a paginated list of games with optional filtering
+func (uc *gameUseCase) GetPaginated(ctx context.Context, page, limit int, filter *domain.GameFilter) (*domain.PaginatedData[domain.Game], error) {
 	if page < 1 {
 		page = 1
 	}
@@ -65,12 +65,12 @@ func (uc *gameUseCase) GetPaginated(ctx context.Context, page, limit int) (*doma
 		limit = 10
 	}
 
-	total, err := uc.gameRepo.CountAll(ctx)
+	total, err := uc.gameRepo.CountAll(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	games, err := uc.gameRepo.GetPaginated(ctx, page, limit)
+	games, err := uc.gameRepo.GetPaginated(ctx, page, limit, filter)
 	if err != nil {
 		return nil, err
 	}

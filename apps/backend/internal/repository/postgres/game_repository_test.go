@@ -134,32 +134,57 @@ func TestGameRepository_CountAllAndGetPaginated(t *testing.T) {
 	author := createTestUser(t)
 
 	t.Run("Get paginated games and count successfully", func(t *testing.T) {
-		game1 := &domain.Game{Title: "Game 1", Description: "First game", AuthorID: author.ID, Status: domain.GameStatusActive}
-		game2 := &domain.Game{Title: "Game 2", Description: "Second game", AuthorID: author.ID, Status: domain.GameStatusActive}
+		game1 := &domain.Game{Title: "Game 1", Description: "First game", AuthorID: author.ID, Status: domain.GameStatusActive, IsPublic: true}
+		game2 := &domain.Game{Title: "Game 2", Description: "Second game", AuthorID: author.ID, Status: domain.GameStatusActive, IsPublic: false}
 		repo.Create(ctx, game1)
 		repo.Create(ctx, game2)
 
-		total, err := repo.CountAll(ctx)
+		// 1. All games
+		total, err := repo.CountAll(ctx, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, total)
 
-		games, err := repo.GetPaginated(ctx, 1, 10)
+		games, err := repo.GetPaginated(ctx, 1, 10, nil)
 
 		assert.NoError(t, err)
 		assert.Len(t, games, 2)
 		// Ordered by created_at DESC, so Game 2 comes first
 		assert.Equal(t, "Game 2", games[0].Title)
 		assert.Equal(t, "Game 1", games[1].Title)
+
+		// 2. Public games only
+		isPublic := true
+		publicFilter := &domain.GameFilter{IsPublic: &isPublic}
+		totalPublic, err := repo.CountAll(ctx, publicFilter)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, totalPublic)
+
+		publicGames, err := repo.GetPaginated(ctx, 1, 10, publicFilter)
+		assert.NoError(t, err)
+		assert.Len(t, publicGames, 1)
+		assert.Equal(t, "Game 1", publicGames[0].Title)
+
+		// 3. Private games only
+		isNotPublic := false
+		privateFilter := &domain.GameFilter{IsPublic: &isNotPublic}
+		totalPrivate, err := repo.CountAll(ctx, privateFilter)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, totalPrivate)
+
+		privateGames, err := repo.GetPaginated(ctx, 1, 10, privateFilter)
+		assert.NoError(t, err)
+		assert.Len(t, privateGames, 1)
+		assert.Equal(t, "Game 2", privateGames[0].Title)
 	})
 
 	t.Run("Return empty slice when no games exist", func(t *testing.T) {
 		cleanDB(t, "matches", "games", "users")
 
-		total, err := repo.CountAll(ctx)
+		total, err := repo.CountAll(ctx, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, total)
 
-		games, err := repo.GetPaginated(ctx, 1, 10)
+		games, err := repo.GetPaginated(ctx, 1, 10, nil)
 
 		assert.NoError(t, err)
 		assert.Len(t, games, 0)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -88,27 +89,43 @@ func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 	return &game, nil
 }
 
-// CountAll returns the total number of games
-func (r *gameRepository) CountAll(ctx context.Context) (int, error) {
-	const query = `SELECT COUNT(*) FROM games`
+// CountAll returns the total number of games with optional filtering
+func (r *gameRepository) CountAll(ctx context.Context, filter *domain.GameFilter) (int, error) {
+	query := `SELECT COUNT(*) FROM games`
+	args := []interface{}{}
+
+	if filter != nil && filter.IsPublic != nil {
+		query += ` WHERE is_public = $1`
+		args = append(args, *filter.IsPublic)
+	}
+
 	var count int
-	if err := r.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+	if err := r.db.QueryRowContext(ctx, query, args...).Scan(&count); err != nil {
 		return 0, mapDBError(err)
 	}
 	return count, nil
 }
 
-// GetPaginated retrieves a paginated list of games, ordered by creation date (newest first)
-func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int) ([]domain.Game, error) {
+// GetPaginated retrieves a paginated list of games with optional filtering, ordered by creation date (newest first)
+func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int, filter *domain.GameFilter) ([]domain.Game, error) {
 	offset := (page - 1) * limit
-	const query = `
+	query := `
 		SELECT id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns, created_at, updated_at
 		FROM games
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
 	`
+	args := []interface{}{}
+	argIdx := 1
 
-	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+	if filter != nil && filter.IsPublic != nil {
+		query += ` WHERE is_public = $` + strconv.Itoa(argIdx)
+		args = append(args, *filter.IsPublic)
+		argIdx++
+	}
+
+	query += ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, mapDBError(err)
 	}

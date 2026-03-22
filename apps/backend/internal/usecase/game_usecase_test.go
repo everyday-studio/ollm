@@ -175,14 +175,14 @@ func TestGameUseCase_GetPaginated(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(mocks.GameRepository)
-			mockRepo.On("CountAll", mock.Anything).Return(tt.mockCount, tt.mockError)
+			mockRepo.On("CountAll", mock.Anything, mock.Anything).Return(tt.mockCount, tt.mockError)
 			if tt.mockError == nil {
-				mockRepo.On("GetPaginated", mock.Anything, 1, 10).Return(tt.mockReturn, nil)
+				mockRepo.On("GetPaginated", mock.Anything, 1, 10, mock.Anything).Return(tt.mockReturn, nil)
 			}
 
 			uc := NewGameUseCase(mockRepo)
 			ctx := context.Background()
-			result, err := uc.GetPaginated(ctx, 1, 10)
+			result, err := uc.GetPaginated(ctx, 1, 10, nil)
 
 			assert.Equal(t, tt.want, result)
 			assert.Equal(t, tt.wantErr, err)
