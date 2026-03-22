@@ -291,6 +291,9 @@ func TestMessageUseCase_Create(t *testing.T) {
 									mockLLMService.On("EvaluateFormatBreak", mock.Anything, tt.mockGameGet.JudgeCondition, tt.mockLLMResp).Return(isBroken, nil).Once()
 								}
 
+								// We need to return values for EvaluatePromptAdvice
+								mockLLMService.On("EvaluatePromptAdvice", mock.Anything, mock.Anything, mock.Anything).Return("Mock advice", nil).Maybe()
+
 								mockMsgRepo.On("Update", mock.Anything, mock.MatchedBy(func(m *domain.Message) bool {
 									return m.Role == domain.MessageRoleUser
 								})).Return(&domain.Message{}, nil) // This fails safely in UC, so return empty

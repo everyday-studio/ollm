@@ -28,8 +28,8 @@ func (r *messageRepository) Create(ctx context.Context, message *domain.Message)
 	message.ID = ulid.MustNew(ulid.Timestamp(time.Now()), ulid.Monotonic(rand.Reader, 0)).String()
 
 	const query = `
-        INSERT INTO messages (id, match_id, role, content, is_visible, turn_count, token_count)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO messages (id, match_id, role, content, is_visible, turn_count, token_count, prompt_advice)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING created_at
     `
 
@@ -43,6 +43,7 @@ func (r *messageRepository) Create(ctx context.Context, message *domain.Message)
 		message.IsVisible,
 		message.TurnCount,
 		message.TokenCount,
+		message.PromptAdvice,
 	).Scan(&message.CreatedAt)
 
 	if err != nil {
@@ -55,7 +56,7 @@ func (r *messageRepository) Create(ctx context.Context, message *domain.Message)
 // GetByID retrieves a single message by its ID
 func (r *messageRepository) GetByID(ctx context.Context, id string) (*domain.Message, error) {
 	const query = `
-        SELECT id, match_id, role, content, is_visible, turn_count, token_count, created_at
+        SELECT id, match_id, role, content, is_visible, turn_count, token_count, prompt_advice, created_at
         FROM messages
         WHERE id = $1
     `
@@ -69,6 +70,7 @@ func (r *messageRepository) GetByID(ctx context.Context, id string) (*domain.Mes
 		&msg.IsVisible,
 		&msg.TurnCount,
 		&msg.TokenCount,
+		&msg.PromptAdvice,
 		&msg.CreatedAt,
 	)
 
@@ -82,7 +84,7 @@ func (r *messageRepository) GetByID(ctx context.Context, id string) (*domain.Mes
 // GetByMatchID retrieves all messages for a specific match
 func (r *messageRepository) GetByMatchID(ctx context.Context, matchID string) ([]domain.Message, error) {
 	const query = `
-        SELECT id, match_id, role, content, is_visible, turn_count, token_count, created_at
+        SELECT id, match_id, role, content, is_visible, turn_count, token_count, prompt_advice, created_at
         FROM messages
         WHERE match_id = $1
         ORDER BY created_at ASC
@@ -106,6 +108,7 @@ func (r *messageRepository) GetByMatchID(ctx context.Context, matchID string) ([
 			&msg.IsVisible,
 			&msg.TurnCount,
 			&msg.TokenCount,
+			&msg.PromptAdvice,
 			&msg.CreatedAt,
 		); err != nil {
 			return nil, mapDBError(err)
@@ -124,8 +127,8 @@ func (r *messageRepository) GetByMatchID(ctx context.Context, matchID string) ([
 func (r *messageRepository) Update(ctx context.Context, msg *domain.Message) (*domain.Message, error) {
 	const query = `
         UPDATE messages
-        SET content = $1, is_visible = $2, turn_count = $3, token_count = $4
-        WHERE id = $5
+        SET content = $1, is_visible = $2, turn_count = $3, token_count = $4, prompt_advice = $5
+        WHERE id = $6
     `
 
 	_, err := r.db.ExecContext(
@@ -135,6 +138,7 @@ func (r *messageRepository) Update(ctx context.Context, msg *domain.Message) (*d
 		msg.IsVisible,
 		msg.TurnCount,
 		msg.TokenCount,
+		msg.PromptAdvice,
 		msg.ID,
 	)
 

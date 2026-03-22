@@ -80,6 +80,64 @@ func (_c *LLMService_EvaluateFormatBreak_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// EvaluatePromptAdvice provides a mock function with given fields: ctx, gameRule, userContent
+func (_m *LLMService) EvaluatePromptAdvice(ctx context.Context, gameRule string, userContent string) (string, error) {
+	ret := _m.Called(ctx, gameRule, userContent)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EvaluatePromptAdvice")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
+		return rf(ctx, gameRule, userContent)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+		r0 = rf(ctx, gameRule, userContent)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, gameRule, userContent)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LLMService_EvaluatePromptAdvice_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EvaluatePromptAdvice'
+type LLMService_EvaluatePromptAdvice_Call struct {
+	*mock.Call
+}
+
+// EvaluatePromptAdvice is a helper method to define mock.On call
+//   - ctx context.Context
+//   - gameRule string
+//   - userContent string
+func (_e *LLMService_Expecter) EvaluatePromptAdvice(ctx interface{}, gameRule interface{}, userContent interface{}) *LLMService_EvaluatePromptAdvice_Call {
+	return &LLMService_EvaluatePromptAdvice_Call{Call: _e.mock.On("EvaluatePromptAdvice", ctx, gameRule, userContent)}
+}
+
+func (_c *LLMService_EvaluatePromptAdvice_Call) Run(run func(ctx context.Context, gameRule string, userContent string)) *LLMService_EvaluatePromptAdvice_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *LLMService_EvaluatePromptAdvice_Call) Return(_a0 string, _a1 error) *LLMService_EvaluatePromptAdvice_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *LLMService_EvaluatePromptAdvice_Call) RunAndReturn(run func(context.Context, string, string) (string, error)) *LLMService_EvaluatePromptAdvice_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EvaluateWinCondition provides a mock function with given fields: ctx, judgeCondition, history
 func (_m *LLMService) EvaluateWinCondition(ctx context.Context, judgeCondition string, history []domain.Message) (bool, int, int, error) {
 	ret := _m.Called(ctx, judgeCondition, history)

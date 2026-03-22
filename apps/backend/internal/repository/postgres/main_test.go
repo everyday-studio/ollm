@@ -153,6 +153,7 @@ func setupSchema() {
 			is_visible BOOLEAN DEFAULT true,
 			turn_count INTEGER NOT NULL DEFAULT 0,
 			token_count INTEGER NOT NULL DEFAULT 0,
+			prompt_advice TEXT,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
 	`
