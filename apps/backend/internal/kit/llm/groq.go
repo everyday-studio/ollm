@@ -150,3 +150,8 @@ func (s *groqService) EvaluateFormatBreak(ctx context.Context, condition string,
 
 	return result.IsBroken, nil
 }
+
+// EvaluatePromptAdvice ...
+func (s *groqService) EvaluatePromptAdvice(ctx context.Context, gameRule string, userContent string) (string, error) {
+	return "", nil
+}

@@ -14,4 +14,7 @@ type LLMService interface {
 	// EvaluateFormatBreak asks the LLM to judge if the AI has failed to follow the format rules.
 	// It returns true if the format is broken (user wins), false otherwise, along with token usage and any error.
 	EvaluateFormatBreak(ctx context.Context, condition string, aiContent string) (bool, error)
+
+	// EvaluatePromptAdvice asks the LLM to analyze the user's prompt and provide helpful advice.
+	EvaluatePromptAdvice(ctx context.Context, gameRule string, userContent string) (string, error)
 }

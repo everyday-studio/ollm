@@ -41,7 +41,7 @@ func main() {
 			),
 			fx.Annotate(
 				func(cfg *config.Config) domain.LLMService {
-					return llm.NewGroqService(cfg.LLM.GroqAPIKey)
+					return llm.NewOpenAIService(cfg.LLM.OpenAIAPIKey)
 				},
 				fx.ResultTags(`name:"judgeLLM"`),
 			),
