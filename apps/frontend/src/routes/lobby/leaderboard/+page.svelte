@@ -127,7 +127,7 @@
   }
 </script>
 
-<div class={`h-[calc(100vh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
+<div class={`h-[calc(100dvh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
   <main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
 
     {#if isLoading}
@@ -280,12 +280,8 @@
               {#each entries as entry, i (entry.user_id)}
                 <tr class={`transition-colors ${isDarkMode ? 'hover:bg-gray-900/60' : 'hover:bg-gray-50'} ${i > 0 ? (isDarkMode ? 'border-t border-gray-800/50' : 'border-t border-gray-100') : ''}`}>
                   <td class="px-5 py-3.5">
-                    {#if entry.rank === 1}
-                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-500/20 text-yellow-400 font-black text-sm">1</span>
-                    {:else if entry.rank === 2}
-                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-400/20 text-gray-300 font-black text-sm">2</span>
-                    {:else if entry.rank === 3}
-                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-600/20 text-amber-500 font-black text-sm">3</span>
+                    {#if entry.rank <= 3}
+                      <img src={`/medal-${entry.rank}.svg`} alt={`${entry.rank}위`} class="w-8 h-8" />
                     {:else}
                       <span class={`inline-flex items-center justify-center w-7 h-7 text-sm font-semibold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{entry.rank}</span>
                     {/if}

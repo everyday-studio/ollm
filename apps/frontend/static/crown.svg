@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" fill="none">
+  <!-- Crown base band -->
+  <ellipse cx="32" cy="42" rx="22" ry="5" fill="#B8860B"/>
+  <rect x="10" y="37" width="44" height="5" rx="1" fill="#DAA520"/>
+  <rect x="10" y="37" width="44" height="2" fill="#F0C040"/>
+  <!-- Crown body -->
+  <path d="M10 37 L6 18 L18 26 L32 8 L46 26 L58 18 L54 37Z" fill="url(#crownGold)"/>
+  <path d="M10 37 L6 18 L18 26 L32 8 L46 26 L58 18 L54 37Z" fill="url(#crownShine)" opacity="0.5"/>
+  <!-- Crown outline for definition -->
+  <path d="M10 37 L6 18 L18 26 L32 8 L46 26 L58 18 L54 37" fill="none" stroke="#B8860B" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Gems -->
+  <!-- Center gem (amber) -->
+  <path d="M32 24 L36 28.5 L32 33 L28 28.5Z" fill="#E8A020" stroke="#B8860B" stroke-width="0.8"/>
+  <path d="M32 24 L34 28.5 L32 31 L30 28.5Z" fill="#FFD060" opacity="0.6"/>
+  <!-- Left gem (emerald) -->
+  <circle cx="17" cy="30" r="3" fill="#2E8B57" stroke="#1A6B3A" stroke-width="0.8"/>
+  <circle cx="16.2" cy="29.2" r="1" fill="#5FD890" opacity="0.5"/>
+  <!-- Right gem (sapphire) -->
+  <circle cx="47" cy="30" r="3" fill="#2855A0" stroke="#1A3D7A" stroke-width="0.8"/>
+  <circle cx="46.2" cy="29.2" r="1" fill="#60A0E0" opacity="0.5"/>
+  <!-- Sparkles -->
+  <g fill="#FFF8DC" opacity="0.8">
+    <path d="M22 16 L22.8 18 L22 17.2 L21.2 18Z"/>
+    <path d="M42 16 L42.8 18 L42 17.2 L41.2 18Z"/>
+    <path d="M32 12 L32.6 13.5 L32 13 L31.4 13.5Z"/>
+    <path d="M14 22 L14.5 23.2 L14 22.7 L13.5 23.2Z"/>
+    <path d="M50 22 L50.5 23.2 L50 22.7 L49.5 23.2Z"/>
+  </g>
+  <defs>
+    <linearGradient id="crownGold" x1="32" y1="8" x2="32" y2="37" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="40%" stop-color="#F0C040"/>
+      <stop offset="100%" stop-color="#DAA520"/>
+    </linearGradient>
+    <linearGradient id="crownShine" x1="20" y1="8" x2="44" y2="37" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFACD"/>
+      <stop offset="50%" stop-color="#FFFACD" stop-opacity="0"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+  </defs>
+</svg>

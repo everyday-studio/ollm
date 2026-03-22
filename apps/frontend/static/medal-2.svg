@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Laurel wreath left -->
+  <g fill="#A0B0C0" opacity="0.9">
+    <ellipse cx="16" cy="30" rx="4" ry="7" transform="rotate(-30 16 30)"/>
+    <ellipse cx="13" cy="36" rx="3.5" ry="6" transform="rotate(-15 13 36)"/>
+    <ellipse cx="12" cy="43" rx="3" ry="5.5" transform="rotate(5 12 43)"/>
+    <ellipse cx="15" cy="49" rx="3" ry="5" transform="rotate(25 15 49)"/>
+  </g>
+  <!-- Laurel wreath right -->
+  <g fill="#A0B0C0" opacity="0.9">
+    <ellipse cx="48" cy="30" rx="4" ry="7" transform="rotate(30 48 30)"/>
+    <ellipse cx="51" cy="36" rx="3.5" ry="6" transform="rotate(15 51 36)"/>
+    <ellipse cx="52" cy="43" rx="3" ry="5.5" transform="rotate(-5 52 43)"/>
+    <ellipse cx="49" cy="49" rx="3" ry="5" transform="rotate(-25 49 49)"/>
+  </g>
+  <!-- Medal circle (silver) -->
+  <circle cx="32" cy="34" r="16" fill="url(#silver2Grad)" stroke="#8090A0" stroke-width="1.5"/>
+  <circle cx="32" cy="34" r="13" fill="none" stroke="#8090A0" stroke-width="0.8" opacity="0.5"/>
+  <!-- Shine -->
+  <ellipse cx="27" cy="28" rx="6" ry="8" fill="white" opacity="0.25" transform="rotate(-20 27 28)"/>
+  <!-- Number -->
+  <text x="32" y="40" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="22" fill="#5A6A7A">2</text>
+  <!-- Blue ribbon -->
+  <path d="M20 52 Q26 48 32 52 Q38 48 44 52 L44 58 Q38 54 32 58 Q26 54 20 58Z" fill="#2563EB"/>
+  <path d="M20 52 Q26 48 32 52 Q38 48 44 52 L44 54 Q38 50 32 54 Q26 50 20 54Z" fill="#3B82F6"/>
+  <!-- Stars on ribbon -->
+  <g fill="#E0E8F0" opacity="0.9">
+    <path d="M26 54 l0.8 1.6 1.7.2-1.2 1.2.3 1.7L26 57.8l-1.6.9.3-1.7-1.2-1.2 1.7-.2z" transform="scale(0.7) translate(6 14)"/>
+    <path d="M32 54 l0.8 1.6 1.7.2-1.2 1.2.3 1.7L32 57.8l-1.6.9.3-1.7-1.2-1.2 1.7-.2z" transform="scale(0.7) translate(14 14)"/>
+    <path d="M38 54 l0.8 1.6 1.7.2-1.2 1.2.3 1.7L38 57.8l-1.6.9.3-1.7-1.2-1.2 1.7-.2z" transform="scale(0.7) translate(22 14)"/>
+  </g>
+  <!-- Sparkles -->
+  <g fill="white" opacity="0.6">
+    <path d="M18 20 l1 2.5-1-1.5-1 1.5z"/>
+    <path d="M46 22 l1 2.5-1-1.5-1 1.5z"/>
+    <path d="M32 14 l.8 2-.8-1.2-.8 1.2z"/>
+  </g>
+  <defs>
+    <radialGradient id="silver2Grad" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0%" stop-color="#F0F4F8"/>
+      <stop offset="60%" stop-color="#C0CCD8"/>
+      <stop offset="100%" stop-color="#A0B0C0"/>
+    </radialGradient>
+  </defs>
+</svg>

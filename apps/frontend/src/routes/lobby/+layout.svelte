@@ -357,7 +357,7 @@
 	<div class="fixed inset-0 z-40 md:hidden" transition:fade={{ duration: 150 }}>
 		<div class="absolute inset-0 bg-black/50" onclick={() => (showMobileMenu = false)} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (showMobileMenu = false)}></div>
 		<nav
-			class="absolute top-16 left-0 w-64 h-[calc(100vh-64px)] shadow-2xl border-r overflow-y-auto {isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}"
+			class="absolute top-16 left-0 w-64 h-[calc(100dvh-64px)] shadow-2xl border-r overflow-y-auto {isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}"
 			transition:fly={{ x: -264, duration: 200 }}
 		>
 			<div class="py-2">

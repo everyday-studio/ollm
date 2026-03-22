@@ -101,6 +101,15 @@
 		sessionRestored = true;
 	});
 
+	// On mobile, scroll chat when keyboard opens/closes
+	onMount(() => {
+		const vv = window.visualViewport;
+		if (!vv) return;
+		const onResize = () => scrollToBottom();
+		vv.addEventListener('resize', onResize);
+		return () => vv.removeEventListener('resize', onResize);
+	});
+
 	// Reload match data whenever matchId changes (reactive navigation)
 	$effect(() => {
 		if (sessionRestored && matchId) {
@@ -156,8 +165,6 @@
 			}
 
 			scrollToBottom();
-			// Auto-focus chat input after match data loads
-			requestAnimationFrame(() => chatInputEl?.focus());
 		} catch (e: unknown) {
 			if (loadToken !== latestLoadToken || id !== matchId) {
 				return;
@@ -383,7 +390,7 @@
 <!-- TEMPLATE                                                        -->
 <!-- ============================================================== -->
 <div
-	class={`flex flex-col h-[calc(100vh-64px)] transition-colors ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}
+	class={`flex flex-col h-[calc(100dvh-64px)] transition-colors ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}
 >
 	<!-- Same container as lobby: max-w + lobby margins -->
 	<div
@@ -1010,7 +1017,7 @@
 													: 'AI 응답을 기다리는 중…'}
 											disabled={!isMatchActive || isSending || !isGamePlayable}
 											rows={1}
-											class={`flex-1 resize-none rounded-xl px-3 py-2.5 text-sm md:text-[15px] outline-none bg-transparent transition-colors ${
+											class={`flex-1 resize-none rounded-xl px-3 py-2.5 text-base md:text-[15px] outline-none bg-transparent transition-colors ${
 												isDarkMode
 													? 'text-gray-200 placeholder-gray-500'
 													: 'text-gray-900 placeholder-gray-400'

@@ -103,6 +103,28 @@
 		startAutoSlide();
 	}
 
+	// Touch swipe support for mobile carousel
+	let touchStartX = 0;
+	let touchStartY = 0;
+
+	function handleTouchStart(e: TouchEvent) {
+		touchStartX = e.touches[0].clientX;
+		touchStartY = e.touches[0].clientY;
+		stopAutoSlide();
+	}
+
+	function handleTouchEnd(e: TouchEvent) {
+		const dx = e.changedTouches[0].clientX - touchStartX;
+		const dy = e.changedTouches[0].clientY - touchStartY;
+		// Only swipe if horizontal movement > vertical and > 50px threshold
+		if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+			if (dx < 0) nextSlide();
+			else prevSlide();
+		} else {
+			startAutoSlide();
+		}
+	}
+
 	let isDarkMode = $derived(theme.isDark);
 
 	// Group matches by game for the "내 매치" section
@@ -266,7 +288,7 @@
 <svelte:window onclick={handleClickOutsideDropdown} />
 
 <div
-	class={`h-[calc(100vh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}
+	class={`h-[calc(100dvh-64px)] overflow-y-auto transition-colors ${isDarkMode ? 'bg-gradient-to-br from-black to-gray-950' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}
 >
 	<main class="max-w-[1800px] mx-auto px-4 py-6 md:px-8 md:py-10 lg:px-10 lg:py-12">
 		{#if isLoading}
@@ -312,9 +334,11 @@
 			<!-- Hero Carousel -->
 			<section class="mb-8">
 				<div
-					class="relative h-[320px] md:h-[400px] rounded-3xl overflow-hidden shadow-2xl group"
+					class="relative h-[320px] md:h-[400px] rounded-3xl overflow-hidden shadow-2xl group touch-pan-y"
 					onmouseenter={stopAutoSlide}
 					onmouseleave={startAutoSlide}
+					ontouchstart={handleTouchStart}
+					ontouchend={handleTouchEnd}
 					role="region"
 					aria-label="추천 게임 슬라이더"
 				>
