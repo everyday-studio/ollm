@@ -1,14 +1,14 @@
 # @name login
-POST http://localhost:8080/auth/login
+POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-    "email": "test.admin@example.com",
+    "email": "newuser1.test@example.com",
     "password": "password123"
 }
 
 ### Update User
-PUT http://localhost:8080/users/me
+PUT http://localhost:8080/api/users/me
 Content-Type: application/json
 Authorization: Bearer {{login.response.body.access_token}}
 
@@ -16,11 +16,15 @@ Authorization: Bearer {{login.response.body.access_token}}
   "name": "관리자올름"
 }
 
-### Sign Up New User (Tag test)
-POST http://localhost:8080/auth/signup
+### Signup User
+POST http://localhost:8080/api/auth/signup
 Content-Type: application/json
 
 {
-    "email": "newuser.test@example.com",
+    "email": "newuser1.test@example.com",
     "password": "password123"
 }
+
+### Delete User
+DELETE http://localhost:8080/api/users/me
+Authorization: Bearer {{login.response.body.access_token}}

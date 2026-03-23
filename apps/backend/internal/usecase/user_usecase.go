@@ -65,3 +65,7 @@ func (uc *userUseCase) UpdateNickname(ctx context.Context, id string, name strin
 
 	return uc.userRepo.GetByID(ctx, id)
 }
+
+func (uc *userUseCase) Delete(ctx context.Context, id string) error {
+	return uc.userRepo.Delete(ctx, id)
+}

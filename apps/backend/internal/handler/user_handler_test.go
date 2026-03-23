@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/everyday-studio/ollm/internal/config"
 	"github.com/everyday-studio/ollm/internal/domain"
 	"github.com/everyday-studio/ollm/internal/domain/mocks"
 )
@@ -81,7 +82,7 @@ func TestUserHandler_GetMe(t *testing.T) {
 			mockUseCase := new(mocks.UserUseCase)
 			mockUseCase.On("GetByID", mock.Anything, tt.userID).Return(tt.mockReturn, tt.mockError).Maybe()
 
-			h := NewUserHandler(e, mockUseCase)
+			h := NewUserHandler(e, mockUseCase, &config.Config{})
 			err := h.GetMe(c)
 
 			assert.NoError(t, err)
@@ -187,12 +188,85 @@ func TestUserHandler_UpdateMe(t *testing.T) {
 				mockUseCase.On("UpdateNickname", mock.Anything, tt.userID, mock.AnythingOfType("string")).Return(tt.mockReturn, tt.mockError).Maybe()
 			}
 
-			h := NewUserHandler(e, mockUseCase)
+			h := NewUserHandler(e, mockUseCase, &config.Config{})
 			err := h.UpdateMe(c)
 
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantStatus, rec.Code)
 			assert.JSONEq(t, tt.wantBody, rec.Body.String())
+
+			mockUseCase.AssertExpectations(t)
+		})
+	}
+}
+
+// --- Withdraw ---
+
+func TestUserHandler_Withdraw(t *testing.T) {
+	tests := []struct {
+		name       string
+		userID     string
+		mockError  error
+		wantStatus int
+		wantBody   string
+	}{
+		{
+			name:       "Withdraw user successfully",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+			mockError:  nil,
+			wantStatus: http.StatusNoContent,
+			wantBody:   "",
+		},
+		{
+			name:       "Fail due to missing user_id in context (unauthorized)",
+			userID:     "", // not set in context
+			mockError:  nil,
+			wantStatus: http.StatusUnauthorized,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrUnauthorized.Error()),
+		},
+		{
+			name:       "Fail due to user not found",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER9",
+			mockError:  domain.ErrNotFound,
+			wantStatus: http.StatusNotFound,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrNotFound.Error()),
+		},
+		{
+			name:       "Fail due to internal error",
+			userID:     "01HQZYX3VQJQZ3Z0Z1Z2ZUSER1",
+			mockError:  domain.ErrInternal,
+			wantStatus: http.StatusInternalServerError,
+			wantBody:   fmt.Sprintf(`{"error":"%s"}`, domain.ErrInternal.Error()),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodDelete, "/api/users/me", nil)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			// Only set user_id when it is not an unauthorized test case
+			if tt.userID != "" {
+				c.Set("user_id", tt.userID)
+			}
+
+			mockUseCase := new(mocks.UserUseCase)
+			if tt.userID != "" {
+				mockUseCase.On("Delete", mock.Anything, tt.userID).Return(tt.mockError).Maybe()
+			}
+
+			h := NewUserHandler(e, mockUseCase, &config.Config{})
+			err := h.Withdraw(c)
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantStatus, rec.Code)
+			if tt.wantBody != "" {
+				assert.JSONEq(t, tt.wantBody, rec.Body.String())
+			} else {
+				assert.Empty(t, rec.Body.String())
+			}
 
 			mockUseCase.AssertExpectations(t)
 		})
