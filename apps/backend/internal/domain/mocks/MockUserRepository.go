@@ -78,6 +78,53 @@ func (_c *UserRepository_CountAll_Call) RunAndReturn(run func(context.Context) (
 	return _c
 }
 
+// Delete provides a mock function with given fields: ctx, id
+func (_m *UserRepository) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UserRepository_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type UserRepository_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *UserRepository_Expecter) Delete(ctx interface{}, id interface{}) *UserRepository_Delete_Call {
+	return &UserRepository_Delete_Call{Call: _e.mock.On("Delete", ctx, id)}
+}
+
+func (_c *UserRepository_Delete_Call) Run(run func(ctx context.Context, id string)) *UserRepository_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *UserRepository_Delete_Call) Return(_a0 error) *UserRepository_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *UserRepository_Delete_Call) RunAndReturn(run func(context.Context, string) error) *UserRepository_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetByID provides a mock function with given fields: ctx, id
 func (_m *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	ret := _m.Called(ctx, id)
