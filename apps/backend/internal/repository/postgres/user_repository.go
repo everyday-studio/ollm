@@ -60,7 +60,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 	query := `
 		SELECT id, name, tag, email, role, created_at, updated_at
 		FROM users
-		WHERE id = $1
+		WHERE id = $1 AND deleted_at IS NULL
 	`
 
 	var user domain.User
@@ -84,7 +84,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*domain.User, 
 }
 
 func (r *userRepository) CountAll(ctx context.Context) (int, error) {
-	query := `SELECT COUNT(*) FROM users`
+	query := `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`
 	var count int
 	if err := r.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
 		return 0, fmt.Errorf("failed to count all users: %w", err)
@@ -97,6 +97,7 @@ func (r *userRepository) GetPaginated(ctx context.Context, page, limit int) ([]d
 	query := `
 		SELECT id, name, tag, email, role, created_at, updated_at
 		FROM users
+		WHERE deleted_at IS NULL
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 	`
@@ -135,7 +136,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 	const query = `
 		SELECT id, name, tag, email, password, role, created_at, updated_at
 		FROM users
-		WHERE email = $1
+		WHERE email = $1 AND deleted_at IS NULL
 	`
 
 	user := &domain.User{}
@@ -191,7 +192,7 @@ func (r *userRepository) UpsertGoogleUser(ctx context.Context, user *domain.User
 	const selectQuery = `
 		SELECT id, name, tag, email, role, created_at, updated_at
 		FROM users
-		WHERE google_id = $1
+		WHERE google_id = $1 AND deleted_at IS NULL
 	`
 	existing := &domain.User{}
 	err := r.db.QueryRowContext(ctx, selectQuery, user.GoogleID).Scan(
@@ -252,3 +253,31 @@ func (r *userRepository) UpsertGoogleUser(ctx context.Context, user *domain.User
 	return nil, fmt.Errorf("max tag retries exceeded: %w", domain.ErrConflict)
 }
 
+func (r *userRepository) Delete(ctx context.Context, id string) error {
+	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
+	deletedMarker := "_deleted_" + ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
+
+	const query = `
+		UPDATE users
+		SET deleted_at = NOW(),
+		    email = email || $2,
+		    google_id = CASE WHEN google_id IS NOT NULL THEN google_id || $2 ELSE NULL END
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+
+	res, err := r.db.ExecContext(ctx, query, id, deletedMarker)
+	if err != nil {
+		return fmt.Errorf("failed to soft delete user: %w", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected during soft delete: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrNotFound
+	}
+
+	return nil
+}

@@ -21,9 +21,10 @@ type User struct {
 	Email     string    `json:"email"`
 	Password  string    `json:"-"`
 	GoogleID  string    `json:"-"`
-	Role      Role      `json:"role"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Role      Role       `json:"role"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 
 type UpdateNicknameRequest struct {
@@ -40,6 +41,7 @@ type UserRepository interface {
 	// UpsertGoogleUser finds a user by google_id or creates a new one.
 	// Returns the existing or newly created user.
 	UpsertGoogleUser(ctx context.Context, user *User) (*User, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type UserUseCase interface {
@@ -47,4 +49,5 @@ type UserUseCase interface {
 	GetPaginated(ctx context.Context, page, limit int) (*PaginatedData[User], error)
 	CountAll(ctx context.Context) (int, error)
 	UpdateNickname(ctx context.Context, id string, name string) (*User, error)
+	Delete(ctx context.Context, id string) error
 }

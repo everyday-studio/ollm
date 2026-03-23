@@ -92,9 +92,11 @@ func setupSchema() {
 			tag VARCHAR(5) NOT NULL DEFAULT '',
 			email TEXT NOT NULL UNIQUE,
 			password VARCHAR(255) NOT NULL DEFAULT '',
+			google_id VARCHAR(255) UNIQUE,
 			role VARCHAR(255) DEFAULT 'User',
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			deleted_at TIMESTAMP WITH TIME ZONE NULL,
 			CONSTRAINT users_tag_key UNIQUE (tag)
 		);
 

@@ -25,10 +25,10 @@ type Game struct {
 	AuthorID       string     `json:"author_id"`
 	Status         GameStatus `json:"status"`
 	IsPublic       bool       `json:"is_public"`
-	SystemPrompt   string     `json:"system_prompt"`
+	SystemPrompt   string     `json:"system_prompt,omitempty"`
 	FirstMessage   string     `json:"first_message"`
 	JudgeType      JudgeType  `json:"judge_type"`
-	JudgeCondition string     `json:"judge_condition"`
+	JudgeCondition string     `json:"judge_condition,omitempty"`
 	MaxTurns       int        `json:"max_turns"`
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`

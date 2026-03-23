@@ -74,6 +74,9 @@ func (h *GameHandler) GetByID(c echo.Context) error {
 	ctx := c.Request().Context()
 	game, err := h.gameUseCase.GetByID(ctx, id)
 	if err == nil {
+		// Hide sensitive information
+		game.SystemPrompt = ""
+		game.JudgeCondition = ""
 		return c.JSON(http.StatusOK, game)
 	}
 
@@ -107,6 +110,11 @@ func (h *GameHandler) GetAll(c echo.Context) error {
 
 	paginatedData, err := h.gameUseCase.GetPaginated(ctx, page, limit, filter)
 	if err == nil {
+		// Hide sensitive information
+		for i := range paginatedData.Data {
+			paginatedData.Data[i].SystemPrompt = ""
+			paginatedData.Data[i].JudgeCondition = ""
+		}
 		return c.JSON(http.StatusOK, paginatedData)
 	}
 
