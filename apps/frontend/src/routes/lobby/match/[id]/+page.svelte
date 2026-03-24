@@ -813,51 +813,67 @@
 												{:else}
 													<!-- AI -->
 													<div class="flex gap-2.5">
+														<!-- Sparkle avatar -->
 														<div
-															class={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black tracking-tight ${
+															class={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
 																isDarkMode
-																	? 'bg-gradient-to-br from-gray-700 to-gray-800 text-orange-400 ring-1 ring-gray-700'
-																	: 'bg-gradient-to-br from-gray-100 to-gray-200 text-orange-500 ring-1 ring-gray-200'
+																	? 'bg-gradient-to-br from-gray-700 to-gray-800 ring-1 ring-gray-700'
+																	: 'bg-gradient-to-br from-orange-50 to-orange-100 ring-1 ring-orange-200'
 															}`}
 														>
-															AI
+															<svg class={`w-4 h-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`} viewBox="0 0 24 24" fill="currentColor">
+																<path d="M12 2 L13.2 10.8 L22 12 L13.2 13.2 L12 22 L10.8 13.2 L2 12 L10.8 10.8 Z"/>
+															</svg>
 														</div>
-														<div class="max-w-[80%] md:max-w-[70%]">
+														<!-- Bubble + advice panel (independent widths) -->
+														<div class="min-w-0">
 															<div
-																class={`rounded-2xl rounded-tl-md px-4 py-2.5 ${
+																class={`w-fit max-w-[75vw] md:max-w-[60vw] rounded-2xl rounded-tl-md px-4 py-2.5 ${
 																	isDarkMode
 																		? 'bg-gray-800/60 text-gray-200 ring-1 ring-gray-800'
 																		: 'bg-white text-gray-800 shadow-sm ring-1 ring-gray-100'
 																}`}
 															>
-																<p
-																	class="text-[15px] leading-relaxed whitespace-pre-wrap break-words"
-																>
+																<p class="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
 																	{msg.content}
 																</p>
 															</div>
-															<div class="mt-1 pl-1 flex items-center gap-2">
+															<div class="mt-1.5 pl-1 flex items-center gap-2">
 																{#if msg.turn_count > 0}
-																	<span
-																		class={`text-[10px] tabular-nums ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
-																	>
+																	<span class={`text-[10px] tabular-nums ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
 																		턴 {msg.turn_count}
 																	</span>
 																{/if}
 																{#if adviceByTurn[msg.turn_count]}
 																	<button
 																		onclick={() => (openAdviceId = openAdviceId === msg.id ? null : msg.id)}
-																		class={`text-base leading-none transition-opacity ${isDarkMode ? 'opacity-30 hover:opacity-70' : 'opacity-25 hover:opacity-60'}`}
+																		class={`p-1 rounded-full transition-all ${
+																			openAdviceId === msg.id
+																				? isDarkMode
+																					? 'text-orange-300 bg-orange-500/20'
+																					: 'text-orange-500 bg-orange-100'
+																				: isDarkMode
+																					? 'text-gray-500 hover:text-orange-400 hover:bg-orange-500/10'
+																					: 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'
+																		}`}
 																		aria-label="AI 조언 보기"
-																	>💬</button>
+																	>
+																		<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+																			<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+																		</svg>
+																	</button>
 																{/if}
 															</div>
 															{#if adviceByTurn[msg.turn_count] && openAdviceId === msg.id}
 																<div
-																	class="mt-1.5 rounded-xl px-3.5 py-2.5 bg-gray-900 ring-1 ring-gray-800"
+																	class={`mt-2 w-fit max-w-[75vw] md:max-w-[60vw] rounded-2xl px-4 py-3 ${
+																		isDarkMode
+																			? 'bg-orange-500/5 ring-1 ring-orange-500/15'
+																			: 'bg-orange-50 ring-1 ring-orange-100'
+																	}`}
 																	transition:fly={{ y: -4, duration: 150 }}
 																>
-																	<p class="text-[13px] leading-relaxed italic text-gray-400 whitespace-pre-wrap break-words">
+																	<p class={`text-[13px] leading-relaxed whitespace-pre-wrap break-words ${isDarkMode ? 'text-orange-200/70' : 'text-orange-900/70'}`}>
 																		{adviceByTurn[msg.turn_count]}
 																	</p>
 																</div>
@@ -873,13 +889,15 @@
 											<div in:fade={{ duration: 200 }}>
 												<div class="flex gap-2.5">
 													<div
-														class={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black tracking-tight ${
+														class={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
 															isDarkMode
-																? 'bg-gradient-to-br from-gray-700 to-gray-800 text-orange-400 ring-1 ring-gray-700'
-																: 'bg-gradient-to-br from-gray-100 to-gray-200 text-orange-500 ring-1 ring-gray-200'
+																? 'bg-gradient-to-br from-gray-700 to-gray-800 ring-1 ring-gray-700'
+																: 'bg-gradient-to-br from-orange-50 to-orange-100 ring-1 ring-orange-200'
 														}`}
 													>
-														AI
+														<svg class={`w-4 h-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`} viewBox="0 0 24 24" fill="currentColor">
+															<path d="M12 2 L13.2 10.8 L22 12 L13.2 13.2 L12 22 L10.8 13.2 L2 12 L10.8 10.8 Z"/>
+														</svg>
 													</div>
 													<div
 														class={`rounded-2xl rounded-tl-md px-4 py-3 ${
