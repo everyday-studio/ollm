@@ -30,6 +30,10 @@
 	let nicknameInput = $state('');
 	let nicknameError = $state('');
 
+	// Withdrawal state
+	let showWithdrawModal = $state(false);
+	let isWithdrawing = $state(false);
+
 	// Profile image upload state
 	let isUploading = $state(false);
 	let avatarCacheBust = $state('');
@@ -118,6 +122,23 @@
 			saveNickname();
 		} else if (e.key === 'Escape') {
 			cancelEditing();
+		}
+	}
+
+	// ----------------------------------------------------------------
+	// Withdrawal
+	// ----------------------------------------------------------------
+	async function handleWithdraw() {
+		isWithdrawing = true;
+		try {
+			await userApi.withdraw();
+			authStore.logout();
+			showWithdrawModal = false;
+			goto('/');
+		} catch {
+			toast.error('탈퇴 처리에 실패했습니다. 다시 시도해주세요.');
+		} finally {
+			isWithdrawing = false;
 		}
 	}
 
@@ -597,6 +618,34 @@
 						</div>
 					</div>
 				</div>
+				<!-- Danger Zone -->
+				<div
+					class={`rounded-2xl border overflow-hidden transition-colors ${isDarkMode ? 'bg-gray-950 border-red-900/30' : 'bg-white border-red-200'}`}
+					in:fly={{ y: 20, duration: 300, delay: 200 }}
+				>
+					<div class={`px-6 py-5 md:px-8 border-b ${isDarkMode ? 'border-red-900/30' : 'border-red-100'}`}>
+						<h3 class={`text-sm font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+							위험 구역
+						</h3>
+					</div>
+					<div class="px-6 py-5 md:px-8 flex items-center justify-between gap-4">
+						<div>
+							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+								계정 탈퇴
+							</p>
+						</div>
+						<button
+							onclick={() => (showWithdrawModal = true)}
+							class={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+								isDarkMode
+									? 'text-red-400 border-red-500/30 hover:bg-red-500/10'
+									: 'text-red-600 border-red-200 hover:bg-red-50'
+							}`}
+						>
+							탈퇴
+						</button>
+					</div>
+				</div>
 			</div>
 		{:else}
 			<!-- Error state -->
@@ -617,3 +666,55 @@
 		{/if}
 	</main>
 </div>
+
+<!-- ==================== Withdrawal confirmation modal ==================== -->
+{#if showWithdrawModal}
+	<div
+		class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+		transition:fade={{ duration: 150 }}
+		role="dialog"
+		aria-modal="true"
+	>
+		<div
+			class={`w-full max-w-sm rounded-2xl shadow-2xl transition-colors ${isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'}`}
+			transition:fly={{ y: 16, duration: 200 }}
+		>
+			<div class="p-6">
+				<div class={`w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-red-500/10' : 'bg-red-50'}`}>
+					<svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+					</svg>
+				</div>
+				<h3 class={`text-lg font-bold text-center mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+					정말 탈퇴하시겠습니까?
+				</h3>
+				<p class={`text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+					기존 게임 기록은 복구되지 않습니다.
+				</p>
+			</div>
+			<div class={`flex gap-3 px-6 pb-6`}>
+				<button
+					onclick={() => (showWithdrawModal = false)}
+					class={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+						isDarkMode
+							? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+							: 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+					}`}
+				>
+					취소
+				</button>
+				<button
+					onclick={handleWithdraw}
+					disabled={isWithdrawing}
+					class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+				>
+					{#if isWithdrawing}
+						<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+					{:else}
+						탈퇴하기
+					{/if}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}

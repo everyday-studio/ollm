@@ -36,6 +36,7 @@
 	let showResignModal = $state(false);
 	let showSidebar = $state(false);
 	let showGameInfo = $state(false);
+	let openAdviceId = $state<string | null>(null);
 	let chatInputEl = $state<HTMLTextAreaElement | null>(null);
 	let sessionRestored = $state(false);
 	let latestLoadToken = 0;
@@ -51,6 +52,7 @@
 					is_visible: true,
 					turn_count: 0,
 					token_count: 0,
+					prompt_advice: null,
 					created_at: match?.created_at ?? new Date().toISOString()
 				} satisfies MessageDTO)
 			: null
@@ -59,6 +61,14 @@
 		...(initialMessage ? [initialMessage] : []),
 		...messages.filter((m) => m.is_visible)
 	]);
+	// Map turn_count → prompt_advice from user messages (backend stores advice on user msg)
+	let adviceByTurn = $derived(
+		Object.fromEntries(
+			messages
+				.filter((m) => m.role === 'user' && m.prompt_advice)
+				.map((m) => [m.turn_count, m.prompt_advice])
+		)
+	);
 	let isMatchActive = $derived(match?.status === 'active');
 	let isGenerating = $derived(match?.status === 'generating');
 	let isSending = $derived(sendingMatchId === matchId);
@@ -234,7 +244,13 @@
 				return;
 			}
 
-			messages = [...messages, aiMessage];
+			// Re-fetch history to replace optimistic user message with real one (which has prompt_advice)
+			try {
+				const historyRes = await messageApi.getHistory(currentMatchId);
+				messages = historyRes.data ?? [...messages, aiMessage];
+			} catch {
+				messages = [...messages, aiMessage];
+			}
 
 			// Refresh match state to get updated status/turn_count
 			try {
@@ -820,7 +836,7 @@
 																	{msg.content}
 																</p>
 															</div>
-															<div class="mt-1 pl-1">
+															<div class="mt-1 pl-1 flex items-center gap-2">
 																{#if msg.turn_count > 0}
 																	<span
 																		class={`text-[10px] tabular-nums ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
@@ -828,7 +844,24 @@
 																		턴 {msg.turn_count}
 																	</span>
 																{/if}
+																{#if adviceByTurn[msg.turn_count]}
+																	<button
+																		onclick={() => (openAdviceId = openAdviceId === msg.id ? null : msg.id)}
+																		class={`text-base leading-none transition-opacity ${isDarkMode ? 'opacity-30 hover:opacity-70' : 'opacity-25 hover:opacity-60'}`}
+																		aria-label="AI 조언 보기"
+																	>💬</button>
+																{/if}
 															</div>
+															{#if adviceByTurn[msg.turn_count] && openAdviceId === msg.id}
+																<div
+																	class="mt-1.5 rounded-xl px-3.5 py-2.5 bg-gray-900 ring-1 ring-gray-800"
+																	transition:fly={{ y: -4, duration: 150 }}
+																>
+																	<p class="text-[13px] leading-relaxed italic text-gray-400 whitespace-pre-wrap break-words">
+																		{adviceByTurn[msg.turn_count]}
+																	</p>
+																</div>
+															{/if}
 														</div>
 													</div>
 												{/if}

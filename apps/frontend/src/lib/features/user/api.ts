@@ -8,5 +8,8 @@ export const userApi = {
     getMe: () => client.get<User>('/api/users/me'),
 
     // PUT /users/me - Update current user nickname
-    updateNickname: (data: UpdateNicknameRequest) => client.put<User>('/api/users/me', data)
+    updateNickname: (data: UpdateNicknameRequest) => client.put<User>('/api/users/me', data),
+
+    // DELETE /users/me - Withdraw (soft delete account)
+    withdraw: () => client.delete('/api/users/me')
 };
