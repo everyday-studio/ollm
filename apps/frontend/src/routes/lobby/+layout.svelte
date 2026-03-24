@@ -2,7 +2,7 @@
 	import { fade, fly, scale } from 'svelte/transition';
 	import { goto, invalidateAll, onNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount, setContext } from 'svelte';
+	import { onMount, setContext, tick } from 'svelte';
 	import type { Navigation } from '@sveltejs/kit';
 
 	import { authApi } from '$lib/features/auth/api';
@@ -87,9 +87,47 @@
 		};
 	});
 
-	function toggleTheme() {
-		isDarkMode = !isDarkMode;
-		localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+	async function toggleTheme(event: MouseEvent) {
+		const x = event.clientX;
+		const y = event.clientY;
+		const maxRadius = Math.hypot(
+			Math.max(x, window.innerWidth - x),
+			Math.max(y, window.innerHeight - y)
+		);
+
+		// Fallback for unsupported browsers (e.g. Firefox)
+		if (!document.startViewTransition) {
+			isDarkMode = !isDarkMode;
+			localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+			return;
+		}
+
+		// Tag the root so CSS suppresses the default cross-fade for this transition
+		document.documentElement.dataset.themeTransition = '';
+
+		const transition = document.startViewTransition(async () => {
+			isDarkMode = !isDarkMode;
+			localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+			await tick();
+		});
+
+		// Wait for both snapshots to be captured, then apply the circle clip-path
+		await transition.ready;
+
+		document.documentElement.animate(
+			[
+				{ clipPath: `circle(0px at ${x}px ${y}px)` },
+				{ clipPath: `circle(${maxRadius}px at ${x}px ${y}px)` }
+			],
+			{
+				duration: 500,
+				easing: 'ease-in-out',
+				pseudoElement: '::view-transition-new(root)'
+			}
+		);
+
+		await transition.finished;
+		delete document.documentElement.dataset.themeTransition;
 	}
 
 	// ----------------------------------------------------------------
@@ -448,3 +486,15 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	/*
+	 * During theme toggle, suppress the default cross-fade so our
+	 * clip-path circle animation can take over cleanly.
+	 */
+	:global(html[data-theme-transition]::view-transition-old(root)),
+	:global(html[data-theme-transition]::view-transition-new(root)) {
+		animation: none;
+		mix-blend-mode: normal;
+	}
+</style>

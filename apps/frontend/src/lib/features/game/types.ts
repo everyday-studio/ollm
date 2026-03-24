@@ -41,6 +41,7 @@ export interface MessageDTO {
   is_visible: boolean;
   turn_count: number;
   token_count: number;
+  prompt_advice?: string | null;
   created_at: string;
 }
 
