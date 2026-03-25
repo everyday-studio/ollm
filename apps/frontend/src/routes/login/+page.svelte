@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade, scale } from 'svelte/transition';
   import { onMount, tick } from 'svelte';
+  import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import { toast } from 'svelte-french-toast';
 
@@ -323,9 +324,21 @@
       resetSession();
       const hasSession = await ensureSession();
       if (hasSession) {
-        toast.success('이전 게스트 계정으로 복귀합니다!', { duration: 3000, position: 'top-center', icon: '👤' });
-        loggedIn = true;
-      } else {
+        // 반드시 게스트 계정(email이 guest_ 로 시작)인지 검증
+        // 관리자/일반 유저가 로그인된 쿠키를 그대로 사용하는 버그를 방지
+        const restoredEmail = get(authStore).user?.email ?? '';
+        if (restoredEmail.startsWith('guest_')) {
+          toast.success('이전 게스트 계정으로 복귀합니다!', { duration: 3000, position: 'top-center', icon: '👤' });
+          loggedIn = true;
+        } else {
+          // 게스트가 아닌 세션 — 로그아웃 후 새 게스트 계정 생성으로 진행
+          authStore.logout();
+          try { await authApi.logout(); } catch { /* ignore */ }
+          resetSession();
+        }
+      }
+
+      if (!loggedIn) {
         resetSession();
         // 2단계: 쿠키 없으면 localStorage의 refresh token으로 복원 시도
         const storedToken = getStoredGuestToken();
