@@ -32,6 +32,7 @@
 	let judgeFilter = $state<'all' | 'target_word' | 'llm_judge' | 'format_break'>('all');
 	let searchQuery = $state('');
 	let showJudgeDropdown = $state(false);
+	let sortOrder = $state<'newest' | 'name' | 'popular'>('newest');
 
 	function matchesQuery(title: string, query: string): boolean {
 		const q = query.trim();
@@ -56,6 +57,13 @@
 		let result = games;
 		if (judgeFilter !== 'all') result = result.filter((g) => g.judge_type === judgeFilter);
 		if (searchQuery.trim()) result = result.filter((g) => matchesQuery(g.title, searchQuery));
+		// Sort
+		if (sortOrder === 'name') {
+			result = [...result].sort((a, b) => a.title.localeCompare(b.title, 'ko'));
+		} else {
+			// 'newest' — already ordered by created_at DESC from backend
+			// 'popular' — disabled, same as newest
+		}
 		return result;
 	});
 
@@ -63,17 +71,46 @@
 		selectedGame ? getJudgeBadgeStyle(selectedGame.judge_type) : getJudgeBadgeStyle('unknown')
 	);
 
+	// Recommended carousel: first-timers see tutorial only,
+	// returning users see 2 newest + up to 6 random others
+	const TUTORIAL_GAME_ID = '01KKZVBA3ZY5DJF9SZRWWAVJHJ';
+
+	let carouselGames = $derived.by(() => {
+		if (matches.length === 0) {
+			const tutorial = games.find((g) => g.id === TUTORIAL_GAME_ID);
+			if (tutorial) return [tutorial];
+		}
+		if (games.length <= 8) return games;
+		// 2 newest (already sorted by created_at DESC)
+		const newest = games.slice(0, 2);
+		const rest = games.slice(2);
+		// Deterministic daily shuffle using date as seed
+		const daySeed = new Date().toISOString().slice(0, 10);
+		const seeded = rest.map((g) => {
+			let h = 0;
+			const s = g.id + daySeed;
+			for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+			return { g, h };
+		}).sort((a, b) => a.h - b.h).map((x) => x.g);
+		return [...newest, ...seeded.slice(0, 6)];
+	});
+
+	// Clamp currentSlide when carouselGames shrinks
+	$effect(() => {
+		if (currentSlide >= carouselGames.length && carouselGames.length > 0) {
+			currentSlide = 0;
+		}
+	});
+
 	// Hero Carousel
 	let currentSlide = $state(0);
 	let slideInterval: ReturnType<typeof setInterval> | null = null;
-	let slideDirection = $state<1 | -1>(1);
 
 	function startAutoSlide() {
 		stopAutoSlide();
 		slideInterval = setInterval(() => {
-			if (games.length > 1) {
-				slideDirection = 1;
-				currentSlide = (currentSlide + 1) % games.length;
+			if (carouselGames.length > 1) {
+				currentSlide = (currentSlide + 1) % carouselGames.length;
 			}
 		}, 6000);
 	}
@@ -86,20 +123,17 @@
 	}
 
 	function goToSlide(index: number) {
-		slideDirection = index > currentSlide ? 1 : -1;
 		currentSlide = index;
 		startAutoSlide();
 	}
 
 	function prevSlide() {
-		slideDirection = -1;
-		currentSlide = (currentSlide - 1 + games.length) % games.length;
+		currentSlide = (currentSlide - 1 + carouselGames.length) % carouselGames.length;
 		startAutoSlide();
 	}
 
 	function nextSlide() {
-		slideDirection = 1;
-		currentSlide = (currentSlide + 1) % games.length;
+		currentSlide = (currentSlide + 1) % carouselGames.length;
 		startAutoSlide();
 	}
 
@@ -231,6 +265,12 @@
 	function openGameModal(game: GameUI) {
 		selectedGame = game;
 		showGameModal = true;
+		stopAutoSlide();
+	}
+
+	function closeGameModal() {
+		showGameModal = false;
+		startAutoSlide();
 	}
 
 	async function redirectToLatestMatch(gameId: string): Promise<boolean> {
@@ -252,7 +292,7 @@
 			return false;
 		}
 
-		showGameModal = false;
+		closeGameModal();
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		await goto(`/lobby/match/${latestMatchId}`);
 		return true;
@@ -262,7 +302,7 @@
 		try {
 			const res = await gameApi.createMatch(game.id);
 			invalidateMatchesCache(); // bust cache so lobby refreshes on return
-			showGameModal = false;
+			closeGameModal();
 			// Navigate directly to the match chat page
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			await goto(`/lobby/match/${res.data.id}`);
@@ -331,70 +371,98 @@
 				{/each}
 			</div>
 		{:else}
-			<!-- Hero Carousel -->
+			<!-- Hero Carousel (3D perspective) -->
 			<section class="mb-8">
 				<div
-					class="relative h-[320px] md:h-[400px] rounded-3xl overflow-hidden shadow-2xl group touch-pan-y"
+					class="relative h-[320px] md:h-[400px] group touch-pan-y"
 					onmouseenter={stopAutoSlide}
 					onmouseleave={startAutoSlide}
 					ontouchstart={handleTouchStart}
 					ontouchend={handleTouchEnd}
 					role="region"
 					aria-label="추천 게임 슬라이더"
+					style="perspective: 1200px;"
 				>
-					{#if games.length > 0}
-						{#key currentSlide}
-							<div
-								class="absolute inset-0"
-								in:fly={{ x: 300 * slideDirection, duration: 500 }}
-								out:fly={{ x: -300 * slideDirection, duration: 500 }}
-							>
-								<img
-									src={games[currentSlide].image}
-									alt={games[currentSlide].title}
-									class="w-full h-full object-cover"
-									onerror={handleImageError(DEFAULT_GAME_THUMBNAIL)}
-								/>
-								<div
-									class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"
-								></div>
+					{#if carouselGames.length > 0}
+						<!-- 3D slides: show prev / current / next -->
+						{@const prevIndex = (currentSlide - 1 + carouselGames.length) % carouselGames.length}
+						{@const nextIndex = (currentSlide + 1) % carouselGames.length}
+						{#each carouselGames as slide, i (slide.id)}
+							{@const isActive = i === currentSlide}
+							{@const isPrev = i === prevIndex && carouselGames.length > 1}
+							{@const isNext = i === nextIndex && carouselGames.length > 1}
+							{@const isVisible = isActive || isPrev || isNext}
+							{#if isVisible}
+								<button
+									type="button"
+									class="absolute inset-y-0 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out border-0 p-0 cursor-pointer"
+									style="
+										{isActive ? 'left: 8%; width: 84%; z-index: 10; transform: translateZ(0) scale(1); opacity: 1; filter: brightness(1);' : ''}
+										{isPrev ? 'left: 0; width: 72%; z-index: 5; transform: translateZ(-80px) scale(0.88); opacity: 0.5; filter: brightness(0.6);' : ''}
+										{isNext ? 'right: 0; left: auto; width: 72%; z-index: 5; transform: translateZ(-80px) scale(0.88); opacity: 0.5; filter: brightness(0.6);' : ''}
+									"
+									onclick={() => {
+										if (isPrev) prevSlide();
+										else if (isNext) nextSlide();
+										else openGameModal(carouselGames[currentSlide]);
+									}}
+									aria-label={isActive ? `${slide.title} - 지금 플레이` : isPrev ? '이전 슬라이드' : '다음 슬라이드'}
+								>
+									<img
+										src={slide.image}
+										alt={slide.title}
+										class="w-full h-full object-cover"
+										onerror={handleImageError(DEFAULT_GAME_THUMBNAIL)}
+									/>
+									{#if isActive}
+										<div
+											class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"
+										></div>
 
-								<!-- Content (inside the sliding container to move together) -->
-								<div class="absolute inset-0 flex flex-col justify-center px-8 md:px-16">
-									<div class="flex gap-2 mb-4 flex-wrap">
-										{#each games[currentSlide].tags as tag (tag)}
-											<span
-												class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-white border border-white/20"
+										<!-- Content overlay -->
+										<div class="absolute inset-0 flex flex-col justify-center px-8 md:px-16 text-left">
+											<div class="flex gap-2 mb-4 flex-wrap">
+												{#each slide.tags as tag (tag)}
+													<span
+														class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-white border border-white/20"
+													>
+														#{tag}
+													</span>
+												{/each}
+											</div>
+											<!-- First-time user banner -->
+											{#if matches.length === 0}
+												<span class="inline-flex items-center gap-1.5 mb-3 px-3 py-1 rounded-full bg-[#FF4D00]/80 backdrop-blur-sm text-white text-xs font-bold w-fit">
+													<svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+													튜토리얼로 시작해보세요
+												</span>
+											{/if}
+											<h1
+												class="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-3 md:mb-4 drop-shadow-2xl"
 											>
-												#{tag}
+												{slide.title}
+											</h1>
+											<p
+												class="text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mb-4 md:mb-6 line-clamp-2"
+											>
+												{slide.description}
+											</p>
+											<span
+												class="self-start px-6 py-3 md:px-8 md:py-4 bg-[#FF4D00] text-white rounded-full font-bold text-base md:text-lg hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-xl pointer-events-none"
+											>
+												지금 플레이
 											</span>
-										{/each}
-									</div>
-									<h1
-										class="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-3 md:mb-4 drop-shadow-2xl"
-									>
-										{games[currentSlide].title}
-									</h1>
-									<p
-										class="text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mb-4 md:mb-6 line-clamp-2"
-									>
-										{games[currentSlide].description}
-									</p>
-									<button
-										onclick={() => openGameModal(games[currentSlide])}
-										class="self-start px-6 py-3 md:px-8 md:py-4 bg-[#FF4D00] text-white rounded-full font-bold text-base md:text-lg hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-xl"
-									>
-										지금 플레이
-									</button>
-								</div>
-							</div>
-						{/key}
+										</div>
+									{/if}
+								</button>
+							{/if}
+						{/each}
 
 						<!-- Arrow buttons -->
-						{#if games.length > 1}
+						{#if carouselGames.length > 1}
 							<button
 								onclick={prevSlide}
-								class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+								class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-20"
 								aria-label="이전 슬라이드"
 							>
 								<svg
@@ -412,7 +480,7 @@
 							</button>
 							<button
 								onclick={nextSlide}
-								class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+								class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-20"
 								aria-label="다음 슬라이드"
 							>
 								<svg
@@ -431,9 +499,9 @@
 						{/if}
 
 						<!-- Dot indicators -->
-						{#if games.length > 1}
-							<div class="absolute bottom-4 md:bottom-6 right-4 md:right-8 flex gap-2 items-center">
-								{#each Array.from({ length: games.length }, (__, i) => i) as i (i)}
+						{#if carouselGames.length > 1}
+							<div class="absolute bottom-4 md:bottom-6 right-[12%] md:right-[12%] flex gap-2 items-center z-20">
+								{#each Array.from({ length: carouselGames.length }, (__, i) => i) as i (i)}
 									<button
 										onclick={() => goToSlide(i)}
 										class="relative h-2 rounded-full transition-all duration-300 {i === currentSlide
@@ -520,6 +588,24 @@
 									{/each}
 								</div>
 							{/if}
+						</div>
+						<!-- Sort buttons -->
+						<div class="flex gap-1 ml-auto">
+							{#each [{ id: 'newest' as const, label: '최신순' }, { id: 'name' as const, label: '이름순' }, { id: 'popular' as const, label: '인기순' }] as s (s.id)}
+								<button
+									onclick={() => { if (s.id !== 'popular') sortOrder = s.id; }}
+									class="px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors
+										{s.id === 'popular'
+											? 'opacity-40 cursor-not-allowed ' + (isDarkMode ? 'text-gray-600' : 'text-gray-400')
+											: sortOrder === s.id
+												? 'bg-[#FF4D00] text-white'
+												: isDarkMode ? 'text-gray-400 hover:bg-gray-900' : 'text-gray-500 hover:bg-gray-100'}"
+									disabled={s.id === 'popular'}
+									title={s.id === 'popular' ? '준비 중' : ''}
+								>
+									{s.label}
+								</button>
+							{/each}
 						</div>
 					</div>
 					<!-- Games Grid -->
@@ -727,8 +813,8 @@
 	<div
 		class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
 		transition:fade={{ duration: 200 }}
-		onclick={() => (showGameModal = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showGameModal = false)}
+		onclick={() => closeGameModal()}
+		onkeydown={(e) => e.key === 'Escape' && closeGameModal()}
 		role="dialog"
 		aria-modal="true"
 		tabindex="-1"
@@ -760,7 +846,7 @@
 				</div>
 
 				<button
-					onclick={() => (showGameModal = false)}
+					onclick={() => closeGameModal()}
 					class="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
 					aria-label="모달 닫기"
 				>
@@ -800,7 +886,7 @@
 
 				<div class="flex justify-end gap-3">
 					<button
-						onclick={() => (showGameModal = false)}
+					onclick={() => closeGameModal()}
 						class={`px-5 md:px-6 py-2 md:py-3 rounded-full font-bold transition-colors ${isDarkMode ? 'text-gray-300 hover:bg-gray-900' : 'text-gray-600 hover:bg-gray-100'}`}
 					>
 						취소
@@ -808,7 +894,7 @@
 					<button
 						onclick={() => {
 							if (selectedGame) startNewMatch(selectedGame);
-							showGameModal = false;
+						closeGameModal();
 						}}
 						class="px-6 md:px-8 py-2 md:py-3 bg-[#FF4D00] text-white rounded-full font-bold hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2"
 					>
