@@ -40,6 +40,7 @@
   let entries = $state<LeaderboardEntry[]>([]);
   let isLoading = $state(true);
   let isTableLoading = $state(false);
+  let showTokenInfo = $state(false);
 
 
   // Combobox state
@@ -272,7 +273,36 @@
                 <th class="px-5 py-3.5 text-left w-16">순위</th>
                 <th class="px-5 py-3.5 text-left">플레이어</th>
                 <th class="px-5 py-3.5 text-right w-24">턴</th>
-                <th class="px-5 py-3.5 text-right w-28">토큰</th>
+                <th class="px-5 py-3.5 text-right w-28">
+                  <span class="inline-flex items-center justify-end gap-1">
+                    토큰
+                    <span class="relative">
+                      <button
+                        onclick={(e) => { e.stopPropagation(); showTokenInfo = !showTokenInfo; }}
+                        class={`w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center transition-colors ${
+                          showTokenInfo
+                            ? isDarkMode ? 'bg-orange-500/30 text-orange-300' : 'bg-orange-100 text-orange-600'
+                            : isDarkMode ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                        }`}
+                        aria-label="토큰 설명"
+                      >?</button>
+                      {#if showTokenInfo}
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <div
+                          class="fixed inset-0 z-40"
+                          onclick={() => (showTokenInfo = false)}
+                          onkeydown={() => {}}
+                        ></div>
+                        <div class={`absolute z-50 right-0 top-6 w-64 rounded-xl shadow-xl p-3.5 text-left ${
+                          isDarkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'
+                        }`}>
+                          <div class={`text-xs font-bold mb-1 ${ isDarkMode ? 'text-orange-300' : 'text-orange-600' }`}>에이전트(AI)가 사용한 토큰 수</div>
+                          <p class={`text-xs leading-relaxed ${ isDarkMode ? 'text-gray-400' : 'text-gray-600' }`}>토큰은 AI가 대화를 이해하고 응답을 생성하는 데 쓴 비용으로, 읽은 토큰 + 입력한 토큰의 합산입니다. 토큰 수가 적을수록 짧고 직접적인 대화로 클리어한 것으로, 더 효율적인 플레이를 나타냅니다.</p>
+                        </div>
+                      {/if}
+                    </span>
+                  </span>
+                </th>
                 <th class="px-5 py-3.5 text-right w-32 hidden sm:table-cell">달성일</th>
               </tr>
             </thead>
