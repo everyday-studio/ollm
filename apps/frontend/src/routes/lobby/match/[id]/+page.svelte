@@ -7,6 +7,7 @@
 	import { gameApi } from '$lib/features/game/api';
 	import { messageApi } from '$lib/features/game/messageApi';
 	import { ensureSession } from '$lib/features/auth/session';
+	import { authStore } from '$lib/features/auth/model';
 	import { invalidateMatchesCache } from '$lib/cache/gameCache';
 	import type { MatchDTO, GameDTO, MessageDTO, MatchStatus } from '$lib/features/game/types';
 	import { getStatusLabel, getStatusColor, getShortStatusLabel } from '$lib/utils/gameHelpers';
@@ -40,6 +41,13 @@
 	let chatInputEl = $state<HTMLTextAreaElement | null>(null);
 	let sessionRestored = $state(false);
 	let latestLoadToken = 0;
+
+	const GCS_BASE = 'https://storage.googleapis.com/ollm-assets-prod';
+	const DEFAULT_USER_PROFILE = `${GCS_BASE}/default/user_profile.png`;
+	let userAvatarUrl = $derived(
+		$authStore.user ? `${GCS_BASE}/user/${$authStore.user.id}.png` : DEFAULT_USER_PROFILE
+	);
+	let userImgError = $state(false);
 
 	// Derived helpers
 	let initialMessage = $derived(
@@ -93,6 +101,13 @@
 			? `https://storage.googleapis.com/ollm-assets-prod/game/${game.id}/profile.png`
 			: ''
 	);
+	// Tracks whether the AI profile image failed to load (falls back to sparkle SVG)
+	let profileImgError = $state(false);
+	$effect(() => {
+		// Reset error flag whenever game changes
+		game;
+		profileImgError = false;
+	});
 
 	// ----------------------------------------------------------------
 	// Chat container ref for auto-scroll
@@ -795,8 +810,8 @@
 											<div in:fly={{ y: 6, duration: 180 }}>
 												{#if msg.role === 'user'}
 													<!-- User -->
-													<div class="flex justify-end">
-														<div class="max-w-[80%] md:max-w-[70%]">
+													<div class="flex justify-end items-start gap-2.5">
+														<div class="max-w-[80%]">
 															<div
 																class="bg-[#FF4D00] text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm shadow-orange-500/10"
 															>
@@ -814,26 +829,45 @@
 																</span>
 															</div>
 														</div>
+														<!-- User avatar -->
+														<div class={`shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${isDarkMode ? 'ring-1 ring-gray-700' : 'ring-1 ring-gray-200'}`}>
+															{#if !userImgError}
+																<img src={userAvatarUrl} alt="me" class="w-full h-full object-cover" onerror={() => (userImgError = true)} />
+															{:else}
+																<div class={`w-full h-full flex items-center justify-center text-base font-bold ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-500'}`}>
+																	{($authStore.user?.name ?? '?')[0].toUpperCase()}
+																</div>
+															{/if}
+														</div>
 													</div>
 												{:else}
 													<!-- AI -->
-													<div class="flex gap-2.5">
-														<!-- Sparkle avatar -->
+													<div class="flex gap-2.5 items-start">
+														<!-- AI avatar: profile image with sparkle fallback -->
 														<div
-															class={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+															class={`shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${
 																isDarkMode
 																	? 'bg-gradient-to-br from-gray-700 to-gray-800 ring-1 ring-gray-700'
 																	: 'bg-gradient-to-br from-orange-50 to-orange-100 ring-1 ring-orange-200'
 															}`}
 														>
-															<svg class={`w-4 h-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`} viewBox="0 0 24 24" fill="currentColor">
-																<path d="M12 2 L13.2 10.8 L22 12 L13.2 13.2 L12 22 L10.8 13.2 L2 12 L10.8 10.8 Z"/>
-															</svg>
+															{#if gameProfileUrl && !profileImgError}
+																<img
+																	src={gameProfileUrl}
+																	alt="AI"
+																	class="w-full h-full object-cover"
+																	onerror={() => (profileImgError = true)}
+																/>
+															{:else}
+																<svg class={`w-6 h-6 ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`} viewBox="0 0 24 24" fill="currentColor">
+																	<path d="M12 2 L13.2 10.8 L22 12 L13.2 13.2 L12 22 L10.8 13.2 L2 12 L10.8 10.8 Z"/>
+																</svg>
+															{/if}
 														</div>
 														<!-- Bubble + advice panel (independent widths) -->
-														<div class="min-w-0">
+														<div class="flex-1 min-w-0 overflow-hidden">
 															<div
-																class={`w-fit max-w-[75vw] md:max-w-[60vw] rounded-2xl rounded-tl-md px-4 py-2.5 ${
+																class={`w-fit max-w-[88%] rounded-2xl rounded-tl-md px-4 py-2.5 ${
 																	isDarkMode
 																		? 'bg-gray-800/60 text-gray-200 ring-1 ring-gray-800'
 																		: 'bg-white text-gray-800 shadow-sm ring-1 ring-gray-100'
@@ -871,7 +905,7 @@
 															</div>
 															{#if adviceByTurn[msg.turn_count] && openAdviceId === msg.id}
 																<div
-																	class={`mt-2 w-fit max-w-[75vw] md:max-w-[60vw] rounded-2xl px-4 py-3 ${
+																	class={`mt-2 w-fit max-w-[88%] rounded-2xl px-4 py-3 ${
 																		isDarkMode
 																			? 'bg-orange-500/5 ring-1 ring-orange-500/15'
 																			: 'bg-orange-50 ring-1 ring-orange-100'
@@ -892,17 +926,21 @@
 										<!-- Generating indicator -->
 										{#if isSending || isGenerating}
 											<div in:fade={{ duration: 200 }}>
-												<div class="flex gap-2.5">
+												<div class="flex gap-2.5 items-start">
 													<div
-														class={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+														class={`shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${
 															isDarkMode
 																? 'bg-gradient-to-br from-gray-700 to-gray-800 ring-1 ring-gray-700'
 																: 'bg-gradient-to-br from-orange-50 to-orange-100 ring-1 ring-orange-200'
 														}`}
 													>
-														<svg class={`w-4 h-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`} viewBox="0 0 24 24" fill="currentColor">
-															<path d="M12 2 L13.2 10.8 L22 12 L13.2 13.2 L12 22 L10.8 13.2 L2 12 L10.8 10.8 Z"/>
-														</svg>
+														{#if gameProfileUrl && !profileImgError}
+															<img src={gameProfileUrl} alt="AI" class="w-full h-full object-cover" onerror={() => (profileImgError = true)} />
+														{:else}
+															<svg class={`w-6 h-6 ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`} viewBox="0 0 24 24" fill="currentColor">
+																<path d="M12 2 L13.2 10.8 L22 12 L13.2 13.2 L12 22 L10.8 13.2 L2 12 L10.8 10.8 Z"/>
+															</svg>
+														{/if}
 													</div>
 													<div
 														class={`rounded-2xl rounded-tl-md px-4 py-3 ${
@@ -1166,7 +1204,7 @@
 			class={`shrink-0 px-4 pt-4 pb-3 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}
 		>
 			<div class="flex items-start justify-between gap-3">
-				<div class="min-w-0">
+				<div class="flex-1 min-w-0 overflow-hidden">
 					<h2
 						class={`font-bold text-sm truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}
 					>

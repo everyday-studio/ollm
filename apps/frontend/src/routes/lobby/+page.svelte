@@ -32,7 +32,15 @@
 	let judgeFilter = $state<'all' | 'target_word' | 'llm_judge' | 'format_break'>('all');
 	let searchQuery = $state('');
 	let showJudgeDropdown = $state(false);
+	let showSortDropdown = $state(false);
 	let sortOrder = $state<'newest' | 'name' | 'popular'>('newest');
+
+	const sortOptions = [
+		{ id: 'newest' as const, label: '최신순' },
+		{ id: 'name' as const, label: '이름순' },
+		{ id: 'popular' as const, label: '인기순', disabled: true }
+	];
+	let sortLabel = $derived(sortOptions.find((s) => s.id === sortOrder)?.label ?? '최신순');
 
 	function matchesQuery(title: string, query: string): boolean {
 		const q = query.trim();
@@ -232,6 +240,9 @@
 		if (!target.closest('.judge-dropdown')) {
 			showJudgeDropdown = false;
 		}
+		if (!target.closest('.sort-dropdown')) {
+			showSortDropdown = false;
+		}
 	}
 
 	// ----------------------------------------------------------------
@@ -395,7 +406,7 @@
 							{#if isVisible}
 								<button
 									type="button"
-									class="absolute inset-y-0 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out border-0 p-0 cursor-pointer"
+									class="absolute inset-y-0 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 ease-in-out border-0 p-0 cursor-pointer {isActive ? 'carousel-active' : ''} {isPrev ? 'carousel-prev' : ''} {isNext ? 'carousel-next' : ''}"
 									style="
 										{isActive ? 'left: 8%; width: 84%; z-index: 10; transform: translateZ(0) scale(1); opacity: 1; filter: brightness(1);' : ''}
 										{isPrev ? 'left: 0; width: 72%; z-index: 5; transform: translateZ(-80px) scale(0.88); opacity: 0.5; filter: brightness(0.6);' : ''}
@@ -447,8 +458,16 @@
 											>
 												{slide.description}
 											</p>
+											<!-- Mobile: play icon / Desktop: 지금 플레이 text -->
 											<span
-												class="self-start px-6 py-3 md:px-8 md:py-4 bg-[#FF4D00] text-white rounded-full font-bold text-base md:text-lg hover:bg-[#ff3300] transition-all hover:scale-105 active:scale-95 shadow-xl pointer-events-none"
+												class="self-start sm:hidden w-11 h-11 bg-[#FF4D00] text-white rounded-full flex items-center justify-center shadow-xl pointer-events-none"
+											>
+												<svg class="w-5 h-5 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+													<path d="M8 5v14l11-7z"/>
+												</svg>
+											</span>
+											<span
+												class="self-start hidden sm:flex px-6 py-3 md:px-8 md:py-4 bg-[#FF4D00] text-white rounded-full font-bold text-base md:text-lg shadow-xl pointer-events-none"
 											>
 												지금 플레이
 											</span>
@@ -565,14 +584,14 @@
 						<div class="relative judge-dropdown">
 							<button
 								onclick={() => (showJudgeDropdown = !showJudgeDropdown)}
-								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors {judgeFilter !== 'all'
+								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold w-20 overflow-hidden border transition-colors {judgeFilter !== 'all'
 									? judgeFilter === 'target_word' ? 'bg-purple-500 text-white border-purple-500'
 										: judgeFilter === 'llm_judge' ? 'bg-blue-500 text-white border-blue-500'
 										: 'bg-orange-500 text-white border-orange-500'
 									: isDarkMode ? 'bg-gray-900 text-gray-400 border-gray-800 hover:bg-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}"
 							>
-								{selectedJudgeLabel}
-								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+								<span class="truncate flex-1">{selectedJudgeLabel}</span>
+								<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
 							</button>
 							{#if showJudgeDropdown}
 								<div class="absolute right-0 top-full mt-1 w-40 rounded-lg border shadow-xl z-20 py-1 {isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}" transition:fade={{ duration: 100 }}>
@@ -589,23 +608,55 @@
 								</div>
 							{/if}
 						</div>
-						<!-- Sort buttons -->
-						<div class="flex gap-1 ml-auto">
-							{#each [{ id: 'newest' as const, label: '최신순' }, { id: 'name' as const, label: '이름순' }, { id: 'popular' as const, label: '인기순' }] as s (s.id)}
+						<!-- Sort: dropdown on mobile, button group on desktop -->
+						<div class="ml-auto">
+							<!-- Mobile dropdown -->
+							<div class="relative sort-dropdown sm:hidden">
 								<button
-									onclick={() => { if (s.id !== 'popular') sortOrder = s.id; }}
-									class="px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors
-										{s.id === 'popular'
-											? 'opacity-40 cursor-not-allowed ' + (isDarkMode ? 'text-gray-600' : 'text-gray-400')
-											: sortOrder === s.id
-												? 'bg-[#FF4D00] text-white'
-												: isDarkMode ? 'text-gray-400 hover:bg-gray-900' : 'text-gray-500 hover:bg-gray-100'}"
-									disabled={s.id === 'popular'}
-									title={s.id === 'popular' ? '준비 중' : ''}
+									onclick={() => (showSortDropdown = !showSortDropdown)}
+									class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold w-24 overflow-hidden border transition-colors {isDarkMode ? 'bg-gray-900 text-gray-300 border-gray-800 hover:bg-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}"
 								>
-									{s.label}
+									<span class="truncate flex-1">{sortLabel}</span>
+									<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
 								</button>
-							{/each}
+								{#if showSortDropdown}
+									<div class="absolute right-0 top-full mt-1 w-28 rounded-lg border shadow-xl z-20 py-1 {isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}" transition:fade={{ duration: 100 }}>
+										{#each sortOptions as s (s.id)}
+											<button
+												onclick={() => { if (!s.disabled) { sortOrder = s.id; showSortDropdown = false; } }}
+												class="w-full text-left px-3 py-2 text-xs font-semibold transition-colors
+													{s.disabled
+														? 'opacity-40 cursor-not-allowed ' + (isDarkMode ? 'text-gray-600' : 'text-gray-400')
+														: sortOrder === s.id
+															? isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
+															: isDarkMode ? 'text-gray-400 hover:bg-gray-900 hover:text-gray-200' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
+												disabled={s.disabled}
+												title={s.disabled ? '준비 중' : ''}
+											>
+												{s.label}
+											</button>
+										{/each}
+									</div>
+								{/if}
+							</div>
+							<!-- Desktop button group -->
+							<div class="hidden sm:flex gap-1">
+								{#each sortOptions as s (s.id)}
+									<button
+										onclick={() => { if (!s.disabled) sortOrder = s.id; }}
+										class="px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors
+											{s.disabled
+												? 'opacity-40 cursor-not-allowed ' + (isDarkMode ? 'text-gray-600' : 'text-gray-400')
+												: sortOrder === s.id
+													? 'bg-[#FF4D00] text-white'
+													: isDarkMode ? 'text-gray-400 hover:bg-gray-900' : 'text-gray-500 hover:bg-gray-100'}"
+										disabled={s.disabled}
+										title={s.disabled ? '준비 중' : ''}
+									>
+										{s.label}
+									</button>
+								{/each}
+							</div>
 						</div>
 					</div>
 					<!-- Games Grid -->
@@ -639,14 +690,14 @@
 						<div class="relative judge-dropdown">
 							<button
 								onclick={() => (showJudgeDropdown = !showJudgeDropdown)}
-								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors {judgeFilter !== 'all'
+								class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold w-20 overflow-hidden border transition-colors {judgeFilter !== 'all'
 									? judgeFilter === 'target_word' ? 'bg-purple-500 text-white border-purple-500'
 										: judgeFilter === 'llm_judge' ? 'bg-blue-500 text-white border-blue-500'
 										: 'bg-orange-500 text-white border-orange-500'
 									: isDarkMode ? 'bg-gray-900 text-gray-400 border-gray-800 hover:bg-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}"
 							>
-								{selectedJudgeLabel}
-								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+								<span class="truncate flex-1">{selectedJudgeLabel}</span>
+								<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
 							</button>
 							{#if showJudgeDropdown}
 								<div class="absolute right-0 top-full mt-1 w-40 rounded-lg border shadow-xl z-20 py-1 {isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}" transition:fade={{ duration: 100 }}>
@@ -908,3 +959,17 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	@media (max-width: 639px) {
+		.carousel-active {
+			left: 0 !important;
+			width: 100% !important;
+			transform: translateZ(0) scale(1) !important;
+		}
+		.carousel-prev,
+		.carousel-next {
+			display: none !important;
+		}
+	}
+</style>
