@@ -16,5 +16,5 @@ type LLMService interface {
 	EvaluateFormatBreak(ctx context.Context, condition string, aiContent string) (bool, error)
 
 	// EvaluatePromptAdvice asks the LLM to analyze the user's prompt and provide helpful advice.
-	EvaluatePromptAdvice(ctx context.Context, gameRule string, userContent string) (string, error)
+	EvaluatePromptAdvice(ctx context.Context, gameRule string, userContent string, aiContent string) (string, error)
 }
