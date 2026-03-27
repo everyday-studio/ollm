@@ -14,6 +14,11 @@
 	} = $props();
 
 	const judgeBadge = $derived(getJudgeBadgeStyle(game.judge_type));
+
+	// Show "NEW!" badge for games created within the last 7 days
+	const isNew = $derived(
+		(Date.now() - new Date(game.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000
+	);
 </script>
 
 <button
@@ -32,6 +37,11 @@
 		></div>
 
 		<div class="absolute top-2 left-2 flex gap-1 flex-wrap">
+			{#if isNew}
+				<span class="bg-[#FF4D00] px-2 py-0.5 rounded text-xs font-black text-white tracking-wide shadow-md">
+					NEW!
+				</span>
+			{/if}
 			{#each game.tags as tag (tag)}
 				<span class="bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs font-bold text-white">
 					{tag}
