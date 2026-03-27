@@ -138,7 +138,8 @@ func (h *AdminHandler) GameEditForm(c echo.Context) error {
 		return c.Redirect(http.StatusFound, adminPath+"/games")
 	}
 
-	return Render(c, http.StatusOK, admin.GameEditPage(adminPath, *game))
+	bucketName := h.config.GCP.BucketName
+	return Render(c, http.StatusOK, admin.GameEditPage(adminPath, *game, bucketName))
 }
 
 func (h *AdminHandler) UpdateGame(c echo.Context) error {

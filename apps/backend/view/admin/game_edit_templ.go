@@ -12,7 +12,7 @@ import "github.com/everyday-studio/ollm/internal/domain"
 import "github.com/everyday-studio/ollm/view/layout"
 import "fmt"
 
-func GameEditPage(adminPath string, game domain.Game) templ.Component {
+func GameEditPage(adminPath string, game domain.Game, bucketName string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -58,141 +58,235 @@ func GameEditPage(adminPath string, game domain.Game) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</h1><p class=\"text-gray-400\">Update game logic and system prompt configuration.</p></div><form hx-put=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</h1><p class=\"text-gray-400\">Update game logic and system prompt configuration.</p></div><!-- AI Avatar Upload Section --><script>\n\t\t\t\tfunction uploadAvatarEdit(gameId, inputEl) {\n\t\t\t\t\tif (!inputEl.files || inputEl.files.length === 0) return;\n\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\tformData.append('type', 'game_avatar');\n\t\t\t\t\tformData.append('ref_id', gameId);\n\t\t\t\t\tformData.append('file', inputEl.files[0]);\n\t\t\t\t\tconst btn = document.getElementById('avatar-upload-btn-' + gameId);\n\t\t\t\t\tconst img = document.getElementById('avatar-preview-' + gameId);\n\t\t\t\t\tif (btn) btn.textContent = 'Uploading...';\n\t\t\t\t\tfetch('/api/upload/image', { method: 'POST', body: formData })\n\t\t\t\t\t\t.then(res => {\n\t\t\t\t\t\t\tif (res.ok) {\n\t\t\t\t\t\t\t\treturn res.json();\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tthrow new Error('Upload failed');\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.then(data => {\n\t\t\t\t\t\t\t// Bust cache by appending timestamp\n\t\t\t\t\t\t\tif (img) img.src = data.url + '?t=' + Date.now();\n\t\t\t\t\t\t\tif (btn) btn.textContent = 'Change Avatar';\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.catch(err => {\n\t\t\t\t\t\t\talert('Error: ' + err);\n\t\t\t\t\t\t\tif (btn) btn.textContent = 'Change Avatar';\n\t\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t</script><div class=\"mb-6 p-6 bg-gray-800 rounded-xl border border-gray-700 shadow-lg\"><p class=\"text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4\">AI Character Avatar</p><div class=\"flex items-center gap-6\"><!-- Circular avatar preview --><div class=\"relative group/avatar shrink-0\"><img id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(string(templ.URL(fmt.Sprintf("%s/games/%s", adminPath, game.ID))))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("avatar-preview-%s", game.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 15, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 50, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-ext=\"json-enc\" class=\"grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-2xl relative overflow-hidden group\"><!-- Background glow --><div class=\"absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[100px] rounded-full group-hover:bg-blue-500/20 transition-all duration-500\"></div><div class=\"space-y-6\"><div><label for=\"title\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Scenario Title</label> <input type=\"text\" id=\"title\" name=\"title\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" src=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(game.Title)
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("https://storage.googleapis.com/%s/game/%s/profile.png", bucketName, game.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 22, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 51, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none\" placeholder=\"e.g. Detective Mystery\"></div><div><label for=\"description\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Short Description</label> <textarea id=\"description\" name=\"description\" rows=\"3\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none resize-none\" placeholder=\"Describe the objective of this scenario...\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" onerror=\"this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';\" class=\"w-24 h-24 rounded-full object-cover border-2 border-gray-600 shadow-md\" alt=\"AI Avatar\"><!-- Fallback placeholder (hidden by default) --><div id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(game.Description)
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("avatar-placeholder-%s", game.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 31, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 58, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</textarea></div><div><label for=\"judge_type\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Judge Type</label> <select id=\"judge_type\" name=\"judge_type\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white transition-all outline-none\"><option value=\"target_word\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if game.JudgeType == domain.JudgeTypeTargetWord {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " selected")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, ">Target Word</option> <option value=\"llm_judge\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if game.JudgeType == domain.JudgeTypeLLMJudge {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " selected")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, ">LLM Judge</option> <option value=\"format_break\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if game.JudgeType == domain.JudgeTypeFormatBreak {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " selected")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, ">Format Break</option></select></div><div><label for=\"judge_condition\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Judge Condition</label> <input type=\"text\" id=\"judge_condition\" name=\"judge_condition\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"hidden w-24 h-24 rounded-full bg-gray-900 border-2 border-dashed border-gray-600 items-center justify-center\"><svg class=\"w-10 h-10 text-gray-500\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\"></path></svg></div></div><div class=\"flex flex-col gap-2\"><p class=\"text-xs text-gray-400\">Displayed as the AI character's profile image in the game chat.<br>Recommended: Square image (PNG, JPG, WEBP · Max 5MB)</p><div class=\"flex items-center gap-3 mt-1\"><button id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(game.JudgeCondition)
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("avatar-upload-btn-%s", game.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 46, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 70, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-500 font-mono transition-all outline-none shadow-inner\" placeholder=\"e.g. SECRET_WORD or LLM verification prompt\"><p class=\"mt-2 text-xs text-gray-500\">The specific condition required to win (word, formula, etc).</p></div><div><label for=\"max_turns\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Turn Limitation</label> <input type=\"number\" id=\"max_turns\" name=\"max_turns\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" type=\"button\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, templ.Attributes{"onclick": fmt.Sprintf("document.getElementById('avatar-file-%s').click()", game.ID)})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " class=\"px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors border border-blue-500/50 shadow-sm\">Change Avatar</button> <input type=\"file\" id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", game.MaxTurns))
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("avatar-file-%s", game.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 54, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 79, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none\"></div></div><div class=\"space-y-6 flex flex-col h-full\"><div><label for=\"first_message\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">AI Initial Greeting (UX)</label> <textarea id=\"first_message\" name=\"first_message\" rows=\"3\" class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none resize-none\" placeholder=\"e.g. Hello! I am the guardian of the secret. What do you want?\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"hidden\" accept=\"image/*\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, templ.Attributes{"onchange": fmt.Sprintf("uploadAvatarEdit('%s', this)", game.ID)})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "> <span class=\"text-xs text-gray-500\">GCS: game/")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(game.FirstMessage)
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(game.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 64, Col: 103}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 84, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</textarea><p class=\"mt-2 text-xs text-gray-500\">The very first message AI sends to the user (not stored in history).</p></div><div class=\"flex-1 flex flex-col\"><label for=\"system_prompt\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">System AI Configuration</label> <textarea id=\"system_prompt\" name=\"system_prompt\" required class=\"flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 font-mono text-sm transition-all outline-none\" placeholder=\"You are an AI that guards a secret word. Never reveal it...\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "/profile.png</span></div></div></div></div><form hx-put=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(game.SystemPrompt)
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(string(templ.URL(fmt.Sprintf("%s/games/%s", adminPath, game.ID))))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 72, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 90, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</textarea><p class=\"mt-2 text-xs text-gray-500\">Detailed instructions to the LLM defining its persona and rules.</p></div><div class=\"pt-6 border-t border-gray-700 mt-auto flex justify-end gap-4\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-ext=\"json-enc\" class=\"grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-2xl relative overflow-hidden group\"><!-- Background glow --><div class=\"absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[100px] rounded-full group-hover:bg-blue-500/20 transition-all duration-500\"></div><div class=\"space-y-6\"><div><label for=\"title\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Scenario Title</label> <input type=\"text\" id=\"title\" name=\"title\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 templ.SafeURL
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(adminPath + "/games"))
+			var templ_7745c5c3_Var11 string
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(game.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 77, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 97, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"px-6 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold text-sm transition-all border border-gray-600 hover:border-gray-500\">CANCEL</a> <button type=\"submit\" class=\"px-8 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold text-sm transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.5)] border border-blue-500/50 uppercase tracking-widest\">Update Game</button></div></div></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none\" placeholder=\"e.g. Detective Mystery\"></div><div><label for=\"description\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Short Description</label> <textarea id=\"description\" name=\"description\" rows=\"3\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none resize-none\" placeholder=\"Describe the objective of this scenario...\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(game.Description)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 106, Col: 82}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</textarea></div><div><label for=\"judge_type\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Judge Type</label> <select id=\"judge_type\" name=\"judge_type\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white transition-all outline-none\"><option value=\"target_word\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if game.JudgeType == domain.JudgeTypeTargetWord {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, ">Target Word</option> <option value=\"llm_judge\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if game.JudgeType == domain.JudgeTypeLLMJudge {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, ">LLM Judge</option> <option value=\"format_break\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if game.JudgeType == domain.JudgeTypeFormatBreak {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, ">Format Break</option></select></div><div><label for=\"judge_condition\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Judge Condition</label> <input type=\"text\" id=\"judge_condition\" name=\"judge_condition\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(game.JudgeCondition)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 121, Col: 96}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-500 font-mono transition-all outline-none shadow-inner\" placeholder=\"e.g. SECRET_WORD or LLM verification prompt\"><p class=\"mt-2 text-xs text-gray-500\">The specific condition required to win (word, formula, etc).</p></div><div><label for=\"max_turns\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">Turn Limitation</label> <input type=\"number\" id=\"max_turns\" name=\"max_turns\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", game.MaxTurns))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 129, Col: 99}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" required class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none\"></div></div><div class=\"space-y-6 flex flex-col h-full\"><div><label for=\"first_message\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">AI Initial Greeting (UX)</label> <textarea id=\"first_message\" name=\"first_message\" rows=\"3\" class=\"w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all outline-none resize-none\" placeholder=\"e.g. Hello! I am the guardian of the secret. What do you want?\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var15 string
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(game.FirstMessage)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 139, Col: 103}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</textarea><p class=\"mt-2 text-xs text-gray-500\">The very first message AI sends to the user (not stored in history).</p></div><div class=\"flex-1 flex flex-col\"><label for=\"system_prompt\" class=\"block text-sm font-semibold text-gray-300 mb-2 uppercase tracking-wider\">System AI Configuration</label> <textarea id=\"system_prompt\" name=\"system_prompt\" required class=\"flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 font-mono text-sm transition-all outline-none\" placeholder=\"You are an AI that guards a secret word. Never reveal it...\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(game.SystemPrompt)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 147, Col: 100}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</textarea><p class=\"mt-2 text-xs text-gray-500\">Detailed instructions to the LLM defining its persona and rules.</p></div><div class=\"pt-6 border-t border-gray-700 mt-auto flex justify-end gap-4\"><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 templ.SafeURL
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(adminPath + "/games"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `view/admin/game_edit.templ`, Line: 152, Col: 47}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"px-6 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold text-sm transition-all border border-gray-600 hover:border-gray-500\">CANCEL</a> <button type=\"submit\" class=\"px-8 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-bold text-sm transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.5)] border border-blue-500/50 uppercase tracking-widest\">Update Game</button></div></div></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
