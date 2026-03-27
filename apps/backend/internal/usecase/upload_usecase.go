@@ -65,6 +65,15 @@ func (u *uploadUseCase) UploadImage(ctx context.Context, req *domain.UploadImage
 				return nil, domain.ErrForbidden
 			}
 		}
+	case domain.UploadTypeGameAvatar:
+		// Avatar upload is admin-only
+		updater, err := u.userRepo.GetByID(ctx, updaterID)
+		if err != nil {
+			return nil, domain.ErrUnauthorized
+		}
+		if updater.Role != domain.RoleAdmin {
+			return nil, domain.ErrForbidden
+		}
 	default:
 		return nil, fmt.Errorf("%w: unsupported upload type '%s'", domain.ErrInvalidInput, req.Type)
 	}
@@ -75,9 +84,19 @@ func (u *uploadUseCase) UploadImage(ctx context.Context, req *domain.UploadImage
 		return nil, fmt.Errorf("%w: unsupported file extension %s", domain.ErrInvalidInput, ext)
 	}
 
-	// Build exact path requested by user: e.g. "game/{id}.png"
-	// Ensure we fix the extension to .png to match original plan (or keep original ext if desired, plan says {id}.png)
-	objectName := fmt.Sprintf("%s/%s.png", string(req.Type), req.RefID)
+	// Build GCS object names per type:
+	//   thumbnail: game/{id}/main.png
+	//   avatar:    game/{id}/profile.png
+	//   user:      user/{id}.png
+	var objectName string
+	switch req.Type {
+	case domain.UploadTypeGameThumbnail:
+		objectName = fmt.Sprintf("game/%s/main.png", req.RefID)
+	case domain.UploadTypeGameAvatar:
+		objectName = fmt.Sprintf("game/%s/profile.png", req.RefID)
+	default:
+		objectName = fmt.Sprintf("%s/%s.png", string(req.Type), req.RefID)
+	}
 
 	url, err := u.storageService.UploadImage(ctx, req.File, objectName, req.ContentType)
 	if err != nil {

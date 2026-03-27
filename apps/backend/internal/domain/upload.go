@@ -11,6 +11,7 @@ type UploadType string
 
 const (
 	UploadTypeGameThumbnail UploadType = "game"
+	UploadTypeGameAvatar    UploadType = "game_avatar"
 	UploadTypeUserProfile   UploadType = "user"
 )
 
