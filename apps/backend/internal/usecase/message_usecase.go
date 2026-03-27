@@ -194,7 +194,7 @@ func (uc *messageUseCase) Create(ctx context.Context, matchID string, userID str
 
 	// 5-2. 훈수 고루틴 (Prompt Advice)
 	eg.Go(func() error {
-		advice, evalErr := uc.judgeLLMService.EvaluatePromptAdvice(egCtx, game.JudgeCondition, req.Content)
+		advice, evalErr := uc.judgeLLMService.EvaluatePromptAdvice(egCtx, game.JudgeCondition, req.Content, aiContent)
 		if evalErr != nil {
 			fmt.Printf("failed to evaluate prompt advice: %v\n", evalErr)
 		} else {
