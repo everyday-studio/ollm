@@ -70,9 +70,10 @@ export interface LeaderboardEntry {
 
 // [Frontend UI Model] Extended structure for UI rendering
 export interface GameUI extends GameDTO {
-  subtitle: string; // e.g., "Lv.1 Basic Injection"
-  image: string;    // Local or remote image URL
-  tags: string[];   // e.g., ["Logic", "Basic"]
+  subtitle: string;       // e.g., "Lv.1 Basic Injection"
+  image: string;          // Thumbnail URL (main.png)
+  profileImage: string;   // Profile image URL (profile.png)
+  tags: string[];         // e.g., ["Logic", "Basic"]
 }
 
 export interface MatchUI extends MatchDTO {

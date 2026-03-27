@@ -85,7 +85,12 @@
 	let statusColor = $derived(getStatusColor(match?.status));
 	let gameThumbnailUrl = $derived(
 		game
-			? `https://storage.googleapis.com/ollm-assets-prod/game/${game.id}.png`
+			? `https://storage.googleapis.com/ollm-assets-prod/game/${game.id}/main.png`
+			: ''
+	);
+	let gameProfileUrl = $derived(
+		game
+			? `https://storage.googleapis.com/ollm-assets-prod/game/${game.id}/profile.png`
 			: ''
 	);
 
