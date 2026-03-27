@@ -17,10 +17,18 @@ const GAME_ASSETS: Record<string, { subtitle: string; image: string; tags: strin
 
 /**
  * Builds a GCS-based thumbnail URL for a given game ID.
- * The upload handler stores game thumbnails as: game/{gameId}
+ * The upload handler stores game thumbnails as: game/{gameId}/main.png
  */
 function buildGameThumbnailUrl(gameId: string): string {
-  return `${GCS_BASE_URL}/game/${gameId}.png`;
+  return `${GCS_BASE_URL}/game/${gameId}/main.png`;
+}
+
+/**
+ * Builds a GCS-based profile image URL for a given game ID.
+ * The upload handler stores game profile images as: game/{gameId}/profile.png
+ */
+export function buildGameProfileUrl(gameId: string): string {
+  return `${GCS_BASE_URL}/game/${gameId}/profile.png`;
 }
 
 /**
@@ -33,6 +41,7 @@ export function toGameUI(dto: GameDTO): GameUI {
     subtitle: staticAssets.subtitle,
     // Prefer GCS uploaded thumbnail; fallback to static asset
     image: buildGameThumbnailUrl(dto.id),
+    profileImage: buildGameProfileUrl(dto.id),
     tags: staticAssets.tags
   };
 }
