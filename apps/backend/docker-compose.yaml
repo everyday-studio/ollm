@@ -19,7 +19,7 @@ services:
       retries: 5
 
   api:
-    image: ghcr.io/mondayy1/ollm-api:latest
+    image: ghcr.io/everyday-studio/ollm-api:latest
     build:
       context: .
       dockerfile: Dockerfile
