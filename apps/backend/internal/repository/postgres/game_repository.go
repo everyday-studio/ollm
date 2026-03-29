@@ -60,7 +60,7 @@ func (r *gameRepository) Create(ctx context.Context, game *domain.Game) (*domain
 // GetByID retrieves a game by its ID
 func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, error) {
 	const query = `
-		SELECT id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns, created_at, updated_at
+		SELECT id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns, play_count, created_at, updated_at
 		FROM games
 		WHERE id = $1
 	`
@@ -78,6 +78,7 @@ func (r *gameRepository) GetByID(ctx context.Context, id string) (*domain.Game, 
 		&game.JudgeType,
 		&game.JudgeCondition,
 		&game.MaxTurns,
+		&game.PlayCount,
 		&game.CreatedAt,
 		&game.UpdatedAt,
 	)
@@ -110,7 +111,7 @@ func (r *gameRepository) CountAll(ctx context.Context, filter *domain.GameFilter
 func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int, filter *domain.GameFilter) ([]domain.Game, error) {
 	offset := (page - 1) * limit
 	query := `
-		SELECT id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns, created_at, updated_at
+		SELECT id, title, description, author_id, status, is_public, system_prompt, first_message, judge_type, judge_condition, max_turns, play_count, created_at, updated_at
 		FROM games
 	`
 	args := []interface{}{}
@@ -122,7 +123,20 @@ func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int, filt
 		argIdx++
 	}
 
-	query += ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+	var sortBy domain.GameSortBy
+	if filter != nil {
+		sortBy = filter.SortBy
+	}
+	switch sortBy {
+	case domain.GameSortByName:
+		query += ` ORDER BY title ASC`
+	case domain.GameSortByPopular:
+		query += ` ORDER BY play_count DESC`
+	default:
+		query += ` ORDER BY updated_at DESC`
+	}
+
+	query += ` LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
 	args = append(args, limit, offset)
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -146,6 +160,7 @@ func (r *gameRepository) GetPaginated(ctx context.Context, page, limit int, filt
 			&game.JudgeType,
 			&game.JudgeCondition,
 			&game.MaxTurns,
+			&game.PlayCount,
 			&game.CreatedAt,
 			&game.UpdatedAt,
 		); err != nil {

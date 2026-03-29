@@ -7,6 +7,7 @@ import (
 
 type GameStatus string
 type JudgeType string
+type GameSortBy string
 
 const (
 	GameStatusActive   GameStatus = "active"
@@ -15,6 +16,10 @@ const (
 	JudgeTypeTargetWord  JudgeType = "target_word"
 	JudgeTypeLLMJudge    JudgeType = "llm_judge"
 	JudgeTypeFormatBreak JudgeType = "format_break"
+
+	GameSortByRecent  GameSortBy = "recent"
+	GameSortByName    GameSortBy = "name"
+	GameSortByPopular GameSortBy = "popular"
 )
 
 // Game represents a text-based game in the platform
@@ -30,6 +35,7 @@ type Game struct {
 	JudgeType      JudgeType  `json:"judge_type"`
 	JudgeCondition string     `json:"judge_condition,omitempty"`
 	MaxTurns       int        `json:"max_turns"`
+	PlayCount      int        `json:"play_count"`
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 }
@@ -63,6 +69,7 @@ type UpdateGameRequest struct {
 // GameFilter defines the filter options for game listing queries
 type GameFilter struct {
 	IsPublic *bool
+	SortBy   GameSortBy
 }
 
 // GameRepository defines the interface for game data access

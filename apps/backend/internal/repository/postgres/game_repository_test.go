@@ -29,8 +29,8 @@ func TestGameRepository_Create(t *testing.T) {
 
 	t.Run("Create game successfully", func(t *testing.T) {
 		game := &domain.Game{
-			Title:       "Adventure Quest",
-			Description: "A text-based adventure game",
+			Title:        "Adventure Quest",
+			Description:  "A text-based adventure game",
 			AuthorID:     author.ID,
 			Status:       domain.GameStatusActive,
 			IsPublic:     false,
@@ -45,8 +45,9 @@ func TestGameRepository_Create(t *testing.T) {
 		assert.Equal(t, "A text-based adventure game", createdGame.Description)
 		assert.Equal(t, author.ID, createdGame.AuthorID)
 		assert.Equal(t, "Welcome to the adventure!", createdGame.FirstMessage)
-		assert.Equal(t, domain.GameStatusActive, createdGame.Status) // default status
-		assert.False(t, createdGame.IsPublic)                        // default is false from Go zero value
+		assert.Equal(t, domain.GameStatusActive, createdGame.Status)
+		assert.False(t, createdGame.IsPublic)
+		assert.Equal(t, 0, createdGame.PlayCount)
 		assert.NotZero(t, createdGame.CreatedAt)
 		assert.NotZero(t, createdGame.UpdatedAt)
 	})
@@ -117,6 +118,7 @@ func TestGameRepository_GetByID(t *testing.T) {
 		assert.Equal(t, createdGame.Title, fetchedGame.Title)
 		assert.Equal(t, createdGame.Description, fetchedGame.Description)
 		assert.Equal(t, createdGame.AuthorID, fetchedGame.AuthorID)
+		assert.Equal(t, 0, fetchedGame.PlayCount)
 	})
 
 	t.Run("Fail to get game with non-existent ID", func(t *testing.T) {
@@ -148,7 +150,7 @@ func TestGameRepository_CountAllAndGetPaginated(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, games, 2)
-		// Ordered by created_at DESC, so Game 2 comes first
+		// Default sort is updated_at DESC, so Game 2 (created later) comes first
 		assert.Equal(t, "Game 2", games[0].Title)
 		assert.Equal(t, "Game 1", games[1].Title)
 
@@ -188,6 +190,90 @@ func TestGameRepository_CountAllAndGetPaginated(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, games, 0)
+	})
+}
+
+func TestGameRepository_GetPaginated_Sort(t *testing.T) {
+	cleanDB(t, "matches", "games", "users")
+	ctx := context.Background()
+	repo := NewGameRepository(testDB)
+	author := createTestUser(t)
+
+	// Create games: Zebra (0 matches), Alpha (2 matches), Middle (1 match)
+	// createTestGame (defined in match_repository_test.go) creates a fixed-title game,
+	// so we create directly here to control the titles.
+	newGame := func(title string) *domain.Game {
+		g, err := repo.Create(ctx, &domain.Game{
+			Title:    title,
+			AuthorID: author.ID,
+			Status:   domain.GameStatusActive,
+			IsPublic: true,
+		})
+		assert.NoError(t, err)
+		return g
+	}
+
+	zebra := newGame("Zebra Game")
+	alpha := newGame("Alpha Game")
+	middle := newGame("Middle Game")
+
+	// Create matches via createTestMatch (defined in message_repository_test.go).
+	// Each match INSERT triggers play_count +1 on the parent game.
+	// Match creation order: alpha x2, middle x1
+	// → updated_at order (DESC): middle > alpha > zebra
+	createTestMatch(t, author, alpha)
+	createTestMatch(t, author, alpha)
+	createTestMatch(t, author, middle)
+
+	t.Run("Sort by name ASC", func(t *testing.T) {
+		filter := &domain.GameFilter{SortBy: domain.GameSortByName}
+		games, err := repo.GetPaginated(ctx, 1, 10, filter)
+
+		assert.NoError(t, err)
+		assert.Len(t, games, 3)
+		assert.Equal(t, "Alpha Game", games[0].Title)
+		assert.Equal(t, "Middle Game", games[1].Title)
+		assert.Equal(t, "Zebra Game", games[2].Title)
+	})
+
+	t.Run("Sort by popular DESC (play_count)", func(t *testing.T) {
+		filter := &domain.GameFilter{SortBy: domain.GameSortByPopular}
+		games, err := repo.GetPaginated(ctx, 1, 10, filter)
+
+		assert.NoError(t, err)
+		assert.Len(t, games, 3)
+		assert.Equal(t, "Alpha Game", games[0].Title)
+		assert.Equal(t, 2, games[0].PlayCount)
+		assert.Equal(t, "Middle Game", games[1].Title)
+		assert.Equal(t, 1, games[1].PlayCount)
+		assert.Equal(t, "Zebra Game", games[2].Title)
+		assert.Equal(t, 0, games[2].PlayCount)
+	})
+
+	t.Run("Sort by recent DESC (updated_at)", func(t *testing.T) {
+		// updated_at: middle (T_last match) > alpha (T_second match) > zebra (T_created, no matches)
+		filter := &domain.GameFilter{SortBy: domain.GameSortByRecent}
+		games, err := repo.GetPaginated(ctx, 1, 10, filter)
+
+		assert.NoError(t, err)
+		assert.Len(t, games, 3)
+		assert.Equal(t, "Middle Game", games[0].Title)
+		assert.Equal(t, "Alpha Game", games[1].Title)
+		assert.Equal(t, "Zebra Game", games[2].Title)
+	})
+
+	t.Run("play_count reflected in GetByID after matches created", func(t *testing.T) {
+		fetchedAlpha, err := repo.GetByID(ctx, alpha.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, fetchedAlpha.PlayCount)
+
+		fetchedMiddle, err := repo.GetByID(ctx, middle.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, fetchedMiddle.PlayCount)
+
+		fetchedZebra, err := repo.GetByID(ctx, zebra.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, fetchedZebra.PlayCount)
 	})
 }
 
