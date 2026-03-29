@@ -28,6 +28,7 @@ jobs:
         run: |
           echo "VITE_API_URL=https://ollm.everydaystudio.xyz" > apps/frontend/.env
           echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_FRONTEND_GOOGLE_CLIENT_ID }}" >> apps/frontend/.env
+          touch apps/backend/.env
           docker compose -f apps/backend/docker-compose.yaml build
           docker compose -f apps/backend/docker-compose.yaml push
           docker compose -f apps/frontend/docker-compose.yaml build
