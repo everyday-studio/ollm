@@ -53,8 +53,6 @@ jobs:
             --command="
               cd ${{ secrets.APP_WORKDIR }} && \
               git pull origin main && \
-              docker compose -f apps/backend/docker-compose.yaml pull && \
-              docker compose -f apps/frontend/docker-compose.yaml pull && \
-              docker compose -f apps/backend/docker-compose.yaml up -d && \
-              docker compose -f apps/frontend/docker-compose.yaml up -d
+              docker compose pull
+              docker compose up -d
             "
