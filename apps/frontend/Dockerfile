@@ -38,3 +38,5 @@ EXPOSE 5173
 
 # 빌드된 최적화 서버 실행
 CMD ["node", "build/index.js"]
+
+LABEL org.opencontainers.image.source="https://github.com/everyday-studio/ollm"
