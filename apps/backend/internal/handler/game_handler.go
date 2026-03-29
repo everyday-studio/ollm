@@ -102,10 +102,22 @@ func (h *GameHandler) GetAll(c echo.Context) error {
 		limit = 10
 	}
 
+	sortParam := c.QueryParam("sort")
+	var sortBy domain.GameSortBy
+	switch sortParam {
+	case string(domain.GameSortByName):
+		sortBy = domain.GameSortByName
+	case string(domain.GameSortByPopular):
+		sortBy = domain.GameSortByPopular
+	default:
+		sortBy = domain.GameSortByRecent
+	}
+
 	ctx := c.Request().Context()
 	isPublic := true
 	filter := &domain.GameFilter{
 		IsPublic: &isPublic,
+		SortBy:   sortBy,
 	}
 
 	paginatedData, err := h.gameUseCase.GetPaginated(ctx, page, limit, filter)
