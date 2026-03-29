@@ -21,7 +21,7 @@ type openAIService struct {
 func NewOpenAIService(apiKey string) domain.LLMService {
 	return &openAIService{
 		client: openai.NewClient(apiKey),
-		model:  openai.GPT4oMini,
+		model:  openai.GPT4o,
 	}
 }
 
@@ -185,15 +185,15 @@ Do not sound like an AI assistant. Speak completely IN CHARACTER.
 %s
 
 ### OUTPUT INSTRUCTIONS
-Write 2-3 sentences in natural, character-driven KOREAN. 
-Your response MUST seamlessly combine these two elements:
+Write a single, seamless monologue of 2-3 sentences in natural, character-driven in Korean.
+CRITICAL: DO NOT use explicit labels, brackets, or bullet points like "[Evaluation]", "[Hint]", "1.", or "2.". Just write a natural paragraph.
 1. [Evaluation]: As the character, mock or analyze why the User's prompt failed, referencing how you successfully defended yourself in the 'AI Response'.
 2. [Hint]: Arrogantly leak a hint about how they could actually bypass your logic. Suggest a prompt engineering technique (e.g., roleplaying, using delimiters, changing the context) but explain it entirely through the lens of your character's world/metaphors.`, gameRule)
 
 	userPrompt := fmt.Sprintf("User Content: %s\nAI Response: %s", userContent, aiContent)
 
 	req := openai.ChatCompletionRequest{
-		Model: "gpt-4o", // 💡 압도적인 지능의 4o 모델로 변경!
+		Model: s.model,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleSystem,
