@@ -129,9 +129,26 @@ func setupSchema() {
 			judge_type VARCHAR(50) DEFAULT 'target_word',
 			judge_condition TEXT DEFAULT '',
 			max_turns INTEGER DEFAULT 5,
+			play_count INTEGER NOT NULL DEFAULT 0,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
+
+		-- Trigger for games table
+		DROP TRIGGER IF EXISTS update_games_updated_at ON games;
+		CREATE TRIGGER update_games_updated_at
+			BEFORE UPDATE ON games
+			FOR EACH ROW
+			EXECUTE FUNCTION update_updated_at_column();
+
+		-- Function and trigger to increment play_count on match insert
+		CREATE OR REPLACE FUNCTION increment_game_play_count()
+		RETURNS TRIGGER AS $$
+		BEGIN
+			UPDATE games SET play_count = play_count + 1 WHERE id = NEW.game_id;
+			RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql;
 
 		-- Matches table
 		CREATE TABLE IF NOT EXISTS matches (
@@ -145,6 +162,12 @@ func setupSchema() {
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
+
+		DROP TRIGGER IF EXISTS increment_play_count_on_match_insert ON matches;
+		CREATE TRIGGER increment_play_count_on_match_insert
+			AFTER INSERT ON matches
+			FOR EACH ROW
+			EXECUTE FUNCTION increment_game_play_count();
 
 		-- Messages table
 		CREATE TABLE IF NOT EXISTS messages (

@@ -39,7 +39,7 @@ func TestGameHandler_Create(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusCreated,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"play_count":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to create game due to invalid input",
@@ -108,7 +108,7 @@ func TestGameHandler_GetByID(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Adventure Quest","description":"A text-based adventure","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"play_count":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to find game",
@@ -155,41 +155,77 @@ func TestGameHandler_GetByID(t *testing.T) {
 // --- GetAll ---
 
 func TestGameHandler_GetAll(t *testing.T) {
+	gameData := []domain.Game{
+		{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME01", Title: "Game 1", Status: domain.GameStatusActive, IsPublic: true},
+		{ID: "01HQZYX3VQJQZ3Z0Z1Z2GAME02", Title: "Game 2", Status: domain.GameStatusActive, IsPublic: false},
+	}
+	paginatedResult := &domain.PaginatedData[domain.Game]{
+		Data:       gameData,
+		Total:      2,
+		Page:       1,
+		Limit:      10,
+		TotalPages: 1,
+	}
+	successBody := `{"data":[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"play_count":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"first_message":"","judge_type":"","max_turns":0,"play_count":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}],"total":2,"page":1,"limit":10,"total_pages":1}`
+
 	tests := []struct {
 		name       string
+		query      string
+		wantSortBy domain.GameSortBy
 		mockReturn *domain.PaginatedData[domain.Game]
 		mockError  error
 		wantStatus int
 		wantBody   string
 	}{
 		{
-			name: "Get all games successfully",
-			mockReturn: &domain.PaginatedData[domain.Game]{
-				Data: []domain.Game{
-					{
-						ID:       "01HQZYX3VQJQZ3Z0Z1Z2GAME01",
-						Title:    "Game 1",
-						Status:   domain.GameStatusActive,
-						IsPublic: true,
-					},
-					{
-						ID:       "01HQZYX3VQJQZ3Z0Z1Z2GAME02",
-						Title:    "Game 2",
-						Status:   domain.GameStatusActive,
-						IsPublic: false,
-					},
-				},
-				Total:      2,
-				Page:       1,
-				Limit:      10,
-				TotalPages: 1,
-			},
+			name:       "Get all games - default (recent) sort",
+			query:      "?page=1&limit=10",
+			wantSortBy: domain.GameSortByRecent,
+			mockReturn: paginatedResult,
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"data":[{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Game 1","description":"","author_id":"","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"},{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME02","title":"Game 2","description":"","author_id":"","status":"active","is_public":false,"first_message":"","judge_type":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}],"total":2,"page":1,"limit":10,"total_pages":1}`,
+			wantBody:   successBody,
+		},
+		{
+			name:       "Get all games - recent sort explicit",
+			query:      "?page=1&limit=10&sort=recent",
+			wantSortBy: domain.GameSortByRecent,
+			mockReturn: paginatedResult,
+			mockError:  nil,
+			wantStatus: http.StatusOK,
+			wantBody:   successBody,
+		},
+		{
+			name:       "Get all games - name sort",
+			query:      "?page=1&limit=10&sort=name",
+			wantSortBy: domain.GameSortByName,
+			mockReturn: paginatedResult,
+			mockError:  nil,
+			wantStatus: http.StatusOK,
+			wantBody:   successBody,
+		},
+		{
+			name:       "Get all games - popular sort",
+			query:      "?page=1&limit=10&sort=popular",
+			wantSortBy: domain.GameSortByPopular,
+			mockReturn: paginatedResult,
+			mockError:  nil,
+			wantStatus: http.StatusOK,
+			wantBody:   successBody,
+		},
+		{
+			name:       "Get all games - unknown sort falls back to recent",
+			query:      "?page=1&limit=10&sort=unknown",
+			wantSortBy: domain.GameSortByRecent,
+			mockReturn: paginatedResult,
+			mockError:  nil,
+			wantStatus: http.StatusOK,
+			wantBody:   successBody,
 		},
 		{
 			name:       "Fail to get games due to internal error",
+			query:      "?page=1&limit=10",
+			wantSortBy: domain.GameSortByRecent,
 			mockReturn: nil,
 			mockError:  domain.ErrInternal,
 			wantStatus: http.StatusInternalServerError,
@@ -200,15 +236,14 @@ func TestGameHandler_GetAll(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/games", nil)
+			req := httptest.NewRequest(http.MethodGet, "/games"+tt.query, nil)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 			c.Set("user_id", "01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5")
 
 			mockUseCase := new(mocks.GameUseCase)
-			// In GetAll, we now pass a filter with IsPublic: true
 			mockUseCase.On("GetPaginated", mock.Anything, 1, 10, mock.MatchedBy(func(f *domain.GameFilter) bool {
-				return f != nil && f.IsPublic != nil && *f.IsPublic == true
+				return f != nil && f.IsPublic != nil && *f.IsPublic == true && f.SortBy == tt.wantSortBy
 			})).Return(tt.mockReturn, tt.mockError)
 			handler := NewGameHandler(e, mockUseCase)
 
@@ -248,7 +283,7 @@ func TestGameHandler_Update(t *testing.T) {
 			},
 			mockError:  nil,
 			wantStatus: http.StatusOK,
-			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Updated Title","description":"Original description","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
+			wantBody:   `{"id":"01HQZYX3VQJQZ3Z0Z1Z2GAME01","title":"Updated Title","description":"Original description","author_id":"01HQZYX3VQJQZ3Z0Z1Z2Z3Z4Z5","status":"active","is_public":true,"first_message":"","judge_type":"","max_turns":0,"play_count":0,"created_at":"0001-01-01T00:00:00Z","updated_at":"0001-01-01T00:00:00Z"}`,
 		},
 		{
 			name:       "Fail to update non-existent game",
