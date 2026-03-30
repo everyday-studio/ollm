@@ -67,6 +67,6 @@ jobs:
             --command="
               cd ${{ secrets.APP_WORKDIR }} && \
               git pull origin main && \
-              docker compose pull \
+              docker compose pull && \
               docker compose up -d
             "
