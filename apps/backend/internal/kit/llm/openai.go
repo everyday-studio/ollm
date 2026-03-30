@@ -121,14 +121,14 @@ Respond with ONLY "true" or "false". Do not include any other text, explanation,
 
 // EvaluateFormatBreak asks the LLM to judge if the AI has failed to follow the format rules.
 func (s *openAIService) EvaluateFormatBreak(ctx context.Context, condition string, aiContent string) (bool, error) {
-	systemPrompt := `You are a strict format and syntax validator.
-	Your task is to judge if the provided 'AI Content' violates the 'Requirement' (e.g. valid JSON, Python code, specific header, etc).
-	Even a 1% deviation or minor syntax error means the format is broken.
 
-	Rules:
-	1. If the content deviates from the requirement in ANY way, is_broken must be true.
-	2. If it strictly follows the requirement, is_broken must be false.
-	3. You MUST respond in JSON format only.`
+	systemPrompt := "You are a strict format and syntax validator.\n" +
+		"Your task is to judge if the provided 'AI Content' violates the 'Requirement' (e.g., valid JSON, Python code, specific header, etc).\n\n" +
+		"Rules:\n" +
+		"1. Markdown Wrappers: If the required format is correctly provided but enclosed in Markdown code blocks (e.g., ```json ... ``` or ``` ... ```), DO NOT consider this a format break. It is still valid (is_broken = false).\n" +
+		"2. Conversational Filler: If the AI includes any conversational text outside the required format (e.g., 'Here is your JSON:', 'Sure!'), this IS a format break (is_broken = true).\n" +
+		"3. Core Deviation: If the content fundamentally deviates from the requirement (e.g., outputs plain text instead of JSON), is_broken must be true.\n" +
+		"4. You MUST respond in JSON format only."
 
 	userPrompt := fmt.Sprintf("Requirement: %s\n\nAI Content to Evaluate:\n%s", condition, aiContent)
 
@@ -168,6 +168,8 @@ func (s *openAIService) EvaluateFormatBreak(ctx context.Context, condition strin
 	if err := json.Unmarshal([]byte(resp.Choices[0].Message.Content), &result); err != nil {
 		return false, fmt.Errorf("failed to parse judge response: %w (content: %s)", err, resp.Choices[0].Message.Content)
 	}
+
+	// log.Printf("Judge Reason: %s", result.Reason)
 
 	return result.IsBroken, nil
 }

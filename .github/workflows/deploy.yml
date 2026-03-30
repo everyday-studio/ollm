@@ -24,15 +24,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🛠️ Build & Push
-        run: |
-          echo "VITE_API_URL=https://ollm.everydaystudio.xyz" > apps/frontend/.env
-          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_FRONTEND_GOOGLE_CLIENT_ID }}" >> apps/frontend/.env
-          touch apps/backend/.env
-          docker compose -f apps/backend/docker-compose.yaml build
-          docker compose -f apps/backend/docker-compose.yaml push
-          docker compose -f apps/frontend/docker-compose.yaml build
-          docker compose -f apps/frontend/docker-compose.yaml push
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🛠️ Build & Push Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/backend
+          push: true
+          tags: ghcr.io/everyday-studio/ollm-api:latest
+          cache-from: type=registry,ref=ghcr.io/everyday-studio/ollm-api:buildcache
+          cache-to: type=registry,ref=ghcr.io/everyday-studio/ollm-api:buildcache,mode=max
+
+      - name: 🛠️ Build & Push Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/frontend
+          push: true
+          tags: ghcr.io/everyday-studio/ollm-frontend:latest
+          build-args: |
+            VITE_API_URL=https://ollm.everydaystudio.xyz
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_FRONTEND_GOOGLE_CLIENT_ID }}
+          cache-from: type=registry,ref=ghcr.io/everyday-studio/ollm-frontend:buildcache
+          cache-to: type=registry,ref=ghcr.io/everyday-studio/ollm-frontend:buildcache,mode=max
 
       - name: 🔐 Authenticate to Google Cloud via WIF
         uses: google-github-actions/auth@v2
@@ -53,6 +67,6 @@ jobs:
             --command="
               cd ${{ secrets.APP_WORKDIR }} && \
               git pull origin main && \
-              docker compose pull
+              docker compose pull \
               docker compose up -d
             "
