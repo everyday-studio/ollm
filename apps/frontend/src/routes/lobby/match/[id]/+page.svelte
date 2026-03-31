@@ -12,6 +12,7 @@
 	import type { MatchDTO, GameDTO, MessageDTO, MatchStatus } from '$lib/features/game/types';
 	import { getStatusLabel, getStatusColor, getShortStatusLabel } from '$lib/utils/gameHelpers';
 	import { handleImageError, DEFAULT_GAME_THUMBNAIL } from '$lib/utils/imageFallback';
+	import { renderMarkdown } from '$lib/utils/markdown';
 
 	const theme = getContext<{ isDark: boolean }>('theme');
 	let isDarkMode = $derived(theme.isDark);
@@ -815,11 +816,9 @@
 															<div
 																class="bg-[#FF4D00] text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm shadow-orange-500/10"
 															>
-																<p
-																	class="text-[15px] leading-relaxed whitespace-pre-wrap break-words"
-																>
-																	{msg.content}
-																</p>
+																<div class="chat-prose prose prose-sm prose-invert max-w-none text-[15px]">
+																	{@html renderMarkdown(msg.content)}
+																</div>
 															</div>
 															<div class="flex justify-end mt-1 pr-1">
 																<span
@@ -873,9 +872,9 @@
 																		: 'bg-white text-gray-800 shadow-sm ring-1 ring-gray-100'
 																}`}
 															>
-																<p class="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-																	{msg.content}
-																</p>
+																<div class={`chat-prose prose prose-sm max-w-none text-[15px] ${isDarkMode ? 'prose-invert' : ''}`}>
+																	{@html renderMarkdown(msg.content)}
+																</div>
 															</div>
 															<div class="mt-1.5 pl-1 flex items-center gap-2">
 																{#if msg.turn_count > 0}
@@ -912,9 +911,9 @@
 																	}`}
 																	transition:fly={{ y: -4, duration: 150 }}
 																>
-																	<p class={`text-[13px] leading-relaxed whitespace-pre-wrap break-words ${isDarkMode ? 'text-orange-200/70' : 'text-orange-900/70'}`}>
-																		{adviceByTurn[msg.turn_count]}
-																	</p>
+																	<div class={`chat-prose prose prose-sm max-w-none text-[13px] ${isDarkMode ? 'prose-invert text-orange-200/70' : 'text-orange-900/70'}`}>
+																		{@html renderMarkdown(adviceByTurn[msg.turn_count] ?? '')}
+																	</div>
 																</div>
 															{/if}
 														</div>
@@ -1460,5 +1459,61 @@
 	.match-tab-active {
 		position: relative;
 		z-index: 1;
+	}
+
+	/* ===== Chat bubble markdown prose overrides ===== */
+	/* .prose sets color on itself via CSS vars; override it to inherit from the bubble parent
+	   (orange div = text-white, AI div = text-gray-200 / text-gray-800) */
+	.chat-prose {
+		color: inherit;
+	}
+
+	/* Compact margins so bubbles don't get too tall */
+	.chat-prose :global(p) {
+		margin-top: 0.25rem;
+		margin-bottom: 0.25rem;
+	}
+	.chat-prose :global(p:first-child) {
+		margin-top: 0;
+	}
+	.chat-prose :global(p:last-child) {
+		margin-bottom: 0;
+	}
+	.chat-prose :global(ul),
+	.chat-prose :global(ol) {
+		margin-top: 0.25rem;
+		margin-bottom: 0.25rem;
+		padding-left: 1.25rem;
+	}
+	.chat-prose :global(li) {
+		margin-top: 0.1rem;
+		margin-bottom: 0.1rem;
+	}
+	.chat-prose :global(pre) {
+		margin-top: 0.5rem;
+		margin-bottom: 0.5rem;
+		border-radius: 0.375rem;
+		padding: 0.75rem 1rem;
+		font-size: 0.8rem;
+		overflow-x: auto;
+	}
+	.chat-prose :global(code:not(pre code)) {
+		font-size: 0.85em;
+		padding: 0.1em 0.35em;
+		border-radius: 0.25rem;
+	}
+	.chat-prose :global(h1),
+	.chat-prose :global(h2),
+	.chat-prose :global(h3) {
+		margin-top: 0.5rem;
+		margin-bottom: 0.25rem;
+		font-size: 1em;
+		font-weight: 700;
+	}
+	.chat-prose :global(blockquote) {
+		margin: 0.35rem 0;
+		padding-left: 0.75rem;
+		border-left-width: 3px;
+		font-style: italic;
 	}
 </style>
