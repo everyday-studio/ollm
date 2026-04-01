@@ -906,12 +906,12 @@
 																<div
 																	class={`mt-2 w-fit max-w-[88%] rounded-2xl px-4 py-3 ${
 																		isDarkMode
-																			? 'bg-orange-500/5 ring-1 ring-orange-500/15'
+																			? 'bg-orange-500/10 ring-1 ring-orange-500/30'
 																			: 'bg-orange-50 ring-1 ring-orange-100'
 																	}`}
 																	transition:fly={{ y: -4, duration: 150 }}
 																>
-																	<div class={`chat-prose prose prose-sm max-w-none text-[13px] ${isDarkMode ? 'prose-invert text-orange-200/70' : 'text-orange-900/70'}`}>
+																	<div class={`chat-prose prose prose-sm max-w-none text-[13px] ${isDarkMode ? 'prose-invert text-orange-200' : 'text-orange-900/70'}`}>
 																		{@html renderMarkdown(adviceByTurn[msg.turn_count] ?? '')}
 																	</div>
 																</div>
@@ -1465,7 +1465,17 @@
 	/* .prose sets color on itself via CSS vars; override it to inherit from the bubble parent
 	   (orange div = text-white, AI div = text-gray-200 / text-gray-800) */
 	.chat-prose {
-		color: inherit;
+    color: inherit; /* user 버블(주황)은 그대로 white 상속 */
+	}
+
+	/* prose-invert 없을 때 = 라이트모드 AI 버블 */
+	.chat-prose:not(.prose-invert) {
+		color: #1f2937; /* gray-800 */
+	}
+
+	/* prose-invert 있을 때 = 다크모드 AI 버블 */
+	.chat-prose.prose-invert {
+		color: #e5e7eb; /* gray-200 */
 	}
 
 	/* Compact margins so bubbles don't get too tall */
